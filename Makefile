@@ -17,7 +17,7 @@ all:	version
 	$(MAKE) -C modules all
 
 version:
-	@if which svnversion >/dev/null; then echo "#define GPAC_SVN_REVISION	\"$(shell svnversion $(SRC_PATH) )\"" > $(SRC_PATH)/include/gpac/version.h ; else  echo "No SVN Version found"; fi
+	@if which git >/dev/null; then echo "#define GPAC_GIT_REVISION	\"$(shell git rev-list HEAD -1 --abbrev-commit)\"" > $(SRC_PATH)/include/gpac/version.h ; else  echo "No GIT Revision found"; fi
 
 lib:	version
 	$(MAKE) -C src all

@@ -36,12 +36,12 @@ export BUILDPATH=$(dirname "$0")
 cd $BUILDPATH
 export BUILDPATH=$(pwd)
 echo "Current Dir = $BUILDPATH"
-version=$(svnversion ../../..)
+version=$(git rev-list HEAD -1 --abbrev-commit)
 echo "*** Build path is $BUILDPATH, setting revision number $version"
 if grep "$version" ../../../include/gpac/version.h >/dev/null 2>&1 ; then
   echo "Version $version already set"
 else
-  echo "#define GPAC_SVN_REVISION \"$version\"" > ../../../include/gpac/version.h
+  echo "#define GPAC_GIT_REVISION \"$version\"" > ../../../include/gpac/version.h
 fi
 echo "Building lib gpac ..."
 cd ../../../

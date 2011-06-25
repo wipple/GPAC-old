@@ -1840,12 +1840,12 @@ echo "#define GPAC_CONFIGURATION \"$GPAC_CONFIGURATION\"" >> $TMPH
 
 version="`grep '#define GPAC_VERSION ' \"$source_path/include/gpac/tools.h\" | cut -d '"' -f 2`"
 
-if which svnversion >/dev/null
+if which git >/dev/null
 then
-    revision="`svnversion \"$source_path\"`"
-    echo "#define GPAC_SVN_REVISION	\"$revision\"" > $source_path/include/gpac/version.h
+    revision="`git rev-list HEAD -1 --abbrev-commit`"
+    echo "#define GPAC_GIT_REVISION	\"$revision\"" > $source_path/include/gpac/version.h
 else
-    echo "Cannot find SVN revision"
+    echo "Cannot find GIT revision"
 fi
 
 echo ""
