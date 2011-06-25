@@ -134,7 +134,7 @@ void convert_file_info(char *inName, u32 trackID)
 
 GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double force_fps, u32 frames_per_sample)
 {
-	u32 track_id, i, timescale, track, stype, profile, level;
+	u32 track_id, i, timescale, track, stype, profile, compat, level;
 	s32 par_d, par_n, prog_id, delay;
 	s32 tw, th, tx, ty;
 	Bool do_audio, do_video, do_all, disable, track_layout, chap_ref, is_chap, keep_handler;
@@ -163,7 +163,7 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 	delay = 0;
 	group = 0;
 	stype = 0;
-	profile = level = 0;
+	profile = compat = level = 0;
 
 	tw = th = tx = ty = 0;
 	par_d = par_n = -2;
@@ -248,8 +248,23 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 		else if (!strnicmp(ext+1, "stype=", 6)) {
 			stype = GF_4CC(ext[7], ext[8], ext[9], ext[10]);
 		}
-		else if (!strnicmp(ext+1, "profile=", 8)) profile = atoi(ext+9);
-		else if (!strnicmp(ext+1, "level=", 6)) level = atoi(ext+7);
+		else if (!strnicmp(ext+1, "profile=", 8)) {
+			if (!stricmp(ext+9, "high444")) profile = 244;
+			else if (!stricmp(ext+9, "high")) profile = 100;
+			else if (!stricmp(ext+9, "extended")) profile = 88;
+			else if (!stricmp(ext+9, "main")) profile = 77;
+			else if (!stricmp(ext+9, "baseline")) profile = 66;
+			else profile = atoi(ext+9);
+		}
+		else if (!strnicmp(ext+1, "compat=", 7)) {
+				compat = atoi(ext+8);
+		}
+		else if (!strnicmp(ext+1, "level=", 6)) {
+			if( atof(ext+7) < 6 )
+				level = (int)(10*atof(ext+7)+.5);
+			else
+				level = atoi(ext+7);
+		}
 
 		/*unrecognized, assume name has colon in it*/
 		else {
@@ -394,8 +409,8 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 				gf_isom_set_track_enabled(import.dest, i+1, 0);
 			}
 
-			if (profile || level)
-				gf_media_change_pl(import.dest, i+1, profile, level);
+			if (profile || compat || level)
+				gf_media_change_pl(import.dest, i+1, profile, compat, level);
 
 			if (gf_isom_get_media_subtype(import.dest, i+1, 1)== GF_4CC( 'm', 'p', '4', 's' ))
 				keep_sys_tracks = 1;
@@ -468,8 +483,8 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 				gf_isom_set_track_enabled(import.dest, track, 0);
 			}
 
-			if (profile || level)
-				gf_media_change_pl(import.dest, track, profile, level);
+			if (profile || compat || level)
+				gf_media_change_pl(import.dest, track, profile, compat, level);
 
 			if (gf_isom_get_mpeg4_subtype(import.dest, track, 1))
 				keep_sys_tracks = 1;
