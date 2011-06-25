@@ -36,13 +36,15 @@ TMPS="${TMPDIR1}/gpac-conf-${RANDOM}-$$-${RANDOM}.S"
 DESTDIR=""
 prefix="/usr/local"
 mandir=""
+source_path=""
 cross_prefix=""
+target_os=""
 dxsdk_path=""
 moz_path="local"
 cc_orig="gcc"
-cc="${cc_orig}"
+cc=""
 cpp_orig="g++"
-cpp="${cpp_orig}"
+cpp=""
 ar="ar"
 ranlib="ranlib"
 make="make"
@@ -50,7 +52,7 @@ strip="strip"
 readelf="readelf"
 install="${INSTALL:=install}"
 instflags="${INSTFLAGS:=-p}"
-cpu=`uname -m`
+cpu=""
 debuginfo="no"
 sdl_path=""
 sdl_local="no"
@@ -58,6 +60,7 @@ sdl_static="no"
 xulsdk_path="/usr/lib/xulrunner/sdk/include"
 xul_flags=""
 libdir="lib"
+opt_libdir=""
 
 #GPAC module config
 js_flags="XP_UNIX"
@@ -88,6 +91,9 @@ has_directfb="no"
 has_x11="no"
 has_x11_shm="no"
 has_x11_xv="no"
+sdl_too_old="no"
+has_sdl="no"
+sdl_config="sdl-config"
 no_gcc_opt="no"
 use_fixed_point="no"
 use_memory_tracking="no"
@@ -184,20 +190,23 @@ GPAC configuration options:
   --help                   print this message
   --prefix=PREFIX          install in PREFIX [$prefix]
   --mandir=DIR             man documentation in DIR [PREFIX/man]
+  --libdir=DIR             install library to PREFIX/DIR [lib]
 
   --source-path=PATH       path of source code [$source_path]
   --cross-prefix=PREFIX    use PREFIX for compile tools [$cross_prefix]
-  --cc =CC                 use C   compiler CC  [$cc]
-  --cpp=CPP                use C++ compiler CPP [$cpp]
+  --target-os=OS           specify target OS for cross compile [$target_os]
+  --cc =CC                 use C   compiler CC  [$cc_orig]
+  --cpp=CPP                use C++ compiler CPP [$cpp_orig]
   --make=MAKE              use specified make [$make]
   --extra-cflags=ECFLAGS   add ECFLAGS to CFLAGS [$CFLAGS]
+  --extra-cppflags=ECPPFLAGS   add ECPPFLAGS to CPPFLAGS [$CPPFLAGS]
   --extra-ldflags=ELDFLAGS add ELDFLAGS to LDFLAGS [$LDFLAGS]
-  --extra-libs=ELIBS       add ELIBS [$ELIBS]
-  --cpu=CPU                force cpu to CPU  [$cpu]
+  --extra-libs=ELIBS       add ELIBS [$LIBS]
+  --cpu=CPU                force cpu to CPU  [`uname -m`]
   --sdl-cfg=SDL_PATH       specify path to sdl-config for local install [$sdl_path]
   --enable-sdl-static      use static SDL linking [default=no]
   --X11-path=X11_PATH      specify path for X11 includes and libraries [$X11_PATH]
-  --dxsdk-path=DX_PATH     specify directX SDK for MinGW [$dxsdk_path]
+  --dxsdk-path=DX_PATH     specify DirectX SDK for MinGW [$dxsdk_path]
   --xulsdk-path=XUL_PATH   specify Mozilla XUL (Gecko) SDK include path [$xulsdk_path]
   --mozdir=MOZ_PATH        specify mozilla main directory path for system install
 
@@ -217,12 +226,16 @@ GPAC configuration options:
   --disable-jack           disable Jack audio
   --enable-pulseaudio      enable  Pulse audio
   --disable-pulseaudio     disable Pulse audio
+  --disable-x11            disable all X11 support
   --disable-x11-shm        disable X11 shared memory support
   --disable-x11-xv         disable X11 Xvideo support
+  --disable-sdl            disable SDL support
   --enable-fixed-point     enable fixed-point math
   --enable-tinygl          enable TinyGL support
+  --disable-directx        disable DirectX support
   --enable-joystick        enable joystick support
   --disable-ssl            disable OpenSSL support
+  --disable-dbv4linux      disable DVB for Linux support
   --enable-amr-nb-fixed    enable AMR NB fixed-point decoder
   --enable-amr-nb          enable AMR NB library
   --enable-amr-wb          enable AMR WB library
@@ -293,15 +306,23 @@ for opt do
             ;;
         --mandir=*) mandir=`echo $opt | cut -d '=' -f 2`
             ;;
+        --libdir=*) opt_libdir=`echo $opt | cut -d '=' -f 2`
+            ;;
         --source-path=*) source_path=`echo $opt | cut -d '=' -f 2`
             ;;
         --cross-prefix=*) cross_prefix=`echo $opt | cut -d '=' -f 2` && echo "cross-prefix detected: $cross_prefix"
             ;;
+        --target-os=*) target_os=`echo $opt | cut -d '=' -f 2 | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz`
+            ;;
         --cc=*) cc=`echo $opt | cut -d '=' -f 2`
+            ;;
+        --cpp=*) cpp=`echo $opt | cut -d '=' -f 2`
             ;;
         --make=*) make=`echo $opt | cut -d '=' -f 2`
             ;;
         --extra-cflags=*) CFLAGS="$CFLAGS ${opt#--extra-cflags=}"
+            ;;
+        --extra-cppflags=*) CPPFLAGS="$CPPFLAGS ${opt#--extra-cppflags=}"
             ;;
         --extra-ldflags=*) LDFLAGS="$LDFLAGS ${opt#--extra-ldflags=}"
             ;;
@@ -309,34 +330,72 @@ for opt do
             ;;
         --cpu=*) cpu=`echo $opt | cut -d '=' -f 2`
             ;;
+        --sdl-cfg=*) sdl_path=`echo $opt | cut -d '=' -f 2`; sdl_local="yes"
+            ;;
+        --enable-sdl-static) sdl_static="yes"
+            ;;
+        --X11-path=*) X11_PATH=`echo $opt | cut -d '=' -f 2`
+            ;;
+        --dxsdk-path=*) dxsdk_path=`echo $opt | cut -d '=' -f 2`
+            ;;
+        --xulsdk-path=*) xulsdk_path=`echo $opt | cut -d '=' -f 2`
+            ;;
+        --mozdir=*) moz_path=`echo $opt | cut -d '=' -f 2`
+            ;;
     esac
 done
 
-case "$cpu" in
-    i386|i486|i586|i686|i86pc|BePC)
-        cpu="x86"
-        ;;
-    x86_64|amd64)
-        cpu="x86"
-        if [ "$linux" = "yes" -o "$darwin" = "yes" ] ; then
-            is_64="yes"
-        fi
-        case `uname -s` in
-            SunOS)
-                canon_arch=`isainfo -n`
-                ;;
-            *)
-                canon_arch="`$cc -dumpmachine | sed -e 's,\([^-]*\)-.*,\1,'`"
-                ;;
-        esac
+cc="${cc:=${cross_prefix}${cc_orig}}"
+cpp="${cpp:=${cross_prefix}${cpp_orig}}"
+ar="${cross_prefix}${ar}"
+ranlib="${cross_prefix}${ranlib}"
+strip="${cross_prefix}${strip}"
 
-        if [ x"$canon_arch" = x"x86_64" -o x"$canon_arch" = x"amd64" ]; then
-            if [ -z "`echo $CFLAGS | grep -- -m32`"  ]; then
-                cpu="x86_64"
-                if test "$linux" = "yes" ; then
-                    libdir="lib64"
-                fi
+if test -z "$cross_prefix" ; then
+    # If --cross-prefix is not specified, assume native build
+    target_os=`uname -s | tr ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyz`
+    cpu=`uname -m`
+else
+    # We are cross-compiling. target_os and cpu must be specified.
+    if test -z "$target_os" -o -z "$cpu" ; then
+        echo "Error: --target-os and --cpu must be specified when you are cross-compiling"
+        exit 1
+    fi
+fi
+
+want_64="no"
+if [ x"$cpu" = x"x86_64" -o x"$cpu" = x"amd64" ]; then
+    want_64="yes"
+fi
+
+case "$cpu" in
+    i386|i486|i586|i686|i86pc|BePC|x86_64|amd64)
+        cpu="x86"
+        # check if the arch of compiler output
+        cat >$TMPC <<EOF
+        int test[(int)sizeof(char*)-7];
+EOF
+        if $cc $CFLAGS -o $TMPO -c $TMPC 2> /dev/null ; then
+            # x86_64 (64bit)
+            if test "$want_64" = "no" ; then
+                echo "Error: You request 32-bit build but compiler output is 64-bit"
+                echo "       Use correct -m/-arch flag or 32-bit target compiler"
+                exit 1
+            else
+                is_64="yes"
+                libdir="lib64"
                 want_pic="yes"
+            fi
+        else
+            # x86 (32bit)
+            if test "$want_64" = "yes" ; then
+                echo "Error: You request 64-bit build but compiler output is 32-bit"
+                echo "       Use correct -m/-arch flag or 64-bit target compiler"
+                exit 1
+            else
+                is_64="no"
+                libdir="lib"
+                want_pic="no"
             fi
         fi
         ;;
@@ -349,7 +408,7 @@ case "$cpu" in
     ppc64)
         cpu="powerpc"
         libdir="lib64"
-        ;;  
+        ;;
     "Power Macintosh"|ppc)
         cpu="powerpc"
         ;;
@@ -372,30 +431,7 @@ case "$cpu" in
         ;;
 esac
 
-#checking for CFLAGS
-if test -z "$CFLAGS"; then
-    CFLAGS=""
-fi
-
-if test "$win32" = "yes" ; then
-    cross_prefix=""
-fi
-
-if test "$mingw32" = "yes" ; then
-    cross_prefix=""
-fi
-
-
-cc="${cross_prefix}${cc}"
-#for ccache
-cc="${cc}"
-cpp="${cross_prefix}${cpp}"
-ar="${cross_prefix}${ar}"
-ranlib="${cross_prefix}${ranlib}"
-strip="${cross_prefix}${strip}"
-
-
-#find source path
+# find source path
 source_path="`echo $0 | sed -e 's#/configure##'`"
 source_path_used="yes"
 if test -z "$source_path" -o "$source_path" = "." ; then
@@ -404,12 +440,9 @@ if test -z "$source_path" -o "$source_path" = "." ; then
 else
     source_path="`cd \"$source_path\"; pwd`"
 fi
-
-
-#OS specific
-targetos=`uname -s`
-case $targetos in
-    BeOS)
+# OS specific
+case $target_os in
+    beos)
         js_flags=-DXP_BEOS
         xul_flags=-DXP_BEOS
         prefix="/boot/home/config"
@@ -435,7 +468,7 @@ case $targetos in
         fi
         ;;
 
-    SunOS)
+    sunos)
         make="gmake"
         readelf="greadelf"
         LDFLAGS="${opt#--extra-ldflags=}"
@@ -463,7 +496,7 @@ EOF
         extralibs="$extralibs -lsocket -lnsl"
         ;;
 
-    FreeBSD)
+    freebsd)
         make="gmake"
         LDFLAGS="$LDFLAGS -export-dynamic"
         CFLAGS="$CFLAGS -pthread"
@@ -472,12 +505,12 @@ EOF
         js_flags="-DXP_UNIX -I/usr/include/js"
         ;;
 
-    BSD/OS)
+    bsd/os)
         extralibs="-lpoll -lgnugetopt -lm"
         make="gmake"
         ;;
 
-    Darwin)
+    darwin)
         js_flags=-DXP_MAC
         xul_flags=-DXP_MAC
         if test -d /sw/bin ; then
@@ -489,7 +522,6 @@ EOF
             CFLAGS="-I/opt/local/include $CFLAGS"
             LDFLAGS="-L/opt/local/lib $LDFLAGS"
         fi
-        cc="cc"
         Mac_Applications="/Applications"
         SHFLAGS="-dynamiclib"
         DYN_LIB_SUFFIX="dylib"
@@ -502,33 +534,33 @@ EOF
         darwin="yes"
         gcc_version=`$cc -v 2>&1 | grep version | cut -d ' ' -f3`
         case "$gcc_version" in
-            *2.95*) 
+            *2.95*)
                 CFLAGS="$CFLAGS -no-cpp-precomp -pipe -fomit-frame-pointer"
                 ;;
             3.*)
                 CFLAGS="$CFLAGS -no-cpp-precomp -pipe -fomit-frame-pointer -mdynamic-no-pic -fno-common"
                 ;;
-            4.*) 
+            4.*)
                 CFLAGS="$CFLAGS -pipe -fomit-frame-pointer -fno-common"
                 ;;
         esac
         ;;
 
-    MINGW32*)
+    mingw32*)
         js_flags="-DXP_PC -D_declspec=__declspec"
         mingw32="yes"
         win32="yes"
         extralibs="$extralibs -lws2_32 -lwinmm"
         ;;
 
-    CYGWIN*)
-        js_flags=-DXP_PC 
+    cygwin*)
+        js_flags=-DXP_PC
         extralibs="$extralibs -lws2_32 -lwinmm"
         cygwin="yes"
         win32="yes"
         ;;
 
-    Linux)
+    linux)
         js_flags="-DXP_UNIX -I/usr/include/js"
         LDFLAGS="$LDFLAGS -Wl,--warn-common"
         #OSS_LDFLAGS="-laoss"
@@ -543,11 +575,15 @@ EOF
     *) ;;
 esac
 
+# Override default libdir with user specified dir
+if test -n "$opt_libdir"; then
+    libdir="$opt_libdir"
+fi
 
-#defines directory for binaries and libs (ex. for TinyGL)
-target_bin_dir="" 
+# Defines directory for binaries and libs (ex. for TinyGL)
+target_bin_dir=""
 if test "$cross_prefix" = "" ; then
-    target_bin_dir=`${cc} -v 2>&1 | sed -n '2p' | awk ' {print $2}'`-${cc_orig}
+    target_bin_dir=`${cc} -v 2>&1 | grep -e '^Target:' | awk ' {print $2}'`-${cc_orig}
 else
     target_bin_dir=${cross_prefix}${cc_orig}
 fi
@@ -573,10 +609,11 @@ EOF
 CFLAGS="$CFLAGS -Wall"
 if $cc -o $TMPO $TMPC -fno-strict-aliasing 2> /dev/null  ; then
     CFLAGS="$CFLAGS -fno-strict-aliasing"
+    CPPFLAGS="$CPPFLAGS -fno-strict-aliasing"
 fi
-CPPFLAGS="$CFLAGS"
-if $cc -o $TMPO $TMPC -lz -Wno-pointer-sign 2> /dev/null  ; then
+if $cc -o $TMPO $TMPC -Wno-pointer-sign 2> /dev/null  ; then
     CFLAGS="$CFLAGS -Wno-pointer-sign"
+    CPPFLAGS="$CPPFLAGS -Wno-pointer-sign"
 fi
 
 
@@ -591,18 +628,13 @@ cat > $TMPC << EOF
 int main( void ) { if (zlibVersion() != ZLIB_VERSION) { puts("zlib version differs !!!"); return 1; } return 0; }
 EOF
 has_zlib="no"
-if test "$cross_prefix"  != "" ; then
-  if $cc -o $TMPO $TMPC -lz 2> /dev/null  ; then
-      has_zlib="system"
-  fi
-fi
-if test "$has_zlib" = "no" ; then
-  if $cc -o $TMPO $TMPC -I"$local_inc/zlib" -L$local_lib -lz 2> /dev/null  ; then
+if $cc -o $TMPO $TMPC $CFLAGS $LDFLAGS -lz 2> /dev/null  ; then
+    has_zlib="system"
+elif $cc -o $TMPO $TMPC -I"$local_inc/zlib" -L$local_lib -lz 2> /dev/null  ; then
     has_zlib="local"
-  else
+else
     echo "error: zlib not found on system or in local libs"
     exit 1
-  fi
 fi
 
 
@@ -816,9 +848,9 @@ avcap_ldflags="-lavcap"
 cat > $TMPC << EOF
 #include <avcap/avcap.h>
 using namespace avcap;
-int main( void ) { 
+int main( void ) {
  const DeviceCollector::DeviceList& dl = DEVICE_COLLECTOR::instance().getDeviceList();
- return 0; 
+ return 0;
 }
 EOF
 if $cpp -o $TMPO $TMPC $avcap_cflags $avcap_ldflags 2> /dev/null  ; then
@@ -875,6 +907,7 @@ cat > $TMPC << EOF
 #include FT_OUTLINE_H
 int main( void ) { return 0; }
 EOF
+
 if test "$cross_prefix"  != "" ; then
     ft_cflags="-I$prefix/include "
     ft_lflags="-L$prefix/lib -lfreetype"
@@ -888,7 +921,7 @@ if test "$cross_prefix"  != "" ; then
         fi
     fi
 else
-    if test "`which freetype-config`" != ""; then
+    if test "`which freetype-config 2> /dev/null`" != ""; then
         ft_cflags="`freetype-config --cflags`"
         ft_lflags="`freetype-config --libs`"
         if $cc -o $TMPO $TMPC $ft_cflags $ft_lflags 2> /dev/null  ; then
@@ -921,7 +954,7 @@ else
     LINK_SSL="-lssl -lcrypto"
 fi
 
-if $cc -o $TMPO $TMPC $LINK_SSL 2> /dev/null  ; then
+if $cc -o $TMPO $TMPC $CFLAGS $LDFLAGS $LINK_SSL 2> /dev/null  ; then
     has_ssl="yes"
 fi
 
@@ -935,7 +968,7 @@ int main( void ) { return 0; }
 EOF
 
 if test "$cross_prefix"  != "" ; then
-    if test "`which $prefix/bin/jpeg-config`" != ""; then
+    if test "`which $prefix/bin/jpeg-config 2> /dev/null`" != ""; then
         jpeg_cflags="`$prefix/bin/jpeg-config --cflags`"
         jpeg_lflags="`$prefix/bin/jpeg-config --libs`"
         if $cc -o $TMPO $TMPC $jpeg_cflags $jpeg_lflags 2> /dev/null  ; then
@@ -964,7 +997,7 @@ else
     if $cc -o $TMPO $TMPC -ljpeg 2> /dev/null  ; then
         has_jpeg="system"
     elif test "$alt_macosx_dir" != "" ; then
-        if cc -o $TMPO $TMPC -I$alt_macosx_dir/include -L$alt_macosx_dir/lib -ljpeg 2> /dev/null ; then
+        if $cc -o $TMPO $TMPC -I$alt_macosx_dir/include -L$alt_macosx_dir/lib -ljpeg 2> /dev/null ; then
             has_jpeg="system"
         fi
     elif $cc -o $TMPO $TMPC -I$local_inc/jpeg -L$local_lib -ljpeg 2> /dev/null  ; then
@@ -984,7 +1017,7 @@ EOF
 if $cc -o $TMPO $TMPC -lopenjpeg 2> /dev/null  ; then
     has_openjpeg="system"
 elif test "$alt_macosx_dir" != "" ; then
-    if cc -o $TMPO $TMPC -I$alt_macosx_dir/include -L$alt_macosx_dir/lib -ljpeg 2> /dev/null ; then
+    if $cc -o $TMPO $TMPC -I$alt_macosx_dir/include -L$alt_macosx_dir/lib -ljpeg 2> /dev/null ; then
         has_openjpeg="system"
     fi
 elif $cc -o $TMPO $TMPC -I$local_inc/openjpeg -L$local_lib -lopenjpeg 2> /dev/null  ; then
@@ -1138,7 +1171,7 @@ EOF
 
 fi
 
-if test "$cross_prefix"  != "" ; then 
+if test "$cross_prefix"  != "" ; then
     if $cc -o $TMPO $TMPC -I$prefix/include -L$prefix/lib $ffmpeg_lflags 2> /dev/null  ; then
         has_ffmpeg="system"
         ffmpeg_cflags="-I$prefix/include"
@@ -1148,7 +1181,7 @@ if test "$cross_prefix"  != "" ; then
             has_ffmpeg="local"
             ffmpeg_cflags="-I$local_inc/include"
             ffmpeg_lflags="-L$local_lib/lib $ffmpeg_lflags"
-            echo OK 
+            echo OK
         fi
     fi
 else
@@ -1425,9 +1458,7 @@ if $cc -o $TMPO $TMPC -I$directfb_inc -L$directfb_lib 2> /dev/null  ; then
     has_directfb="yes"
 fi
 
-
-
-#look for X11 shared memory support
+#look for X11 support
 cat > $TMPC << EOF
 #include <X11/Xlib.h>
 int main( void ) { return 0; }
@@ -1463,64 +1494,68 @@ EOF
 
 fi
 
+#look for DX support
+dx_path="system"
+if test "$win32" = "yes" ; then
+
+    cat > $TMPC << EOF
+#include <ddraw.h>
+int main( void ) { return 0; }
+EOF
+
+    if $cc -o $TMPO $TMPC 2> /dev/null  ; then
+        has_mingw_directx="yes"
+    else
+        dx_path="$dxsdk_path"
+        if $cc -o $TMPO $TMPC -I$dxsdk_path/include -L$dxsdk_path/lib -lddraw 2> /dev/null  ; then
+            has_mingw_directx="yes"
+        fi
+    fi
+
+fi
+
+#look for SDL support
+
+if test "$sdl_local" = "yes"; then
+    sdl_config="$sdl_path/sdl-config"
+    sdl_static="yes"
+fi
+
+if test "`which $sdl_config 2>/dev/null`" != ""; then
+
+    cat > $TMPC << EOF
+#include <SDL.h>
+#undef main
+int main( void ) { return SDL_Init (SDL_INIT_VIDEO); }
+EOF
+
+    if test "$sdl_static" = "yes"; then
+        sdl_lib_flags=`$sdl_config --static-libs`
+    else
+        sdl_lib_flags=`$sdl_config --libs`
+    fi
+
+    sdl_cflags=`$sdl_config --cflags`
+    if $cc -o $TMPO $sdl_cflags $TMPC $sdl_lib_flags  > /dev/null 2>&1  ; then
+        _sdlversion=`$sdl_config --version | sed 's/[^0-9]//g'`
+        if test "$_sdlversion" -lt 121 ; then
+            sdl_too_old="yes"
+        else
+            has_sdl="yes"
+        fi
+    fi
+fi
+#end SDL check
 
 
-#overwrite detection with manual settings
 for opt do
     case "$opt" in
-        --sdl-cfg=*) sdl_path=`echo $opt | cut -d '=' -f 2`; sdl_local="yes"
-            ;;
-        --enable-sdl-static=*) sdl_static="yes"
-            ;;
-        --enable-jack=*) has_jack="yes"
-            ;;
-        --X11-path=*) X11_PATH=`echo $opt | cut -d '=' -f 2`
-            ;;
-        --dxsdk-path=*) dxsdk_path=`echo $opt | cut -d '=' -f 2`
-            ;;
-        --xulsdk-path=*) xulsdk_path=`echo $opt | cut -d '=' -f 2`
-            ;;
-        --mozdir=*) moz_path=`echo $opt | cut -d '=' -f 2`
-            ;;
-        --enable-amr-nb-fixed) has_amr_nb_fixed="yes"
-            ;;
-        --disable-pulseaudio=*) has_pulseaudio="no"
-            ;;
-        --enable-amr-nb) has_amr_nb="yes"
-            ;;
-        --enable-amr-wb) has_amr_wb="yes"
-            ;;
-        --enable-amr) has_amr_wb="yes"; has_amr_nb="yes"
-            ;;
-        --disable-oggvorbis) has_oggvorbis="no"
-            ;;
-        --disable-jack=*) has_jack="no"
-            ;;
-        --disable-alsa) has_alsa="no"
-            ;;
+        ### General build options
         --enable-debug) debuginfo="yes"; no_gcc_opt="yes"
             ;;
         --enable-gprof) gprof_build="yes";
             ;;
-        --enable-static-bin) static_build="yes";
-            ;;
         --enable-pic) want_pic="yes";
-            ;;
-        --disable-opt) no_gcc_opt="yes"
-            ;;
-        --disable-ipv6) has_ipv6="no"
-            ;;
-        --disable-wx) has_wx="no"
-            ;;
-        --disable-platinum) has_platinum="no"
-            ;;
-        --disable-oss-audio) has_oss_audio="no"
-            ;;
-        --disable-x11-shm) has_x11_shm="no"
-            ;;
-        --disable-x11-xv) has_x11_xv="no"
-            ;;
-        --enable-fixed-point) use_fixed_point="yes"
             ;;
         --strip) INSTFLAGS="-s $INSTFLAGS"
             ;;
@@ -1528,14 +1563,58 @@ for opt do
             ;;
         --track-memory) use_memory_tracking="yes"
             ;;
+        --disable-opt) no_gcc_opt="yes"
+            ;;
+
+        ### General libraries (some of these are platform specific)
+        --disable-ipv6) has_ipv6="no"
+            ;;
+        --disable-wx) has_wx="no"
+            ;;
+        --disable-alsa) has_alsa="no"
+            ;;
+        --disable-jack) has_jack="no"
+            ;;
+        --disable-oss-audio) has_oss_audio="no"
+            ;;
+        --disable-pulseaudio) has_pulseaudio="no"
+            ;;
+        --disable-x11) has_x11="no"
+            ;;
+        --disable-x11-shm) has_x11_shm="no"
+            ;;
+        --disable-x11-xv) has_x11_xv="no"
+            ;;
+        --disable-sdl) has_sdl="no"
+            ;;
+        --enable-fixed-point) use_fixed_point="yes"
+            ;;
         --enable-tinygl) enable_tinygl="yes"
+            ;;
+        --disable-directx) has_mingw_directx="no"
+            ;;
+        --enable-joystick) enable_joystick="yes"
             ;;
         --disable-ssl) has_ssl="no"
             ;;
-        --enable-depth) enable_depth_compositor="yes"
+        --disable-dvb4linux) has_dvb4linux="no"
+            ;;
+        --enable-amr-nb-fixed) has_amr_nb_fixed="yes"
+            ;;
+        --enable-amr-nb) has_amr_nb="yes"
+            ;;
+        --enable-amr-wb) has_amr_wb="yes"
+            ;;
+        --enable-amr) has_amr_wb="yes"; has_amr_nb="yes"
             ;;
         --static-mp4box) static_mp4box="yes"
             ;;
+        --enable-static-bin) static_build="yes";
+            ;;
+        --enable-depth) enable_depth_compositor="yes"
+            ;;
+
+        ### Extra libraries configuration
         --use-faad=*) has_faad=${opt#--use-faad=}
             ;;
         --use-js=*) has_js=${opt#--use-js=}
@@ -1556,13 +1635,13 @@ for opt do
             if test "$tmp_has_png" = "system" ; then
                 if test "$has_png"  != "system" ; then
                     if test "$cross_prefix"  != "" ; then
-                        echo 
+                        echo
                         echo "WARNING: PNG has been forced to system, but we are cross-compiling, it will have to be on target"
-                        echo 
+                        echo
                     else
-                        echo 
+                        echo
                         echo "WARNING!! : PNG has been forced to system even though it hasn't been found in this host"
-                        echo 
+                        echo
                     fi
                 fi
             fi
@@ -1572,13 +1651,13 @@ for opt do
             if test "$tmp_has_zlib" = "system" ; then
                 if test "$has_zlib"  != "system" ; then
                     if test "$cross_prefix"  != "" ; then
-                        echo 
+                        echo
                         echo "WARNING: ZLIB has been forced to system, but we are cross-compiling, it will have to be on target"
-                        echo 
+                        echo
                     else
-                        echo 
+                        echo
                         echo "WARNING!! : ZLIB has been forced to system even though it hasn't been found in this host"
-                        echo 
+                        echo
                     fi
                 fi
             fi
@@ -1591,10 +1670,6 @@ for opt do
         --use-theora=*) has_theora=${opt#--use-theora=}
             ;;
         --use-openjpeg=*) has_openjpeg=${opt#--use-openjpeg=}
-            ;;
-        --enable-joystick) enable_joystick="yes"
-            ;;
-        --enable-pulseaudio=*) has_pulseaudio="yes"
             ;;
 
         --disable-all) has_pulseaudio="no"; has_alsa="no"; disable_3d="yes"; disable_svg="yes"; disable_vrml="yes"; disable_od="yes"; disable_bifs="yes"; disable_bifs_enc="yes"; disable_laser="yes"; disable_beng="yes"; disable_qtvr="yes";  disable_avi="yes"; disable_ogg="yes"; disable_m2ps="yes"; disable_m2ts="yes"; disable_m2ts_mux="yes"; disable_parsers="yes"; disable_import="yes"; disable_export="yes"; disable_swf="yes"; disable_scene_stats="yes"; disable_scene_dump="yes"; disable_scene_encode="yes"; disable_loader_isoff="yes"; disable_od_dump="yes"; disable_mcrypt="yes"; disable_isoff="yes"; disable_isoff_write="yes"; disable_isoff_hint="yes"; disable_isoff_frag="yes"; disable_streaming="yes"; disable_x3d="yes"; disable_loader_bt="yes"; disable_loader_xmt="yes"; has_dvb4linux="no"
@@ -1729,7 +1804,7 @@ for opt do
         --disable-streaming) disable_streaming="yes"
             ;;
         --enable-streaming) disable_streaming="no"
-            ;; 
+            ;;
 
 
     esac
@@ -1848,69 +1923,6 @@ if test "$no_gcc_opt" = "no"; then
 fi
 
 
-
-#look for DX support
-dx_path="system"
-has_mingw_directx="no"
-if test "$win32" = "yes" ; then
-
-    cat > $TMPC << EOF
-#include <ddraw.h>
-int main( void ) { return 0; }
-EOF
-
-    if $cc -o $TMPO $TMPC 2> /dev/null  ; then
-        has_mingw_directx="yes"
-    else
-        dx_path="$dxsdk_path"
-        if $cc -o $TMPO $TMPC -I$dxsdk_path/include -L$dxsdk_path/lib -lddraw 2> /dev/null  ; then
-            has_mingw_directx="yes"
-        fi
-    fi
-
-fi
-
-
-
-#look for SDL support
-sdl_too_old=no
-has_sdl=no
-sdl_config="sdl-config"
-if test "$sdl_local" = "yes"; then
-    sdl_config="$sdl_path/sdl-config"
-    sdl_static="yes"
-fi
-
-if type $sdl_config >/dev/null 2>&1; then
-
-    cat > $TMPC << EOF
-#include <SDL.h>
-#undef main
-int main( void ) { return SDL_Init (SDL_INIT_VIDEO); }
-EOF
-
-    if test "$sdl_static" = "yes"; then
-        sdl_lib_flags=`$sdl_config --static-libs`
-    else
-        sdl_lib_flags=`$sdl_config --libs`
-    fi
-    sdl_cflags=`$sdl_config --cflags`
-
-    if $cc -o $TMPO $sdl_cflags $TMPC $sdl_lib_flags  > /dev/null 2>&1  ; then
-        _sdlversion=`$sdl_config --version | sed 's/[^0-9]//g'`
-        if test "$_sdlversion" -lt 121 ; then
-            sdl_too_old=yes
-        else
-            has_sdl=yes
-        fi
-    fi
-
-fi
-#end SDL check
-
-
-
-#look at endianess
 if test -z "$cross_prefix" ; then
 
     # big/little endian test
@@ -1985,8 +1997,19 @@ echo "Install prefix: $prefix"
 echo "Source path: $source_path"
 echo "C   compiler: $cc"
 echo "C++ compiler: $cpp"
+echo "C   compiler flags: $CFLAGS"
+echo "C++ compiler flags: $CPPFLAGS"
+echo "Linker flags: $LDFLAGS"
 echo "make: $make"
-echo "CPU: $cpu"
+if test "$cpu" = "x86" ; then
+  if test "$is_64" = "yes" ; then
+    echo "CPU: x86_64"
+  else
+    echo "CPU: x86"
+  fi
+else
+    echo "CPU: $cpu"
+fi
 echo "Big Endian: $bigendian"
 if test $cpu = "mips"; then
     echo "MMI enabled: $mmi"
@@ -2143,8 +2166,14 @@ if test "$win32" != "yes" ; then
     echo "Jack Audio: $has_jack"
     echo "PulseAudio Audio: $has_pulseaudio"
     echo "DirectFB support: $has_directfb"
-    echo "X11 Shared Memory support: $has_x11_shm (path: $X11_PATH)"
-    echo "X11 XVideo support: $has_x11_xv"
+    echo "X11 support: $has_x11 (path: $X11_PATH)"
+    if test "$has_x11" = "no" ; then
+        has_x11_shm="no"
+        has_x11_xv="no"
+    else
+        echo "X11 Shared Memory support: $has_x11_shm"
+        echo "X11 XVideo support: $has_x11_xv"
+    fi
 fi
 
 echo "SDL Support: $has_sdl"
@@ -2318,7 +2347,7 @@ fi
 
 if test "$use_memory_tracking" = "yes"; then
     echo "#define GPAC_MEMORY_TRACKING" >> $TMPH
-elif test "$use_std_alloc" = "yes"; then 
+elif test "$use_std_alloc" = "yes"; then
     echo "#define GPAC_STD_ALLOCATOR" >> $TMPH
 fi
 
@@ -2561,7 +2590,7 @@ echo "GPAC_ENST_INC=$GPAC_ENST" >> config.mak
 if test "$source_path_used" = "yes" ; then
 
     echo "Creating compilation tree image"
-    SRC_DIRS="src src/utils src/isomedia src/ietf src/odf src/bifs src/scenegraph src/terminal src/mcrypt src/media_tools src/scene_manager src/compositor src/laser" 
+    SRC_DIRS="src src/utils src/isomedia src/ietf src/odf src/bifs src/scenegraph src/terminal src/mcrypt src/media_tools src/scene_manager src/compositor src/laser"
 
     APP_DIRS="applications/mp4box applications/mp4client applications/osmozilla applications/osmo4_wx applications/mp42ts"
 
