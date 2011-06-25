@@ -777,6 +777,7 @@ const char *gf_m4a_object_type_name(u32 objectType)
 	case 34: return "MPEG-1 Audio Layer-3";
 	case 35: return "MPEG-4 Audio DST";
 	case 36: return "MPEG-4 Audio ALS";
+	case 37: return "MPEG-4 Audio SLS";
 	default: return "MPEG-4 Audio Unknown";
 	}
 }
@@ -833,6 +834,8 @@ const char *gf_m4a_get_profile_name(u8 audio_pl)
 	case 0x2D: return "High Efficiency AAC Profile @ Level 3";
 	case 0x2E: return "High Efficiency AAC Profile @ Level 4";
 	case 0x2F: return "High Efficiency AAC Profile @ Level 5";
+	case 0x3B: return "High Definition AAC Profile @ Level 1";
+	case 0x3C: return "ALS Simple Profile @ Level 1";
 	case 0xFE: return "Not part of MPEG-4 audio profiles";
 	case 0xFF: return "No audio capability required";
 	default: return "ISO Reserved / User Private";

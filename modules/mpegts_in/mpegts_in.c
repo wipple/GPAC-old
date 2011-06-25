@@ -181,6 +181,10 @@ static GF_ObjectDescriptor *MP2TS_GetOD(M2TSIn *m2ts, GF_M2TS_PES *stream, char 
 		esd->decoderConfig->streamType = GF_STREAM_VISUAL;
 		esd->decoderConfig->objectTypeIndication = GPAC_OTI_VIDEO_AVC;
 		break;
+	case GF_M2TS_VIDEO_VC1:
+		esd->decoderConfig->streamType = GF_STREAM_VISUAL;
+		esd->decoderConfig->objectTypeIndication = GPAC_OTI_VIDEO_SMPTE_VC1;
+		break;
 	case GF_M2TS_AUDIO_MPEG1:
 		esd->decoderConfig->streamType = GF_STREAM_AUDIO;
 		esd->decoderConfig->objectTypeIndication = GPAC_OTI_AUDIO_MPEG1;

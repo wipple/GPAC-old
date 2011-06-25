@@ -1543,7 +1543,7 @@ GF_ESD *gf_media_map_esd(GF_ISOFile *mp4, u32 track)
 		return esd;
 	}
 
-	if (subtype == GF_ISOM_SUBTYPE_AC3) {
+	if ((subtype == GF_ISOM_SUBTYPE_AC3) || (subtype == GF_ISOM_SUBTYPE_SAC3)) {
 		esd = gf_odf_desc_esd_new(0);
 		esd->slConfig->timestampResolution = gf_isom_get_media_timescale(mp4, track);
 		esd->ESID = gf_isom_get_track_id(mp4, track);
