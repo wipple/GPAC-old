@@ -1259,6 +1259,13 @@ GF_Err gf_isom_set_audio_info(GF_ISOFile *movie, u32 trackNumber, u32 StreamDesc
 		((GF_AudioSampleEntryBox*)entry)->channel_count = nbChannels;
 		((GF_AudioSampleEntryBox*)entry)->bitspersample = bitsPerSample;
 		return GF_OK;
+	case GF_ISOM_SUBTYPE_AC3:
+	case GF_ISOM_SUBTYPE_SAC3:
+		((GF_AC3SampleEntryBox*)entry)->samplerate_hi = sampleRate;
+		((GF_AC3SampleEntryBox*)entry)->samplerate_lo = 0;
+		((GF_AC3SampleEntryBox*)entry)->channel_count = nbChannels;
+		((GF_AC3SampleEntryBox*)entry)->bitspersample = bitsPerSample;
+		return GF_OK;
 	/*check BIFS*/
 	default:
 		return GF_BAD_PARAM;
