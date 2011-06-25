@@ -2798,6 +2798,167 @@ GF_Err AVC_ChangePAR(GF_AVCConfig *avcc, s32 ar_n, s32 ar_d)
 	}
 	return GF_OK;
 }
+
+GF_Err AVC_ChangeColorProp(GF_AVCConfig *avcc, s32 fullrange, s32 vidformat, s32 colorprim, s32 transfer, s32 colmatrix)
+{
+	GF_BitStream *orig, *mod;
+	AVCState avc;
+	u32 i, bit_offset, flag;
+	s32 idx;
+	GF_AVCConfigSlot *slc;
+	orig = NULL;
+
+	memset(&avc, 0, sizeof(AVCState));
+	avc.sps_active_idx = -1;
+
+	i=0;
+	while ((slc = (GF_AVCConfigSlot *)gf_list_enum(avcc->sequenceParameterSets, &i))) {
+		char *no_emulation_buf = NULL;
+		u32 no_emulation_buf_size = 0, emulation_bytes = 0;
+		idx = AVC_ReadSeqInfo(slc->data+1/*skip NALU type*/, slc->size-1, &avc, 0, &bit_offset);
+		if (idx<0) {
+			if ( orig )
+				gf_bs_del(orig);
+			continue;
+		}
+
+		/*SPS still contains emulation bytes*/
+		no_emulation_buf = gf_malloc((slc->size-1)*sizeof(char));
+		no_emulation_buf_size = avc_remove_emulation_bytes(slc->data+1, no_emulation_buf, slc->size-1);
+
+		orig = gf_bs_new(no_emulation_buf, no_emulation_buf_size, GF_BITSTREAM_READ);
+		gf_bs_read_data(orig, no_emulation_buf, no_emulation_buf_size);
+		gf_bs_seek(orig, 0);
+		mod = gf_bs_new(NULL, 0, GF_BITSTREAM_WRITE);
+
+		/*copy over till vui flag*/
+		while (bit_offset) {
+			flag = gf_bs_read_int(orig, 1);
+			gf_bs_write_int(mod, flag, 1);
+			bit_offset--;
+		}
+		/*check VUI*/
+		flag = gf_bs_read_int(orig, 1);
+		gf_bs_write_int(mod, 1, 1);
+		if (flag) { /* VUI found in input bitstream */
+			u32 flag2 = gf_bs_read_int(orig, 1); /*aspect_ratio_info_present_flag*/
+			gf_bs_write_int(mod, flag2, 1);      /*just copy*/
+			if (flag2) {
+				s32 aspect_ratio_idc = gf_bs_read_int(orig, 8); /*aspect_ratio_idc*/
+				gf_bs_write_int(mod, aspect_ratio_idc, 8);      /*just copy*/
+				if (aspect_ratio_idc == 255) {
+					u32 ar_n, ar_d;
+					ar_n = gf_bs_read_int(orig, 16); /*sar_width*/
+					gf_bs_write_int(mod, ar_n, 16);  /*just copy*/
+					ar_d = gf_bs_read_int(orig, 16); /*sar_height*/
+					gf_bs_write_int(mod, ar_d, 16);  /*just copy*/
+				}
+			}
+
+			/*overscan_info_present_flag */
+			flag2 = gf_bs_read_int(orig, 1);
+			gf_bs_write_int(mod, flag2, 1);
+			if(flag2) {
+				u32 flag3 = gf_bs_read_int(orig, 1);
+				gf_bs_write_int(mod, flag3, 1);
+			}
+		} else { /* no VUI in input bitstream, create one */
+			gf_bs_write_int(mod, 0, 1);     /*aspect_ratio_present_flag*/
+			gf_bs_write_int(mod, 0, 1);     /*overscan_info_present_flag*/
+		}
+
+		/*video signal type related flags */
+		{
+			u32 video_signal_type_present_flag  = 0;
+			u32 video_format                    = 5;
+			u32 video_full_range_flag           = 0;
+			u32 colour_description_present_flag = 0;
+			u32 colour_primaries                = 2;
+			u32 transfer_characteristics        = 2;
+			u32 matrix_coefficients             = 2;
+
+			/* read all video signal related flags first */
+			video_signal_type_present_flag = gf_bs_read_int(orig, 1);
+			if(video_signal_type_present_flag) {
+				video_format                    = gf_bs_read_int(orig, 3);
+				video_full_range_flag           = gf_bs_read_int(orig, 1);
+				colour_description_present_flag = gf_bs_read_int(orig, 1);
+				if(colour_description_present_flag) {
+					colour_primaries            = gf_bs_read_int(orig, 8);
+					transfer_characteristics    = gf_bs_read_int(orig, 8);
+					matrix_coefficients         = gf_bs_read_int(orig, 8);
+				}
+			}
+
+			/* correct the values of each flags, depending on those from input stream */
+			/* and those specified in command line                                    */
+			if(fullrange==0 && vidformat==5 && colorprim==2 && transfer==2 && colmatrix==2) {
+				video_signal_type_present_flag = 0; /* no signal */
+			} else {
+				video_signal_type_present_flag = 1;
+				video_format                   = (vidformat < 0 ? video_format          : vidformat);
+				video_full_range_flag          = (fullrange < 0 ? video_full_range_flag : fullrange);
+				if(colorprim==2 && transfer==2 && colmatrix==2) {
+					colour_description_present_flag = 0;
+				} else {
+					colour_description_present_flag = 1;
+					colour_primaries                = (colorprim < 0 ? colour_primaries         : colorprim);
+					transfer_characteristics        = (transfer  < 0 ? transfer_characteristics : transfer );
+					matrix_coefficients             = (colmatrix < 0 ? matrix_coefficients      : colmatrix);
+				}
+				if(colour_primaries==2 && transfer_characteristics==2 && matrix_coefficients==2) {
+					colour_description_present_flag = 0;
+					if(video_format==5 && video_full_range_flag==0)
+						video_signal_type_present_flag = 0;
+				}
+			}
+
+			/* write to output bitstream */
+			gf_bs_write_int(mod, video_signal_type_present_flag, 1);
+			if(video_signal_type_present_flag) {
+				gf_bs_write_int(mod, video_format, 3);
+				gf_bs_write_int(mod, video_full_range_flag, 1);
+				gf_bs_write_int(mod, colour_description_present_flag, 1);
+				if(colour_description_present_flag) {
+					gf_bs_write_int(mod, colour_primaries, 8);
+					gf_bs_write_int(mod, transfer_characteristics, 8);
+					gf_bs_write_int(mod, matrix_coefficients, 8);
+				}
+			}
+		}
+
+		if (!flag) {
+			gf_bs_write_int(mod, 0, 1);		/*overscan_info_present_flag */
+			gf_bs_write_int(mod, 0, 1);		/*video_signal_type_present_flag */
+			gf_bs_write_int(mod, 0, 1);		/*chroma_location_info_present_flag */
+			gf_bs_write_int(mod, 0, 1);		/*timing_info_present_flag*/
+			gf_bs_write_int(mod, 0, 1);		/*nal_hrd_parameters_present*/
+			gf_bs_write_int(mod, 0, 1);		/*vcl_hrd_parameters_present*/
+			gf_bs_write_int(mod, 0, 1);		/*pic_struct_present*/
+			gf_bs_write_int(mod, 0, 1);		/*bitstream_restriction*/
+		}
+
+		/*finally copy over remaining*/
+		while (gf_bs_bits_available(orig)) {
+			flag = gf_bs_read_int(orig, 1);
+			gf_bs_write_int(mod, flag, 1);
+		}
+		gf_bs_del(orig);
+		orig = NULL;
+		gf_free(no_emulation_buf);
+
+		/*set anti-emulation*/
+		gf_bs_get_content(mod, (char **) &no_emulation_buf, &flag);
+		emulation_bytes = avc_emulation_bytes_add_count(no_emulation_buf, flag);
+		if (flag+emulation_bytes+1>slc->size)
+			slc->data = (char*)gf_realloc(slc->data, flag+emulation_bytes);
+		slc->size = avc_add_emulation_bytes(no_emulation_buf, slc->data+1, flag)+1;
+
+		gf_bs_del(mod);
+		gf_free(no_emulation_buf);
+	}
+	return GF_OK;
+}
 #endif
 
 GF_EXPORT
