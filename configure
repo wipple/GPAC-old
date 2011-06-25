@@ -110,6 +110,7 @@ has_libxml2="no"
 gprof_build="no"
 static_build="no"
 want_pic="no"
+enable_strip="no"
 has_joystick="no"
 has_xul="no"
 enable_joystick="no"
@@ -1566,7 +1567,7 @@ for opt do
             ;;
         --enable-pic) want_pic="yes";
             ;;
-        --strip) INSTFLAGS="-s $INSTFLAGS"
+        --strip) enable_strip="yes"
             ;;
         --std-allocator) use_std_alloc="yes"
             ;;
@@ -2492,6 +2493,7 @@ echo "CONFIG_AMR_WB_FT=$has_amr_wb" >> config.mak
 echo "DEBUGBUILD=$debuginfo" >> config.mak
 echo "GPROFBUILD=$gprof_build" >> config.mak
 echo "STATICBUILD=$static_build" >> config.mak
+echo "STRIPINSTALL=$enable_strip" >> config.mak
 
 echo "CONFIG_IPV6=$has_ipv6" >> config.mak
 if test "$has_ipv6" = "yes" ; then
