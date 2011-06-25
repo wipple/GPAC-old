@@ -19,12 +19,14 @@
 *.opic
 *.obj
 *.opt
+*.orig
 *.pc
 *.pch
 *.pdb
 *.ph
 *.plg
 *.pot
+*.rej
 *.res
 *.sbr
 *.so*
@@ -36,5 +38,7 @@
 *.patch
 .*.swp
 .depend
+.DS_Store
 config.h
 config.mak
+version.h
