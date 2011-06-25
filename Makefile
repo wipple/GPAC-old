@@ -16,13 +16,13 @@ version:
 lib:	version
 	$(MAKE) -C src all
 
-apps:
+apps:	lib
 	$(MAKE) -C applications all
 
 sggen:
 	$(MAKE) -C applications sggen
 
-mods:
+mods:	lib
 	$(MAKE) -C modules all
 
 instmoz:
@@ -176,8 +176,8 @@ help:
 	@echo "depend/dep: builds dependencies (dev only)"
 	@echo "all (void): builds main library, programs and plugins"
 	@echo "lib: builds GPAC library only (libgpac.so)"
-	@echo "apps: builds programs only"
-	@echo "modules: builds modules only"
+	@echo "apps: builds programs only (if necessary, also builds GPAC library)"
+	@echo "modules: builds modules only (if necessary, also builds GPAC library)"
 	@echo "instmoz: build and local install of osmozilla"
 	@echo "sggen: builds scene graph generators"
 	@echo 
