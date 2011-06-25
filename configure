@@ -551,6 +551,7 @@ EOF
         mingw32="yes"
         win32="yes"
         extralibs="$extralibs -lws2_32 -lwinmm"
+        want_pic="no"
         ;;
 
     cygwin*)
