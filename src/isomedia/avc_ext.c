@@ -269,6 +269,7 @@ GF_Err gf_isom_svc_config_update(GF_ISOFile *the_file, u32 trackNumber, u32 Desc
 GF_Err gf_isom_set_ipod_compatible(GF_ISOFile *the_file, u32 trackNumber)
 {
 	static const u8 ipod_ext[][16] = { { 0x6B, 0x68, 0x40, 0xF2, 0x5F, 0x24, 0x4F, 0xC5, 0xBA, 0x39, 0xA5, 0x1B, 0xCF, 0x03, 0x23, 0xF3} };
+	static const u8 ipod_ext_data[][4] = { { 0x00, 0x00, 0x00, 0x00 } };
 	GF_TrackBox *trak;
 	GF_Err e;
 	GF_MPEGVisualSampleEntryBox *entry;
@@ -290,7 +291,9 @@ GF_Err gf_isom_set_ipod_compatible(GF_ISOFile *the_file, u32 trackNumber)
 
 	if (!entry->ipod_ext) entry->ipod_ext = (GF_UnknownUUIDBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_UUID);
 	memcpy(entry->ipod_ext->uuid, ipod_ext, sizeof(u8)*16);
-	entry->ipod_ext->dataSize = 0;
+	entry->ipod_ext->dataSize = 4;
+	entry->ipod_ext->data = gf_malloc(sizeof(u8)*4);
+	memcpy(entry->ipod_ext->data, ipod_ext_data, sizeof(u8)*4);
 	return GF_OK;
 }
 
