@@ -28,7 +28,7 @@ endif
 ifneq ($(STATICBUILD),yes)
 LINKVAR=-L../../bin/gcc -lgpac $(FT_LIBS)
 else
-LINKVAR=-L../../bin/gcc -lgpac_static $(FT_LIBS)
+LINKVAR=-L../../bin/gcc -lgpac_static -lz $(FT_LIBS)
 endif
 
 

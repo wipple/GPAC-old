@@ -19,7 +19,7 @@ LOCAL_LIB=../../bin/gcc
 ifneq ($(STATICBUILD),yes)
 LINKLIBS= -lgpac
 else
-LINKLIBS= -lgpac_static
+LINKLIBS= -lgpac_static -lz
 endif
 
 #common objects
