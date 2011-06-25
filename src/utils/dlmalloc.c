@@ -1292,7 +1292,7 @@ int mspace_mallopt(int, int);
 
 /*------------------------------ internal #includes ---------------------- */
 
-#ifdef WIN32
+#if defined(WIN32) && defined(MSC_VER)
 #pragma warning( disable : 4146 ) /* no "unsigned" warnings */
 #endif /* WIN32 */
 
