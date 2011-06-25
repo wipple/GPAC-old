@@ -525,8 +525,8 @@ static GF_Err gf_dump_to_vobsub(GF_MediaExporter *dumper, char *szName, u32 trac
 		dts = dts / 60;
 		mm  = (u32)(dts % 60);
 		hh  = (u32)(dts / 60);
-#if defined(WIN32)  && !defined(__GNUC__)
-		fprintf(fidx, "timestamp: %02u:%02u:%02u:%03u, filepos: %09lx\n", hh, mm, ss, ms, gf_f64_tell(fsub));
+#if defined(__MINGW32__) || (defined(WIN32) && !defined(__GNUC__))
+		fprintf(fidx, "timestamp: %02u:%02u:%02u:%03u, filepos: "LLU"\n", hh, mm, ss, ms, LLU_CAST gf_f64_tell(fsub));
 #else
 		fprintf(fidx, "timestamp: %02u:%02u:%02u:%03u, filepos: " LLXPAD("09") "\n", hh, mm, ss, ms, gf_f64_tell(fsub));
 #endif
