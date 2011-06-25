@@ -802,32 +802,41 @@ void dump_file_ts(GF_ISOFile *file, char *inName)
 	has_error = 0;
 	for (i=0; i<gf_isom_get_track_count(file); i++) {	
 		Bool has_cts_offset = gf_isom_has_time_offset(file, i+1);
+		Bool mem_error = 0;
+		u64 *dts = NULL, *cts = NULL;
+		u8 *rap = NULL;
+		u32 *length = NULL;
 
 		fprintf(dump, "#dumping track ID %d timing: Num DTS CTS Size RAP\n", gf_isom_get_track_id(file, i+1));
 		count = gf_isom_get_sample_count(file, i+1);
-		for (j=0; j<count; j++) {
-			u64 dts, cts;
-			GF_ISOSample *samp = gf_isom_get_sample_info(file, i+1, j+1, NULL, NULL);
-			dts = samp->DTS;
-			cts = dts + (s32) samp->CTS_Offset;
 
-			fprintf(dump, "Sample %d\tDTS "LLD"\tCTS "LLD"\t%d\t%d", j+1, LLD_CAST dts, LLD_CAST cts, samp->dataLength, samp->IsRAP);
-			if (cts<dts) { fprintf(dump, " #NEGATIVE CTS OFFSET!!!"); has_error = 1;}
-		
+		dts = gf_malloc(sizeof(u64) * count);
+		cts = gf_malloc(sizeof(u64) * count);
+		rap = gf_malloc(sizeof(u8) * count);
+		length = gf_malloc(sizeof(u32) * count);
+		if( !dts || !cts || !rap || !length ) {
+			mem_error = 1;
+			goto memory_error;
+		}
+
+		for (j=0; j<count; j++) {
+			GF_ISOSample *samp = gf_isom_get_sample_info(file, i+1, j+1, NULL, NULL);
+			dts[j] = samp->DTS;
+			cts[j] = dts[j] + samp->CTS_Offset;
+			rap[j] = samp->IsRAP;
+			length[j] = samp->dataLength;
 			gf_isom_sample_del(&samp);
+		}
+
+		for (j=0; j<count; j++) {
+			fprintf(dump, "Sample %d\tDTS "LLD"\tCTS "LLD"\t%d\t%d", j+1, LLD_CAST dts[j], LLD_CAST cts[j], length[j], rap[j]);
+			if (cts[j]<dts[j]) { fprintf(dump, " #NEGATIVE CTS OFFSET!!!"); has_error = 1;}
 
 			if (has_cts_offset) {
 				for (k=0; k<count; k++) {
-					u64 adts, acts;
 					if (k==j) continue;
-					samp = gf_isom_get_sample_info(file, i+1, k+1, NULL, NULL);
-					adts = samp->DTS;
-					acts = adts + (s32) samp->CTS_Offset;
-
-					if (adts==dts) { fprintf(dump, " #SAME DTS USED!!!"); has_error = 1; }
-					if (acts==cts) { fprintf(dump, " #SAME CTS USED!!! "); has_error = 1; }
-
-					gf_isom_sample_del(&samp);
+					if (dts[j]==dts[k]) { fprintf(dump, " #SAME DTS USED!!!"); has_error = 1; }
+					if (cts[j]==cts[k]) { fprintf(dump, " #SAME CTS USED!!! "); has_error = 1; }
 				}
 			}
 
@@ -836,6 +845,16 @@ void dump_file_ts(GF_ISOFile *file, char *inName)
 		}
 		fprintf(dump, "\n\n");
 		gf_set_progress("Analysing Track Timing", count, count);
+
+memory_error:
+		if(dts) gf_free(dts);
+		if(cts) gf_free(cts);
+		if(rap) gf_free(rap);
+		if(length) gf_free(length);
+		if(mem_error) {
+			fprintf(stdout, "\tMemory allocation failed! Exiting...\n");
+			break;
+		}
 	}
 	if (inName) fclose(dump);
 	if (has_error) fprintf(stdout, "\tFile has CTTS table errors\n");
