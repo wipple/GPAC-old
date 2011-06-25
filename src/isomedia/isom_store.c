@@ -29,6 +29,8 @@
 
 #define GPAC_ISOM_CPRT_NOTICE "IsoMedia File Produced with GPAC "GPAC_FULL_VERSION
 
+extern GF_Err stbl_ShiftOffset(GF_Box **a, u64 offset, u32 start, u32 end);
+
 static GF_Err gf_isom_insert_copyright(GF_ISOFile *movie)
 {
 	u32 i;
@@ -193,13 +195,15 @@ static void ShiftMetaOffset(GF_MetaBox *meta, u64 offset)
 	}
 }
 
-static GF_Err ShiftOffset(GF_ISOFile *file, GF_List *writers, u64 offset)
+static GF_Err ShiftOffset(GF_ISOFile *file, GF_List *writers, u64 offset, u8 *converted)
 {
-	u32 i, j, k, l, last;
+	u32 i, j, end;
 	TrackWriter *writer;
 	GF_StscEntry *ent;
-	GF_ChunkOffsetBox *stco;
-	GF_ChunkLargeOffsetBox *co64;
+	GF_Box *box;
+	GF_Err result;
+
+	*converted = 0;
 
 	if (file->meta) ShiftMetaOffset(file->meta, offset);
 	if (file->moov && file->moov->meta) ShiftMetaOffset(file->moov->meta, offset);
@@ -213,42 +217,18 @@ static GF_Err ShiftOffset(GF_ISOFile *file, GF_List *writers, u64 offset)
 			ent = &writer->stsc->entries[j];
 			if (!Media_IsSelfContained(writer->mdia, ent->sampleDescriptionIndex)) continue;
 
-			//OK, get the chunk(s) number(s) and "shift" its (their) offset(s).
-			if (writer->stco->type == GF_ISOM_BOX_TYPE_STCO) {
-				stco = (GF_ChunkOffsetBox *) writer->stco;
-				//be carefull for the last entry, nextChunk is set to 0 in edit mode...
-				last = ent->nextChunk ? ent->nextChunk : stco->nb_entries + 1;
-				for (k = ent->firstChunk; k < last; k++) {
+			if (writer->stco->type == GF_ISOM_BOX_TYPE_STCO)
+				end = ent->nextChunk ? ent->nextChunk : ((GF_ChunkOffsetBox *)writer->stco)->nb_entries + 1;
+			else
+				end = ent->nextChunk ? ent->nextChunk : ((GF_ChunkLargeOffsetBox *)writer->stco)->nb_entries + 1;
 
-					if (stco->offsets[k-1] + offset > 0xFFFFFFFF) {
-						//too bad, rewrite the table....
-						co64 = (GF_ChunkLargeOffsetBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_CO64);
-						if (!co64) return GF_OUT_OF_MEM;
-						co64->nb_entries = stco->nb_entries;
-						co64->offsets = (u64*)gf_malloc(co64->nb_entries * sizeof(u64));
-						if (!co64) {
-							gf_isom_box_del((GF_Box *)co64);
-							return GF_OUT_OF_MEM;
-						}
-						//duplicate the table 
-						for (l = 0; l < co64->nb_entries; l++) {
-							co64->offsets[l] = (u64) stco->offsets[l];
-							if (l + 1 == k) co64->offsets[l] += offset;
-						}
-						//and replace our box
-						gf_isom_box_del(writer->stco);
-						writer->stco = (GF_Box *)co64;
-					} else {
-						stco->offsets[k-1] += (u32) offset;
-					}
-				}
-			} else {
-				co64 = (GF_ChunkLargeOffsetBox *) writer->stco;
-				//be carefull for the last entry ...
-				last = ent->nextChunk ? ent->nextChunk : co64->nb_entries + 1;
-				for (k = ent->firstChunk; k < last; k++) {
-					co64->offsets[k-1] += offset;
-				}
+			box = writer->stco;
+			if ((result = stbl_ShiftOffset(&box, offset, ent->firstChunk, end)) != GF_OK)
+				return result;
+
+			if (box != writer->stco) {
+				writer->stco = box;
+				*converted = 1;
 			}
 		}
 	}
@@ -601,8 +581,9 @@ GF_Err DoWrite(MovieWriter *mw, GF_List *writers, GF_BitStream *bs, u8 Emulation
 GF_Err WriteFlat(MovieWriter *mw, u8 moovFirst, GF_BitStream *bs)
 {
 	GF_Err e;
+	u8 converted;
 	u32 i;
-	u64 offset, finalOffset, totSize, begin, firstSize, finalSize;
+	u64 offset, shift_offset, prev, totSize, begin;
 	GF_Box *a;
 	GF_List *writers = gf_list_new();
 	GF_ISOFile *movie = mw->movie;
@@ -750,24 +731,19 @@ GF_Err WriteFlat(MovieWriter *mw, u8 moovFirst, GF_BitStream *bs)
 	e = DoWrite(mw, writers, bs, 1, gf_bs_get_position(bs));
 	if (e) goto exit;
 	
-	firstSize = GetMoovAndMetaSize(movie, writers);
-	//offset = (firstSize > 0xFFFFFFFF ? firstSize + 8 : firstSize) + 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
-	offset = firstSize + 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
-	e = ShiftOffset(movie, writers, offset);
-	if (e) goto exit;
-	//get the size and see if it has changed (eg, we moved to 64 bit offsets)
-	finalSize = GetMoovAndMetaSize(movie, writers);
-	if (firstSize != finalSize) {
-		//we need to remove our offsets
-		ResetWriters(writers);
-		//finalOffset = (finalSize > 0xFFFFFFFF ? finalSize + 8 : finalSize) + 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
-		finalOffset = finalSize + 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
-		//OK, now we're sure about the final size.
-		//we don't need to re-emulate, as the only thing that changed is the offset
-		//so just shift the offset
-		e = ShiftOffset(movie, writers, finalOffset - offset);
+	shift_offset = 0;
+	prev = 0;
+
+	for (;;) {
+		offset = GetMoovAndMetaSize(movie, writers);
+		if (offset==prev) break;
+		prev = offset;
+		offset += 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
+		e = ShiftOffset(movie, writers, offset-shift_offset, &converted);
 		if (e) goto exit;
+		shift_offset = offset;
 	}
+
 	//now write our stuff
 	e = WriteMoovAndMeta(movie, writers, bs);
 	if (e) goto exit;
@@ -1140,9 +1116,10 @@ GF_Err DoInterleave(MovieWriter *mw, GF_List *writers, GF_BitStream *bs, u8 Emul
 static GF_Err WriteInterleaved(MovieWriter *mw, GF_BitStream *bs, Bool drift_inter)
 {
 	GF_Err e;
+	u8 converted;
 	u32 i;
 	GF_Box *a;
-	u64 firstSize, finalSize, offset, finalOffset;
+	u64 offset, shift_offset, prev;
 	GF_List *writers = gf_list_new();
 	GF_ISOFile *movie = mw->movie;
 
@@ -1172,25 +1149,19 @@ static GF_Err WriteInterleaved(MovieWriter *mw, GF_BitStream *bs, Bool drift_int
 	e = DoInterleave(mw, writers, bs, 1, gf_bs_get_position(bs), drift_inter);
 	if (e) goto exit;
 
-	firstSize = GetMoovAndMetaSize(movie, writers);
-	offset = firstSize;
-	if (movie->mdat && movie->mdat->dataSize) offset += 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
-	e = ShiftOffset(movie, writers, offset);
-	if (e) goto exit;
-	//get the size and see if it has changed (eg, we moved to 64 bit offsets)
-	finalSize = GetMoovAndMetaSize(movie, writers);
-	if (firstSize != finalSize) {
-		//we need to remove our offsets
-		ResetWriters(writers);
-		finalOffset = finalSize;
-		if (movie->mdat->dataSize) finalOffset += 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
-		//OK, now we're sure about the final size -> shift the offsets
-		//we don't need to re-emulate, as the only thing that changed is the offset
-		//so just shift the offset
-		e = ShiftOffset(movie, writers, finalOffset - offset);
+	shift_offset = 0;
+	prev = 0;
+	for (;;) {
+		offset = GetMoovAndMetaSize(movie, writers);
+		if (offset==prev) break;
+		prev = offset;
+		if (movie->mdat && movie->mdat->dataSize)
+			offset += 8 + (movie->mdat->dataSize > 0xFFFFFFFF ? 8 : 0);
+		e = ShiftOffset(movie, writers, offset-shift_offset,&converted);
 		if (e) goto exit;
-		firstSize = GetMoovAndMetaSize(movie, writers);
+		shift_offset = offset;
 	}
+
 	//now write our stuff
 	e = WriteMoovAndMeta(movie, writers, bs);
 	if (e) goto exit;
