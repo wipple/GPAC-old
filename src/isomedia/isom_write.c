@@ -1355,7 +1355,7 @@ found:
 		ent->segmentDuration = EditDuration;
 		switch (EditMode) {
 		case GF_ISOM_EDIT_EMPTY:
-			ent->mediaRate = 1;
+			ent->mediaRate = 1<<16;
 			ent->mediaTime = -1;
 			break;
 		case GF_ISOM_EDIT_DWELL:
@@ -1363,7 +1363,7 @@ found:
 			ent->mediaTime = MediaTime;
 			break;
 		default:
-			ent->mediaRate = 1;
+			ent->mediaRate = 1<<16;
 			ent->mediaTime = MediaTime;
 			break;
 		}
@@ -1465,7 +1465,7 @@ GF_Err gf_isom_append_edit_segment(GF_ISOFile *movie, u32 trackNumber, u64 EditD
 	ent->segmentDuration = EditDuration;
 	switch (EditMode) {
 	case GF_ISOM_EDIT_EMPTY:
-		ent->mediaRate = 1;
+		ent->mediaRate = 1<<16;
 		ent->mediaTime = -1;
 		break;
 	case GF_ISOM_EDIT_DWELL:
@@ -1473,10 +1473,40 @@ GF_Err gf_isom_append_edit_segment(GF_ISOFile *movie, u32 trackNumber, u64 EditD
 		ent->mediaTime = MediaTime;
 		break;
 	default:
-		ent->mediaRate = 1;
+		ent->mediaRate = 1<<16;
 		ent->mediaTime = MediaTime;
 		break;
 	}
+	gf_list_add(trak->editBox->editList->entryList, ent);
+	return SetTrackDuration(trak);
+}
+
+GF_Err gf_isom_append_edit_segment2(GF_ISOFile *movie, u32 trackNumber, u64 EditDuration, u64 MediaTime, u32 MediaRate, u8 EditMode)
+{
+	GF_Err e;
+	GF_TrackBox *trak;
+	GF_EdtsEntry *ent;
+	trak = gf_isom_get_track_from_file(movie, trackNumber);
+	if (!trak) return GF_BAD_PARAM;
+	e = CanAccessMovie(movie, GF_ISOM_OPEN_WRITE);
+	if (e) return e;
+
+	if (!trak->editBox) {
+		GF_EditBox *edts = (GF_EditBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_EDTS);
+		if (!edts) return GF_OUT_OF_MEM;
+		trak_AddBox((GF_Box*)trak, (GF_Box *)edts);
+	}
+	if (!trak->editBox->editList) {
+		GF_EditListBox *elst = (GF_EditListBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_ELST);
+		if (!elst) return GF_OUT_OF_MEM;
+		edts_AddBox((GF_Box*)trak->editBox, (GF_Box *)elst);
+	}
+	ent = (GF_EdtsEntry *)gf_malloc(sizeof(GF_EdtsEntry));
+	if (!ent) return GF_OUT_OF_MEM;
+
+	ent->segmentDuration = EditDuration;
+	ent->mediaTime = (EditMode == GF_ISOM_EDIT_EMPTY) ? -1 : MediaTime;
+	ent->mediaRate = MediaRate;
 	gf_list_add(trak->editBox->editList->entryList, ent);
 	return SetTrackDuration(trak);
 }
@@ -1498,7 +1528,7 @@ GF_Err gf_isom_modify_edit_segment(GF_ISOFile *movie, u32 trackNumber, u32 seg_i
 	ent->segmentDuration = EditDuration;
 	switch (EditMode) {
 	case GF_ISOM_EDIT_EMPTY:
-		ent->mediaRate = 1;
+		ent->mediaRate = 1<<16;
 		ent->mediaTime = -1;
 		break;
 	case GF_ISOM_EDIT_DWELL:
@@ -1506,10 +1536,30 @@ GF_Err gf_isom_modify_edit_segment(GF_ISOFile *movie, u32 trackNumber, u32 seg_i
 		ent->mediaTime = MediaTime;
 		break;
 	default:
-		ent->mediaRate = 1;
+		ent->mediaRate = 1<<16;
 		ent->mediaTime = MediaTime;
 		break;
 	}
+	return SetTrackDuration(trak);
+}
+
+GF_Err gf_isom_modify_edit_segment2(GF_ISOFile *movie, u32 trackNumber, u32 seg_index, u64 EditDuration, u64 MediaTime, u32 MediaRate, u8 EditMode)
+{
+	GF_Err e;
+	GF_TrackBox *trak;
+	GF_EdtsEntry *ent;
+	trak = gf_isom_get_track_from_file(movie, trackNumber);
+	if (!trak || !seg_index) return GF_BAD_PARAM;
+	e = CanAccessMovie(movie, GF_ISOM_OPEN_WRITE);
+	if (e) return e;
+
+	if (!trak->editBox || !trak->editBox->editList) return GF_OK;
+	if (gf_list_count(trak->editBox->editList->entryList)<seg_index) return GF_BAD_PARAM;
+	ent = (GF_EdtsEntry*) gf_list_get(trak->editBox->editList->entryList, seg_index-1);
+
+	ent->segmentDuration = EditDuration;
+	ent->mediaTime = (EditMode == GF_ISOM_EDIT_EMPTY) ? -1 : MediaTime;
+	ent->mediaRate = MediaRate;
 	return SetTrackDuration(trak);
 }
 

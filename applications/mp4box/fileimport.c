@@ -139,7 +139,11 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 	s32 par_d, par_n, prog_id, delay;
 	s32 tw, th, tx, ty;
 	Bool do_audio, do_video, do_all, disable, track_layout, chap_ref, is_chap, keep_handler;
+	Bool do_ctdelay, fix_media_time;
 	u32 group, handler, rvc_predefined;
+	u64 seg_durs[10];
+	s64 media_times[10];
+	u32 media_rates[10], scale_modes[10], edit_num;
 	const char *szLan;
 	GF_Err e;
 	GF_MediaImporter import;
@@ -166,6 +170,9 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 	stype = 0;
 	profile = compat = level = 0;
 	fullrange = vidformat = colorprim = transfer = colmatrix = -1;
+	do_ctdelay = 1;
+	fix_media_time = 0;
+	edit_num = 0;
 
 	tw = th = tx = ty = 0;
 	par_d = par_n = -2;
@@ -184,6 +191,20 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 
 		/*all extensions for track-based importing*/
 		if (!strnicmp(ext+1, "lang=", 5)) szLan = GetLanguageCode(ext+6);
+		else if (!strnicmp(ext+1, "edit=", 5)) {
+				u32 edit_scale;		/* 1: specify in own timescale; 0: specify in milliseconds */
+				double media_rate;
+				if (edit_num == 10) {
+					fprintf(stdout, "Warning: 10 or more edit list are ignored\n");
+				}
+				if (sscanf(ext+6, "%u,"LLU","LLD",%lf", &edit_scale, &seg_durs[edit_num], &media_times[edit_num], &media_rate) == 4) {
+					scale_modes[edit_num] = edit_scale;
+					media_rates[edit_num] = (u32)(media_rate * (1<<16));
+					edit_num++;
+				}
+		}
+		else if (!stricmp(ext+1, "delay=noct")) do_ctdelay = 0;
+		else if (!stricmp(ext+1, "delay=fix")) fix_media_time = 1;
 		else if (!strnicmp(ext+1, "delay=", 6)) delay = atoi(ext+7);
 		else if (!strnicmp(ext+1, "fps=", 4)) {
 			if (!strcmp(ext+5, "auto")) force_fps = 10000.0;
@@ -414,22 +435,65 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 		count = gf_isom_get_track_count(import.dest);
 		timescale = gf_isom_get_timescale(dest);
 		for (i=o_count; i<count; i++) {
+			u64 tk_dur;
 			if (szLan) gf_isom_set_media_language(import.dest, i+1, (char *) szLan);
-			if (delay) {
-				u64 tk_dur;
+			if (do_ctdelay) {
+				GF_ISOSample *samp;
+				samp = gf_isom_get_sample_info(import.dest, i+1, 1, NULL, NULL);
+				if (!samp) {
+					fprintf(stdout, "Track ID %d ctdelay failed\n", i+1);
+					goto exit;
+				}
+				if (samp->CTS_Offset > 0 || delay) {	// I might remove this condition later...
+					gf_isom_remove_edit_segments(import.dest, i+1);
+					tk_dur = gf_isom_get_track_duration(import.dest, i+1);
+					if (delay>0) {
+						gf_isom_append_edit_segment(import.dest, i+1, timescale*(delay/1000.0), 0, GF_ISOM_EDIT_EMPTY);
+						gf_isom_append_edit_segment(import.dest, i+1, tk_dur, samp->CTS_Offset, GF_ISOM_EDIT_NORMAL);
+					} else {
+						u64 to_skip = timescale*((-delay)/1000.0);
+						u32 media_ts = gf_isom_get_media_timescale(import.dest, i+1);
+						u64 media_time = samp->CTS_Offset + (u64)(media_ts*((-delay)/1000.0));
+						if (to_skip<tk_dur) {
+							gf_isom_append_edit_segment(import.dest, i+1, tk_dur-to_skip, media_time, GF_ISOM_EDIT_NORMAL);
+						} else {
+							fprintf(stdout, "Warning: request negative delay longer than track duration - ignoring\n");
+						}
+					}
+				}
+				gf_isom_sample_del(&samp);
+			}
+			else if (delay) {
 				gf_isom_remove_edit_segments(import.dest, i+1);
 				tk_dur = gf_isom_get_track_duration(import.dest, i+1);
 				if (delay>0) {
-					gf_isom_append_edit_segment(import.dest, i+1, (timescale*delay)/1000, 0, GF_ISOM_EDIT_EMPTY);
+					gf_isom_append_edit_segment(import.dest, i+1, timescale*(delay/1000.0), 0, GF_ISOM_EDIT_EMPTY);
 					gf_isom_append_edit_segment(import.dest, i+1, tk_dur, 0, GF_ISOM_EDIT_NORMAL);
 				} else {
-					u64 to_skip = (timescale*(-delay))/1000;
+					u64 to_skip = timescale*((-delay)/1000.0);
+					u32 media_ts = gf_isom_get_media_timescale(dest, i+1);
 					if (to_skip<tk_dur) {
-						//u64 seg_dur = (-delay)*gf_isom_get_media_timescale(import.dest, i+1) / 1000;
-						gf_isom_append_edit_segment(import.dest, i+1, tk_dur-to_skip, to_skip, GF_ISOM_EDIT_NORMAL);
+						gf_isom_append_edit_segment(import.dest, i+1, tk_dur-to_skip, media_ts*((-delay)/1000.0), GF_ISOM_EDIT_NORMAL);
 					} else {
 						fprintf(stdout, "Warning: request negative delay longer than track duration - ignoring\n");
 					}
+				}
+			}
+			if(edit_num)
+			{
+				u32 j;
+				u32 edit_count = gf_isom_get_edit_segment_count(import.dest, i+1);
+				u32 media_ts = gf_isom_get_media_timescale(import.dest, i+1);
+				for (j=0;j<edit_num;j++) {
+					u8 edit_mode = media_times[j] < 0 ? GF_ISOM_EDIT_EMPTY : GF_ISOM_EDIT_NORMAL;
+					if (!scale_modes[j]) {
+						seg_durs[j] = (u64)((seg_durs[j]/1000.0)*timescale);
+						media_times[j] = (u64)((media_times[j]/1000.0)*media_ts);
+					}
+					if (edit_count < j+1)
+						gf_isom_append_edit_segment2(import.dest, i+1, seg_durs[j], media_times[j], media_rates[j], edit_mode);
+					else
+						gf_isom_modify_edit_segment2(import.dest, i+1, j+1, seg_durs[j], media_times[j], media_rates[j], edit_mode);
 				}
 			}
 			if ((par_n>=0) && (par_d>=0)) {
@@ -492,22 +556,134 @@ GF_Err import_file(GF_ISOFile *dest, char *inName, u32 import_flags, Double forc
 			track = gf_isom_get_track_by_id(import.dest, import.final_trackID);
 			if (szLan) gf_isom_set_media_language(import.dest, track, (char *) szLan);
 			if (disable) gf_isom_set_track_enabled(import.dest, track, 0);
+			if (do_ctdelay) {
+				GF_ISOSample *samp;
+				samp = gf_isom_get_sample_info(import.dest, track, 1, NULL, NULL);
+				if (!samp) {
+					fprintf(stdout, "Track ID %d ctdelay failed\n", track);
+					goto exit;
+				}
+				if (samp->CTS_Offset > 0 || delay) {	// I might remove this condition later...
+					if (!fix_media_time) {
+						u64 tk_dur;
+						gf_isom_remove_edit_segments(import.dest, track);
+						tk_dur = gf_isom_get_track_duration(import.dest, track);
+						if (delay>0) {
+							gf_isom_append_edit_segment(import.dest, track, timescale*(delay/1000.0), 0, GF_ISOM_EDIT_EMPTY);
+							gf_isom_append_edit_segment(import.dest, track, tk_dur, samp->CTS_Offset, GF_ISOM_EDIT_NORMAL);
+						} else {
+							u64 to_skip = timescale*((-delay)/1000.0);
+							u32 media_ts = gf_isom_get_media_timescale(import.dest, track);
+							u64 media_time = samp->CTS_Offset + (u64)(media_ts*((-delay)/1000.0));
+							if (to_skip<tk_dur) {
+								gf_isom_append_edit_segment(import.dest, i+1, tk_dur-to_skip, media_time, GF_ISOM_EDIT_NORMAL);
+							} else {
+								fprintf(stdout, "Warning: request negative delay longer than track duration - ignoring\n");
+							}
+						}
+					} else {
+						u32 j;
+						u32 media_ts = gf_isom_get_media_timescale(import.dest, track);
+						u32 edit_count = gf_isom_get_edit_segment_count(import.dest, track);
+						u64 *edit_time=NULL, *seg_dur=NULL, *media_time=NULL;
+						u8 *edit_mode=NULL;
 
-			if (delay) {
+						edit_time = (u64 *)gf_malloc(sizeof(u64)*(edit_count+!edit_count));
+						if (!edit_time) {e = 1; goto malloc_fail;}
+						seg_dur = (u64 *)gf_malloc(sizeof(u64)*(edit_count+!edit_count));
+						if (!seg_dur) {e = 1; goto malloc_fail;}
+						media_time = (u64 *)gf_malloc(sizeof(u64)*(edit_count+!edit_count));
+						if (!media_time) {e = 1; goto malloc_fail;}
+						edit_mode = (u8 *)gf_malloc(sizeof(u8)*(edit_count+!edit_count));
+						if (!edit_mode) {e = 1; goto malloc_fail;}
+
+						for (j=0; j<edit_count; j++) {
+							gf_isom_get_edit_segment(import.dest, track, j+1, &edit_time[j], &seg_dur[j], &media_time[j], &edit_mode[j]);
+						}
+						if (edit_count) {
+							if (edit_mode[0] == GF_ISOM_EDIT_EMPTY) {
+								s64 offset = (s64)(seg_dur[0] - samp->CTS_Offset*((double)timescale/media_ts) + 0.5);
+								if (offset>0) {
+									seg_dur[0] = offset;
+									media_time[0] = -1;
+								} else {
+									media_time[0] = (s64)(samp->CTS_Offset - seg_dur[0]*((double)media_ts/timescale) + 0.5);
+									edit_mode[0] = GF_ISOM_EDIT_NORMAL;
+								}
+							}
+							else if (edit_mode[0] == GF_ISOM_EDIT_NORMAL) {
+								media_time[0] = (u64)(media_time[0]*((double)media_ts/timescale) + samp->CTS_Offset + 0.5);
+							}
+						} else {
+							seg_dur[0] = gf_isom_get_track_duration(import.dest, track);
+							media_time[0] = samp->CTS_Offset;
+							edit_mode[0] = GF_ISOM_EDIT_NORMAL;
+						}
+
+						gf_isom_remove_edit_segments(import.dest, track);
+						gf_isom_append_edit_segment(import.dest, track, seg_dur[0], media_time[0], edit_mode[0]);
+						for (j=1; j<edit_count; j++) {
+							if (edit_mode[j] == GF_ISOM_EDIT_NORMAL) {
+								media_time[j] = (u64)(media_time[j]*((double)media_ts/timescale) + 0.5);
+							}
+							gf_isom_append_edit_segment(import.dest, track, seg_dur[j], media_time[j], edit_mode[j]);
+						}
+malloc_fail:
+						if (edit_time) gf_free(edit_time);
+						if (seg_dur) gf_free(seg_dur);
+						if (media_time) gf_free(media_time);
+						if (edit_mode) gf_free(edit_mode);
+					}
+				}
+				gf_isom_sample_del(&samp);
+				if (e) goto exit;
+			}
+			else if (fix_media_time) {
+				u32 j;
+				u32 media_ts = gf_isom_get_media_timescale(import.dest, track);
+				u32 edit_count = gf_isom_get_edit_segment_count(import.dest, track);
+				u64 edit_time, seg_dur, media_time;
+				u8 edit_mode;
+				for (j=0; j<edit_count; j++) {
+					gf_isom_get_edit_segment(import.dest, track, j+1, &edit_time, &seg_dur, &media_time, &edit_mode);
+					if (edit_mode == GF_ISOM_EDIT_NORMAL) {
+						media_time = (u64)(media_time*((double)media_ts/timescale)+0.5);
+						gf_isom_modify_edit_segment(import.dest, track, j+1, seg_dur, media_time, edit_mode);
+					}
+				}
+			}
+			else if (delay) {
 				u64 tk_dur;
 				gf_isom_remove_edit_segments(import.dest, track);
 				tk_dur = gf_isom_get_track_duration(import.dest, track);
 				if (delay>0) {
-					gf_isom_append_edit_segment(import.dest, track, (timescale*delay)/1000, 0, GF_ISOM_EDIT_EMPTY);
+					gf_isom_append_edit_segment(import.dest, track, timescale*(delay/1000.0), 0, GF_ISOM_EDIT_EMPTY);
 					gf_isom_append_edit_segment(import.dest, track, tk_dur, 0, GF_ISOM_EDIT_NORMAL);
 				} else {
-					u64 to_skip = (timescale*(-delay))/1000;
+					u64 to_skip = timescale*((-delay)/1000.0);
+					u32 media_ts = gf_isom_get_media_timescale(import.dest, track);
 					if (to_skip<tk_dur) {
-						//u64 seg_dur = (-delay)*gf_isom_get_media_timescale(import.dest, i+1) / 1000;
-						gf_isom_append_edit_segment(import.dest, i+1, tk_dur-to_skip, to_skip, GF_ISOM_EDIT_NORMAL);
+						gf_isom_append_edit_segment(import.dest, i+1, tk_dur-to_skip, media_ts*((-delay)/1000.0), GF_ISOM_EDIT_NORMAL);
 					} else {
 						fprintf(stdout, "Warning: request negative delay longer than track duration - ignoring\n");
 					}
+				}
+			}
+			if(edit_num)
+			{
+				u32 j;
+				u32 edit_count = gf_isom_get_edit_segment_count(import.dest, track);
+				u32 media_ts = gf_isom_get_media_timescale(import.dest, track);
+				for (j=0;j<edit_num;j++) {
+					u8 edit_mode = media_times[j] < 0 ? GF_ISOM_EDIT_EMPTY : GF_ISOM_EDIT_NORMAL;
+					if (!scale_modes[j]) {
+						seg_durs[j] = (u64)((seg_durs[j]/1000.0)*timescale);
+						media_times[j] = (u64)((media_times[j]/1000.0)*media_ts);
+					}
+					if (edit_count < j+1)
+						gf_isom_append_edit_segment2(import.dest, track, seg_durs[j], media_times[j], media_rates[j], edit_mode);
+					else
+						gf_isom_modify_edit_segment2(import.dest, track, j+1, seg_durs[j], media_times[j], media_rates[j], edit_mode);
 				}
 			}
 			if ((import.tk_info[i].type==GF_ISOM_MEDIA_VISUAL) && (par_n>=-1) && (par_d>=-1)) {
@@ -1400,6 +1576,7 @@ GF_Err cat_isomedia_file(GF_ISOFile *dest, char *fileName, u32 import_flags, Dou
 			Double t;
 			u8 editMode;
 			u32 j, count;
+			Float media_ts_scale;
 			
 			count = gf_isom_get_edit_segment_count(dest, dst_tk);
 			gf_isom_get_edit_segment(dest, dst_tk, count, &editTime, &segmentDuration, &mediaTime, &editMode);
@@ -1408,6 +1585,8 @@ GF_Err cat_isomedia_file(GF_ISOFile *dest, char *fileName, u32 import_flags, Dou
 			/*convert to dst time scale*/
 			ts_scale = (Float) gf_isom_get_timescale(dest);
 			ts_scale /= (Float) gf_isom_get_timescale(orig);
+			media_ts_scale = (Float) gf_isom_get_media_timescale(dest, dst_tk);
+			media_ts_scale /= gf_isom_get_media_timescale(orig, i+1);
 
 			edit_offset = editTime + segmentDuration;
 			count = gf_isom_get_edit_segment_count(orig, i+1);
@@ -1415,7 +1594,7 @@ GF_Err cat_isomedia_file(GF_ISOFile *dest, char *fileName, u32 import_flags, Dou
 				gf_isom_get_edit_segment(orig, i+1, j+1, &editTime, &segmentDuration, &mediaTime, &editMode);
 				t = (Double) (s64) editTime; t *= ts_scale; t += (s64) edit_offset; editTime = (s64) t;
 				t = (Double) (s64) segmentDuration; t *= ts_scale; segmentDuration = (s64) t;
-				t = (Double) (s64) mediaTime; t *= ts_scale; t+= (s64) dest_track_dur_before_cat; mediaTime = (s64) t;
+				t = (Double) (s64) mediaTime; t *= media_ts_scale; t+= (s64) dest_track_dur_before_cat; mediaTime = (s64) t;
 
 				gf_isom_set_edit_segment(dest, dst_tk, editTime, segmentDuration, mediaTime, editMode);
 			}

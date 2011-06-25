@@ -588,8 +588,14 @@ GF_Err gf_media_make_psp(GF_ISOFile *mp4)
 		case GF_ISOM_MEDIA_AUDIO:
 			/*if no edit list, add one*/
 			if (!gf_isom_get_edit_segment_count(mp4, i+1)) {
+				GF_ISOSample *samp = gf_isom_get_sample_info(mp4, i+1, 1, NULL, NULL);
+				if (!samp) {
+					GF_LOG(GF_LOG_ERROR, GF_LOG_AUTHOR, ("[PSP convert] Track ID %d adding an edit list failed\n", gf_isom_get_track_id(mp4, i+1) ));
+					return 1;
+				}
 				gf_isom_remove_edit_segments(mp4, i+1);
-				gf_isom_append_edit_segment(mp4, i+1, gf_isom_get_track_duration(mp4, i+1), 0, GF_ISOM_EDIT_NORMAL);
+				gf_isom_append_edit_segment(mp4, i+1, gf_isom_get_track_duration(mp4, i+1), samp->CTS_Offset, GF_ISOM_EDIT_NORMAL);
+				gf_isom_sample_del(&samp);
 			}
 			/*add PSP UUID*/
 			gf_isom_remove_uuid(mp4, i+1, psp_track_uuid);
