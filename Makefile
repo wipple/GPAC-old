@@ -3,6 +3,12 @@
 #
 include config.mak
 
+ifeq ($(CONFIG_WIN32),yes)
+EXE=.exe
+else
+EXE=
+endif
+
 vpath %.c $(SRC_PATH)
 
 all:	version
@@ -42,7 +48,7 @@ distclean:
 	$(MAKE) -C src distclean
 	$(MAKE) -C applications distclean
 	$(MAKE) -C modules distclean
-	rm -f config.mak config.h
+	rm -f config.mak config.h include/gpac/version.h
 
 dep:	depend
 
@@ -56,8 +62,12 @@ tar:
 install:
 	$(INSTALL) -d "$(DESTDIR)$(prefix)"
 	$(INSTALL) -d "$(DESTDIR)$(prefix)/bin"
-	$(INSTALL) $(INSTFLAGS) -m 755 bin/gcc/MP4Box "$(DESTDIR)$(prefix)/bin"
-	$(INSTALL) $(INSTFLAGS) -m 755 bin/gcc/MP4Client "$(DESTDIR)$(prefix)/bin"
+ifeq ($(STRIPINSTALL),yes)
+	$(STRIP) bin/gcc/MP4Box$(EXE) bin/gcc/MP4Client$(EXE)
+	$(STRIP) bin/gcc/*.$(DYN_LIB_SUFFIX)
+endif
+	$(INSTALL) $(INSTFLAGS) -m 755 bin/gcc/MP4Box$(EXE) "$(DESTDIR)$(prefix)/bin"
+	$(INSTALL) $(INSTFLAGS) -m 755 bin/gcc/MP4Client$(EXE) "$(DESTDIR)$(prefix)/bin"
 	$(INSTALL) -d "$(DESTDIR)$(moddir)"
 	$(INSTALL) bin/gcc/*.$(DYN_LIB_SUFFIX) "$(DESTDIR)$(moddir)"
 	rm -f $(DESTDIR)$(moddir)/libgpac.$(DYN_LIB_SUFFIX)
@@ -88,20 +98,22 @@ uninstall:
 	$(MAKE) -C applications uninstall
 	rm -rf $(DESTDIR)$(moddir)
 	rm -rf $(DESTDIR)$(prefix)/$(libdir)/libgpac*
-	rm -rf $(DESTDIR)$(prefix)/bin/MP4Box
-	rm -rf $(DESTDIR)$(prefix)/bin/MP4Client
+	rm -rf $(DESTDIR)$(prefix)/bin/MP4Box$(EXE)
+	rm -rf $(DESTDIR)$(prefix)/bin/MP4Client$(EXE)
 	rm -rf $(DESTDIR)$(mandir)/man1/mp4box.1
 	rm -rf $(DESTDIR)$(mandir)/man1/mp4client.1
 	rm -rf $(DESTDIR)$(mandir)/man1/gpac.1
 	rm -rf $(DESTDIR)$(prefix)/share/gpac
+	$(MAKE) uninstalldylib
 
 installdylib:
-ifeq ($(CONFIG_WIN32),yes)
-	$(INSTALL) $(INSTFLAGS) -m 755 bin/gcc/libgpac.dll $(prefix)/$(libdir)
-else
-ifeq ($(DEBUGBUILD),no)
+ifeq ($(STRIPINSTALL),yes)
 	$(STRIP) bin/gcc/libgpac.$(DYN_LIB_SUFFIX)
 endif
+ifeq ($(CONFIG_WIN32),yes)
+	mkdir -p $(DESTDIR)$(prefix)/bin
+	$(INSTALL) $(INSTFLAGS) -m 755 bin/gcc/libgpac.$(DYN_LIB_SUFFIX) $(DESTDIR)$(prefix)/bin/libgpac.$(DYN_LIB_SUFFIX)
+else
 ifeq ($(CONFIG_DARWIN),yes)
 	$(INSTALL) -m 755 bin/gcc/libgpac.$(DYN_LIB_SUFFIX) $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(VERSION).$(DYN_LIB_SUFFIX)
 	ln -sf libgpac.$(VERSION).$(DYN_LIB_SUFFIX) $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(DYN_LIB_SUFFIX)
@@ -116,7 +128,7 @@ endif
 
 uninstalldylib:
 ifeq ($(CONFIG_WIN32),yes)
-	rm -f $(prefix)/$(libdir)/libgpac.dll
+	rm -f $(DESTDIR)$(prefix)/bin/libgpac.$(DYN_LIB_SUFFIX)
 else
 ifeq ($(CONFIG_DARWIN),yes)
 	rm -f $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(DYN_LIB_SUFFIX)
@@ -145,14 +157,20 @@ endif
 	mkdir -p "$(DESTDIR)$(prefix)/$(libdir)"
 	$(INSTALL) $(INSTFLAGS) -m 644 "./bin/gcc/libgpac_static.a" "$(DESTDIR)$(prefix)/$(libdir)"
 	$(MAKE) installdylib
+ifeq ($(CONFIG_WIN32),yes)
+	cp -p $(DESTDIR)$(prefix)/bin/libgpac.$(DYN_LIB_SUFFIX) "$(DESTDIR)$(prefix)/$(libdir)"
+endif
 
 uninstall-lib:
-	rm -rf "$(prefix)/include/gpac/internal"
-	rm -rf "$(prefix)/include/gpac/modules"
-	rm -rf "$(prefix)/include/gpac/enst"
-	rm -rf "$(prefix)/include/gpac"
-	rm -rf "$(prefix)/$(libdir)/libgpac_static.a"
+	rm -rf "$(DESTDIR)$(prefix)/include/gpac/internal"
+	rm -rf "$(DESTDIR)$(prefix)/include/gpac/modules"
+	rm -rf "$(DESTDIR)$(prefix)/include/gpac/enst"
+	rm -rf "$(DESTDIR)$(prefix)/include/gpac"
+	rm -rf "$(DESTDIR)$(prefix)/$(libdir)/libgpac_static.a"
 	$(MAKE) uninstalldylib
+ifeq ($(CONFIG_WIN32),yes)
+	rm -f $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(DYN_LIB_SUFFIX)
+endif
 
 ifeq ($(CONFIG_DARWIN),yes)
 dmg:
