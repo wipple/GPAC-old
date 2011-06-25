@@ -203,6 +203,7 @@ u32 AVC_ReformatSEI_NALU(char *buffer, u32 nal_size, AVCState *avc);
 
 #ifndef GPAC_DISABLE_ISOM
 GF_Err AVC_ChangePAR(GF_AVCConfig *avcc, s32 ar_n, s32 ar_d);
+GF_Err AVC_ChangeColorProp(GF_AVCConfig *avcc, s32 fullrange, s32 vidformat, s32 colorprim, s32 transfer, s32 colmatrix);
 #endif
 
 #endif /*GPAC_DISABLE_AV_PARSERS*/
