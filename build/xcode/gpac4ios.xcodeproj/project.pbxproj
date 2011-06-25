@@ -2672,7 +2672,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "if which svnversion 2>/dev/null; then echo \"#define GPAC_SVN_REVISION \\\"`svnversion`\\\"\" > ../../include/gpac/version.h ; else  echo \"No SVN Version found\"; fi\n";
+			shellScript = "if which git >/dev/null; then echo \"#define GPAC_GIT_REVISION \\\"`git rev-list HEAD -1 --abbrev-commit`\\\"\" > ../../include/gpac/version.h ; else  echo \"No GIT Version found\"; fi\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 

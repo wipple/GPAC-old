@@ -61,7 +61,7 @@ extern "C" {
 #define GPAC_VERSION       "0.4.6-DEV"
 
 #include <gpac/version.h>
-#define GPAC_FULL_VERSION       GPAC_VERSION"-rev"GPAC_SVN_REVISION
+#define GPAC_FULL_VERSION       GPAC_VERSION"-git-"GPAC_GIT_REVISION
 
 /*!
  *	\brief GPAC Version

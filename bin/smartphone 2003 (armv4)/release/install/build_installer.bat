@@ -1,7 +1,7 @@
 set OLDDIR=%CD%
 cd /d %~dp0
 
-for /f "delims=" %%a in ('svnversion') do set gpac_revision=%%a
+for /f "delims=" %%a in ('git rev-list HEAD -1 --abbrev-commit') do set gpac_revision=%%a
 
 ECHO [Version] > gpaccab.inf
 ECHO Provider = "GPAC 0.4.6-r%gpac_revision%" >> gpaccab.inf
