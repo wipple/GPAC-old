@@ -6711,7 +6711,7 @@ GF_Err gf_media_change_par(GF_ISOFile *file, u32 track, s32 ar_num, s32 ar_den)
 
 
 GF_EXPORT
-GF_Err gf_media_change_pl(GF_ISOFile *file, u32 track, u32 profile, u32 level)
+GF_Err gf_media_change_pl(GF_ISOFile *file, u32 track, u32 profile, u32 compat, u32 level)
 {
 	u32 i, count, stype;
 	GF_Err e;
@@ -6728,11 +6728,13 @@ GF_Err gf_media_change_pl(GF_ISOFile *file, u32 track, u32 profile, u32 level)
 
 	avcc = gf_isom_avc_config_get(file, track, 1);
 	if (level) avcc->AVCLevelIndication = level;
+	if (compat) avcc->profile_compatibility = compat;
 	if (profile) avcc->AVCProfileIndication = profile;
 	count = gf_list_count(avcc->sequenceParameterSets);
 	for (i=0; i<count; i++) {
 		GF_AVCConfigSlot *slc = gf_list_get(avcc->sequenceParameterSets, i);
 		if (profile) slc->data[1] = profile;
+		if (compat) slc->data[2]  = compat;
 		if (level) slc->data[3] = level;
 	}
 	e = gf_isom_avc_config_update(file, track, 1, avcc);
