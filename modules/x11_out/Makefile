@@ -66,11 +66,11 @@ all: $(LIB)
 $(LIB): $(OBJS)
 	$(CC) $(SHFLAGS) $(LDFLAGS) -lX11 -L../../bin/gcc -lgpac -o ../../bin/gcc/$@ $(OBJS)
 ifeq ($(STATICBUILD),yes)
-	$(CC) $(SHFLAGS) $(LDFLAGS) -o ../../bin/gcc/gm_x11_out-static.so $(OBJS) -lX11 -L../../bin/gcc -lgpac_static
+	$(CC) $(SHFLAGS) $(LDFLAGS) -o ../../bin/gcc/gm_x11_out-static.so $(OBJS) -lX11 -L../../bin/gcc -lgpac_static -lz
 endif
 
 #static-bin:
-#	$(CC) $(SHFLAGS) $(LDFLAGS) -o ../../bin/gcc/gm_x11_out-static.so $(OBJS) -lX11 -L../../bin/gcc -lgpac_static
+#	$(CC) $(SHFLAGS) $(LDFLAGS) -o ../../bin/gcc/gm_x11_out-static.so $(OBJS) -lX11 -L../../bin/gcc -lgpac_static -lz
                                                                                                
 %.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $< 
