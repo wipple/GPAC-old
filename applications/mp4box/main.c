@@ -995,7 +995,7 @@ typedef struct
 } MetaAction;
 
 /*for SDP_EX, AddTrack and RemTrack*/
-#define MAX_CUMUL_OPS	20
+#define MAX_CUMUL_OPS	100
 
 #ifndef GPAC_DISABLE_ISOM_WRITE
 static Bool parse_meta_args(MetaAction *meta, char *opts)
