@@ -967,8 +967,7 @@ GF_Err elst_Read(GF_Box *s, GF_BitStream *bs)
 			tr = gf_bs_read_u32(bs);
 			p->mediaTime = (s64) tr;
 		}
-		p->mediaRate = gf_bs_read_u16(bs);
-		gf_bs_read_u16(bs);
+		p->mediaRate = gf_bs_read_u32(bs);
 		gf_list_add(ptr->entryList, p);
 	}
 	return GF_OK;
@@ -1016,8 +1015,7 @@ GF_Err elst_Write(GF_Box *s, GF_BitStream *bs)
 			gf_bs_write_u32(bs, (u32) p->segmentDuration);
 			gf_bs_write_u32(bs, (s32) p->mediaTime);
 		}
-		gf_bs_write_u16(bs, p->mediaRate);
-		gf_bs_write_u16(bs, 0);
+		gf_bs_write_u32(bs, p->mediaRate);
 	}
 	return GF_OK;
 }

@@ -1207,6 +1207,11 @@ enum
 	GF_ISOM_CONV_TYPE_PSP
 };
 
+int compare_u64(const u64 *a, const u64 *b)
+{
+	s64 delta = (s64)(*a - *b);
+	return (delta > 0 ? 1 : delta == 0 ? 0 : -1);
+}
 
 int mp4boxMain(int argc, char **argv)
 {
@@ -1223,7 +1228,7 @@ int mp4boxMain(int argc, char **argv)
 	u64 movie_time;
 	s32 frags_per_sidx;
 	u32 brand_add[MAX_CUMUL_OPS], brand_rem[MAX_CUMUL_OPS];
-	u32 i, MTUSize, stat_level, hint_flags, info_track_id, import_flags, nb_add, nb_cat, ismaCrypt, agg_samples, nb_sdp_ex, max_ptime, raw_sample_num, split_size, nb_meta_act, nb_track_act, rtp_rate, major_brand, nb_alt_brand_add, nb_alt_brand_rem, old_interleave, car_dur, minor_version, conv_type, nb_tsel_acts, program_number;
+	u32 i, MTUSize, stat_level, hint_flags, info_track_id, import_flags, nb_add, nb_cat, ismaCrypt, agg_samples, nb_sdp_ex, max_ptime, raw_sample_num, split_size, nb_meta_act, nb_track_act, rtp_rate, major_brand, nb_alt_brand_add, nb_alt_brand_rem, old_interleave, car_dur, minor_version, conv_type, nb_tsel_acts, program_number, nb_tracks;
 	Bool HintIt, needSave, FullInter, Frag, HintInter, dump_std, dump_rtp, dump_mode, regular_iod, trackID, HintCopy, remove_sys_tracks, remove_hint, force_new, remove_root_od, import_subtitle, dump_chap;
 	Bool print_sdp, print_info, open_edit, track_dump_type, dump_isom, dump_cr, force_ocr, encode, do_log, do_flat, dump_srt, dump_ttxt, x3d_info, chunk_mode, dump_ts, do_saf, do_mpd, dump_m2ts, dump_cart, do_hash, verbose, force_cat, pack_wgt, dash_ts_use_index;
 	char *inName, *outName, *arg, *mediaSource, *tmpdir, *input_ctx, *output_ctx, *drm_file, *avi2raw, *cprt, *chap_file, *pes_dump, *itunes_tags, *pack_file, *raw_cat, *seg_name, *dash_ctx;
@@ -2928,17 +2933,18 @@ int mp4boxMain(int argc, char **argv)
 		case 2:
 			if (tka->delay_ms) {
 				u64 tk_dur;
+				u32 timescale = gf_isom_get_timescale(file);
 				gf_isom_remove_edit_segments(file, track);
 				tk_dur = gf_isom_get_track_duration(file, track);
 				if (tka->delay_ms>0) {
-					gf_isom_append_edit_segment(file, track, (timescale*tka->delay_ms)/1000, 0, GF_ISOM_EDIT_EMPTY);
+					gf_isom_append_edit_segment(file, track, timescale*(tka->delay_ms/1000.0), 0, GF_ISOM_EDIT_EMPTY);
 					gf_isom_append_edit_segment(file, track, tk_dur, 0, GF_ISOM_EDIT_NORMAL);
 					needSave = 1;
 				} else {
 					u64 to_skip = (timescale*(-tka->delay_ms))/1000;
+					u32 media_ts = gf_isom_get_media_timescale(file, track);
 					if (to_skip<tk_dur) {
-						u64 seg_dur = (-tka->delay_ms)*gf_isom_get_media_timescale(file, track) / 1000;
-						gf_isom_append_edit_segment(file, track, tk_dur-to_skip, seg_dur, GF_ISOM_EDIT_NORMAL);
+						gf_isom_append_edit_segment(file, track, tk_dur-to_skip, media_ts*((-tka->delay_ms)/1000.0), GF_ISOM_EDIT_NORMAL);
 					} else {
 						fprintf(stdout, "Warning: request negative delay longer than track duration - ignoring\n");
 					}
@@ -3220,6 +3226,78 @@ int mp4boxMain(int argc, char **argv)
 	for (i=0; i<nb_alt_brand_rem; i++) {
 		gf_isom_modify_alternate_brand(file, brand_add[i], 0);
 		needSave = 1;
+	}
+
+	/* fix inappropriate duration for vfr.
+	 * Note: media duration is not actual presentation duration, it's just media duration.
+	 * In presentation time-line, any demuxers should follow track durations or segment durations. */
+	nb_tracks = gf_isom_get_track_count(file);
+	for (i=0; i<nb_tracks; i++) {
+		if (gf_isom_get_media_type(file, i+1) == GF_ISOM_MEDIA_VISUAL) {
+			u32 j, count;
+			u64 *CTS = NULL;
+			u64 max_CTS = 0;
+			u32 max_CTS_delta, min_CTS_delta;
+			u64 media_dur, media_dur_mvhd_ts, last_dts;
+			u64 first_CTSOffset;
+			u32 last_dur, media_ts, timescale;
+			u64 edit_time, seg_dur, media_time;
+			u8	edit_mode;
+
+			count = gf_isom_get_sample_count(file, i+1);
+			if (count > 1) {
+				CTS = (u64 *)gf_malloc(sizeof(u64)*count);
+				if (!CTS) goto err_exit;
+
+				for (j=0; j<count; j++) {
+					GF_ISOSample *samp = gf_isom_get_sample_info(file, i+1, j+1, NULL, NULL);
+					CTS[j] = samp->DTS + samp->CTS_Offset;
+					gf_isom_sample_del(&samp);
+					max_CTS = MAX(CTS[j], max_CTS);
+				}
+				qsort(CTS, count, sizeof(u64), (int (*)(const void *, const void *))compare_u64);
+				max_CTS_delta = 1;
+				min_CTS_delta = max_CTS;
+				for (j=1; j<count; j++) {
+					u32 CTS_delta = CTS[j] - CTS[j-1];
+					max_CTS_delta = MAX(CTS_delta, max_CTS_delta);
+					min_CTS_delta = MIN(CTS_delta, min_CTS_delta);
+				}
+				first_CTSOffset = CTS[0];
+				last_dur = CTS[count-1] - CTS[count-2];
+				media_dur = CTS[count-1] - CTS[0] + last_dur;
+				gf_free(CTS);
+
+				last_dts = gf_isom_get_sample_dts(file, i+1, count);
+				last_dur = (media_dur > last_dts) ? (u32)(media_dur - last_dts) : last_dur;
+
+				timescale = gf_isom_get_timescale(file);
+				media_ts = gf_isom_get_media_timescale(file, i+1);
+				media_dur_mvhd_ts = (gf_isom_get_media_duration(file, i+1) * timescale) / media_ts;
+
+				gf_isom_set_last_sample_duration(file, i+1, last_dur);	/* update media duration here */
+
+				count = gf_isom_get_edit_segment_count(file, i+1);
+				for (j=0; j<count; j++) {
+					gf_isom_get_edit_segment(file, i+1, j+1, &edit_time, &seg_dur, &media_time, &edit_mode);
+					if (edit_mode == GF_ISOM_EDIT_NORMAL) {
+						u64 to_skip = (u64)((media_time - first_CTSOffset)*((double)timescale/media_ts));
+						if (media_dur_mvhd_ts == seg_dur + to_skip) {
+							/* When it is inappropriate for segment duration simply converted from media duration,
+							 * update to better new segment duration and track duration */
+							seg_dur = (u64)(media_dur*((double)timescale/media_ts) - to_skip);
+							gf_isom_modify_edit_segment(file, i+1, j+1, seg_dur, media_time, edit_mode);
+						}
+					}
+				}
+
+				max_CTS_delta = MAX(last_dur, max_CTS_delta);
+				min_CTS_delta = MIN(last_dur, min_CTS_delta);
+				if (max_CTS_delta != min_CTS_delta) {
+					fprintf(stdout, "maximum fps: %.6f, minimum fps: %.6f\n", (double)media_ts/min_CTS_delta, (double)media_ts/max_CTS_delta );
+				}
+			}
+		}
 	}
 
 	if (!encode && !force_new) gf_isom_set_final_name(file, outfile);

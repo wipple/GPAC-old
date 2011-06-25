@@ -888,8 +888,10 @@ GF_Err gf_isom_set_edit_segment(GF_ISOFile *the_file, u32 trackNumber, u64 EditT
 
 /*same as above except only modifies duartion type and mediaType*/
 GF_Err gf_isom_modify_edit_segment(GF_ISOFile *the_file, u32 trackNumber, u32 seg_index, u64 EditDuration, u64 MediaTime, u8 EditMode);
+GF_Err gf_isom_modify_edit_segment2(GF_ISOFile *movie, u32 trackNumber, u32 seg_index, u64 EditDuration, u64 MediaTime, u32 MediaRate, u8 EditMode);
 /*same as above except only appends new segment*/
 GF_Err gf_isom_append_edit_segment(GF_ISOFile *the_file, u32 trackNumber, u64 EditDuration, u64 MediaTime, u8 EditMode);
+GF_Err gf_isom_append_edit_segment2(GF_ISOFile *movie, u32 trackNumber, u64 EditDuration, u64 MediaTime, u32 MediaRate, u8 EditMode);
 
 /*remove the edit segments for the whole track*/
 GF_Err gf_isom_remove_edit_segments(GF_ISOFile *the_file, u32 trackNumber);
