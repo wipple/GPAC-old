@@ -18,7 +18,7 @@
  *   
  *  You should have received a copy of the GNU Lesser General Public
  *  License along with this library; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 021839, USA.
  *
  */
 
@@ -31,6 +31,64 @@ gf_realloc low, which greatly impacts performances for large files*/
 #define ALLOC_INC(a)	a = ((a<10) ? 100 : (a*3)/2);
 
 #ifndef GPAC_DISABLE_ISOM_WRITE
+
+GF_ChunkLargeOffsetBox *stco_to_co64(GF_ChunkOffsetBox *stco, u32 alloc_size);
+GF_Err stbl_ShiftOffset(GF_Box **a, u64 offset, u32 start, u32 end);
+
+GF_ChunkLargeOffsetBox *stco_to_co64(GF_ChunkOffsetBox *stco, u32 alloc_size)
+{
+	u32 i;
+	GF_ChunkLargeOffsetBox *co64;
+
+	if (stco->nb_entries > alloc_size)
+		alloc_size = stco->nb_entries;
+
+	co64 = (GF_ChunkLargeOffsetBox *)gf_isom_box_new(GF_ISOM_BOX_TYPE_CO64);
+	if (!co64)
+		return NULL;
+
+	co64->offsets = (u64 *)gf_malloc(alloc_size * sizeof(u64));
+	if (!co64->offsets) {
+		gf_isom_box_del((GF_Box *)co64);
+		return NULL;
+	}
+
+	for (i=0; i<stco->nb_entries; i++)
+		co64->offsets[i] = (u64)stco->offsets[i];
+	co64->nb_entries = stco->nb_entries;
+	co64->alloc_size = alloc_size;
+	gf_isom_box_del((GF_Box *)stco);
+	return co64;
+}
+
+GF_Err stbl_ShiftOffset(GF_Box **a, u64 offset, u32 start, u32 end)
+{
+	u32 k;
+
+	GF_ChunkOffsetBox *stco;
+	GF_ChunkLargeOffsetBox *co64;
+
+restart:
+	if ((*a)->type == GF_ISOM_BOX_TYPE_STCO) {
+		stco = (GF_ChunkOffsetBox *) *a;
+		for (k=start; k < end; k++) {
+			if (stco->offsets[k-1] + offset > 0xFFFFFFFF) {
+				co64 = stco_to_co64((GF_ChunkOffsetBox *) *a, 0);
+				if (!co64) return GF_OUT_OF_MEM;
+				*a = (GF_Box *)co64;
+				start = k;
+				goto restart;
+			}
+			stco->offsets[k-1] += (u32) offset;
+		}
+	} else {
+		co64 = (GF_ChunkLargeOffsetBox *) *a;
+		for (k = start; k < end; k++) {
+			co64->offsets[k-1] += offset;
+		}
+	}
+	return GF_OK;
+}
 
 //adds a DTS in the table and get the sample number of this new sample
 //we could return an error if a sample with the same DTS already exists
@@ -522,29 +580,18 @@ GF_Err stbl_AddChunkOffset(GF_MediaBox *mdia, u32 sampleNumber, u32 StreamDescIn
 
 	if (stsc->nb_entries + 1 < sampleNumber ) return GF_BAD_PARAM;
 
+	if (stbl->ChunkOffset->type == GF_ISOM_BOX_TYPE_STCO) {
+		if (offset > 0xFFFFFFFF) {
+			co64 = stco_to_co64((GF_ChunkOffsetBox *)stbl->ChunkOffset, 0);
+			if (!co64) return GF_OUT_OF_MEM;
+			stbl->ChunkOffset = (GF_Box *)co64;
+		}
+	}
+
 	//add the offset to the chunk...
 	//and we change our offset
 	if (stbl->ChunkOffset->type == GF_ISOM_BOX_TYPE_STCO) {
 		stco = (GF_ChunkOffsetBox *)stbl->ChunkOffset;
-		//if the new offset is a large one, we have to rewrite our table entry by entry (32->64 bit conv)...
-		if (offset > 0xFFFFFFFF) {
-			co64 = (GF_ChunkLargeOffsetBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_CO64);
-			co64->nb_entries = stco->nb_entries + 1;
-			co64->alloc_size = co64->nb_entries;
-			co64->offsets = (u64*)gf_malloc(sizeof(u64) * co64->nb_entries);
-			if (!co64->offsets) return GF_OUT_OF_MEM;
-			k = 0;
-			for (i=0;i<stco->nb_entries; i++) {
-				if (i + 1 == sampleNumber) {
-					co64->offsets[i] = offset;
-					k = 1;
-				}
-				co64->offsets[i+k] = (u64) stco->offsets[i];
-			}
-			if (!k) co64->offsets[co64->nb_entries - 1] = offset;
-			gf_isom_box_del(stbl->ChunkOffset);
-			stbl->ChunkOffset = (GF_Box *) co64;
-		} else {
 			//no, we can use this one.
 			if (sampleNumber > stco->nb_entries) {
 				if (!stco->alloc_size) stco->alloc_size = stco->nb_entries;
@@ -573,7 +620,6 @@ GF_Err stbl_AddChunkOffset(GF_MediaBox *mdia, u32 sampleNumber, u32 StreamDescIn
 				stco->nb_entries ++;
 				stco->alloc_size = stco->nb_entries;
 			}
-		}
 	} else {
 		//use large offset...
 		co64 = (GF_ChunkLargeOffsetBox *)stbl->ChunkOffset;
@@ -652,7 +698,6 @@ GF_Err stbl_AddChunkOffset(GF_MediaBox *mdia, u32 sampleNumber, u32 StreamDescIn
 GF_Err stbl_SetChunkOffset(GF_MediaBox *mdia, u32 sampleNumber, u64 offset)
 {
 	GF_StscEntry *ent;
-	u32 i;
 	GF_ChunkLargeOffsetBox *co64;
 	GF_SampleTableBox *stbl = mdia->information->sampleTable;
 
@@ -664,23 +709,20 @@ GF_Err stbl_SetChunkOffset(GF_MediaBox *mdia, u32 sampleNumber, u64 offset)
 	if (Media_IsSelfContained(mdia, ent->sampleDescriptionIndex))
 		ent->isEdited = 1;
 
+	if (stbl->ChunkOffset->type == GF_ISOM_BOX_TYPE_STCO) {
+		if (offset > 0xFFFFFFFF) {
+			co64 = stco_to_co64((GF_ChunkOffsetBox *)stbl->ChunkOffset, 0);
+			if (!co64) return GF_OUT_OF_MEM;
+			stbl->ChunkOffset = (GF_Box *)co64;
+		}
+		co64->offsets[ent->firstChunk - 1] = offset;
+		gf_isom_box_del(stbl->ChunkOffset);
+		stbl->ChunkOffset = (GF_Box *) co64;
+		return GF_OK;
+	}
+
 	//and we change our offset
 	if (stbl->ChunkOffset->type == GF_ISOM_BOX_TYPE_STCO) {
-		//if the new offset is a large one, we have to rewrite our table...
-		if (offset > 0xFFFFFFFF) {
-			co64 = (GF_ChunkLargeOffsetBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_CO64);
-			co64->nb_entries = ((GF_ChunkOffsetBox *)stbl->ChunkOffset)->nb_entries;
-			co64->alloc_size = co64->nb_entries;
-			co64->offsets = (u64*)gf_malloc(sizeof(u64)*co64->nb_entries);
-			if (!co64->offsets) return GF_OUT_OF_MEM;
-			for (i=0;i<co64->nb_entries; i++) {
-				co64->offsets[i] = (u64) ((GF_ChunkOffsetBox *)stbl->ChunkOffset)->offsets[i];
-			}
-			co64->offsets[ent->firstChunk - 1] = offset;
-			gf_isom_box_del(stbl->ChunkOffset);
-			stbl->ChunkOffset = (GF_Box *) co64;
-			return GF_OK;
-		}
 		((GF_ChunkOffsetBox *)stbl->ChunkOffset)->offsets[ent->firstChunk - 1] = (u32) offset;
 	} else {
 		((GF_ChunkLargeOffsetBox *)stbl->ChunkOffset)->offsets[ent->firstChunk - 1] = offset;
@@ -1304,22 +1346,18 @@ void stbl_AppendChunk(GF_SampleTableBox *stbl, u64 offset)
 	u32 *new_offsets, i;
 	u64 *off_64;
 
+	if (stbl->ChunkOffset->type == GF_ISOM_BOX_TYPE_STCO) {
+		if (offset > 0xFFFFFFFF) {
+			co64 = stco_to_co64((GF_ChunkOffsetBox *)stbl->ChunkOffset, 0);
+			if (!co64) return; // !!!!error!!!!
+			stbl->ChunkOffset = (GF_Box *)co64;
+		}
+	}
+
 	//we may have to convert the table...
 	if (stbl->ChunkOffset->type==GF_ISOM_BOX_TYPE_STCO) {
 		stco = (GF_ChunkOffsetBox *)stbl->ChunkOffset;
 
-		if (offset>0xFFFFFFFF) {
-			co64 = (GF_ChunkLargeOffsetBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_CO64);
-			co64->nb_entries = stco->nb_entries + 1;
-			co64->alloc_size = co64->nb_entries;
-			co64->offsets = (u64*)gf_malloc(sizeof(u64) * co64->nb_entries);
-			if (!co64->offsets) return;
-			for (i=0; i<stco->nb_entries; i++) co64->offsets[i] = stco->offsets[i];
-			co64->offsets[i] = offset;
-			gf_isom_box_del(stbl->ChunkOffset);
-			stbl->ChunkOffset = (GF_Box *) co64;
-			return;
-		}
 		//we're fine
 		new_offsets = (u32*)gf_malloc(sizeof(u32)*(stco->nb_entries+1));
 		if (!new_offsets) return;
@@ -1514,13 +1552,12 @@ GF_Err stbl_UnpackOffsets(GF_SampleTableBox *stbl)
 		stco_tmp = NULL;
 		co64_tmp = (GF_ChunkLargeOffsetBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_CO64);
 		if (!co64_tmp) return GF_OUT_OF_MEM;
-		co64_tmp->nb_entries = stbl->SampleSize->sampleCount;
-		co64_tmp->offsets = (u64*)gf_malloc(co64_tmp->nb_entries * sizeof(u64));
+		co64_tmp->nb_entries = co64_tmp->alloc_size = stbl->SampleSize->sampleCount;
+		co64_tmp->offsets = (u64*)gf_malloc(co64_tmp->alloc_size * sizeof(u64));
 		if (!co64_tmp->offsets) {
 			gf_isom_box_del((GF_Box*)co64_tmp);
 			return GF_OUT_OF_MEM;
 		}
-		co64_tmp->alloc_size = co64_tmp->nb_entries;
 	} else {
 		return GF_ISOM_INVALID_FILE;
 	}
@@ -1583,30 +1620,17 @@ static GFINLINE GF_Err stbl_AddOffset(GF_Box **a, u64 offset)
 {
 	GF_ChunkOffsetBox *stco;
 	GF_ChunkLargeOffsetBox *co64;
-	u32 i;
+
+	if ((*a)->type == GF_ISOM_BOX_TYPE_STCO) {
+		if (offset > 0xFFFFFFFF) {
+			co64 = stco_to_co64((GF_ChunkOffsetBox *)*a, 0);
+			if (!co64) return GF_OUT_OF_MEM;
+			*a = (GF_Box *)co64;
+		}
+	}
 
 	if ((*a)->type == GF_ISOM_BOX_TYPE_STCO) {
 		stco = (GF_ChunkOffsetBox *) *a;
-		//if dataOffset is bigger than 0xFFFFFFFF, move to LARGE offset
-		if (offset > 0xFFFFFFFF) {
-			co64 = (GF_ChunkLargeOffsetBox *) gf_isom_box_new(GF_ISOM_BOX_TYPE_CO64);
-			if (!co64) return GF_OUT_OF_MEM;
-			co64->nb_entries = stco->nb_entries + 1;
-			co64->alloc_size = co64->nb_entries;
-			co64->offsets = (u64*)gf_malloc(co64->nb_entries * sizeof(u64));
-			if (!co64->offsets) {
-				gf_isom_box_del((GF_Box *)co64);
-				return GF_OUT_OF_MEM;
-			}
-			for (i = 0; i< co64->nb_entries - 1; i++) {
-				co64->offsets[i] = (u64) stco->offsets[i];
-			}
-			co64->offsets[i] = offset;
-			//delete the box...
-			gf_isom_box_del(*a);
-			*a = (GF_Box *)co64;
-			return GF_OK;
-		}
 		//OK, stick with regular...
 		if (stco->nb_entries==stco->alloc_size) {
 			ALLOC_INC(stco->alloc_size);
@@ -1614,7 +1638,6 @@ static GFINLINE GF_Err stbl_AddOffset(GF_Box **a, u64 offset)
 			if (!stco->offsets) return GF_OUT_OF_MEM;
 			memset(&stco->offsets[stco->nb_entries], 0, (stco->alloc_size - stco->nb_entries) * sizeof(u32));
 		}
-
 		stco->offsets[stco->nb_entries] = (u32) offset;
 		stco->nb_entries += 1;
 	} else {
