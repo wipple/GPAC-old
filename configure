@@ -372,10 +372,6 @@ else
     fi
 fi
 
-want_64="no"
-if [ x"$cpu" = x"x86_64" -o x"$cpu" = x"amd64" ]; then
-    want_64="yes"
-fi
 
 case "$cpu" in
     i386|i486|i586|i686|i86pc|BePC|x86_64|amd64)
@@ -386,26 +382,14 @@ case "$cpu" in
 EOF
         if $cc $CFLAGS -o $TMPO -c $TMPC 2> /dev/null ; then
             # x86_64 (64bit)
-            if test "$want_64" = "no" ; then
-                echo "Error: You request 32-bit build but compiler output is 64-bit"
-                echo "       Use correct -m/-arch flag or 32-bit target compiler"
-                exit 1
-            else
-                is_64="yes"
-                libdir="lib64"
-                want_pic="yes"
-            fi
+            is_64="yes"
+            libdir="lib64"
+            want_pic="yes"
         else
             # x86 (32bit)
-            if test "$want_64" = "yes" ; then
-                echo "Error: You request 64-bit build but compiler output is 32-bit"
-                echo "       Use correct -m/-arch flag or 64-bit target compiler"
-                exit 1
-            else
-                is_64="no"
-                libdir="lib"
-                want_pic="no"
-            fi
+            is_64="no"
+            libdir="lib"
+            want_pic="no"
         fi
         ;;
     armv4l|arm)
