@@ -1062,9 +1062,9 @@ static void DumpMetaItem(GF_ISOFile *file, Bool root_meta, u32 tk_num, char *nam
 
 void DumpTrackInfo(GF_ISOFile *file, u32 trackID, Bool full_dump)
 {
-	Float scale;
+	Double scale, max_rate, rate;
 	Bool is_od_track = 0;
-	u32 trackNum, i, j, max_rate, rate, ts, mtype, msub_type, timescale, sr, nb_ch, count, alt_group, nb_groups;
+	u32 trackNum, i, j, ts, mtype, msub_type, timescale, sr, nb_ch, count, alt_group, nb_groups;
 	u64 time_slice, dur, size;
 	u8 bps;
 	GF_ESD *esd;
@@ -1555,31 +1555,30 @@ void DumpTrackInfo(GF_ISOFile *file, u32 trackID, Bool full_dump)
 		dur = samp->DTS+samp->CTS_Offset;
 		size += samp->dataLength;
 		rate += samp->dataLength;
-		if (samp->DTS - time_slice>ts) {
-			if (max_rate < rate) max_rate = rate;
+		if (samp->DTS - time_slice > ts) {
+			Double max_tmp = rate * ts / (samp->DTS - time_slice);
+			if (max_rate < max_tmp )
+			    max_rate = max_tmp;
 			rate = 0;
 			time_slice = samp->DTS;
 		}
 		gf_isom_sample_del(&samp);
 	}
 	fprintf(stdout, "\nComputed info from media:\n");
-	scale = 1000;
-	scale /= ts;
-	dur = (u64) (scale * (s64)dur);
-	fprintf(stdout, "\tTotal size "LLU" bytes - Total samples duration "LLU" ms\n", size, dur);
+	scale = 1000.0 / ts;
+	dur *= scale;
+	fprintf(stdout, "\tTotal size "LLU" bytes - Total samples duration "LLU" ms\n", LLU_CAST (size), LLU_CAST (dur));
 	if (!dur) {
 		fprintf(stdout, "\n");
 		return;
 	}
 	/*rate in byte, dur is in ms*/
-	rate = (u32) ((size * 8 * 1000) / dur);
-	max_rate *= 8;
+	rate = 8000.0 * size / dur;
+	max_rate *= 8.0;
 	if (rate >= 1500) {
-		rate /= 1000;
-		max_rate /= 1000;
-		fprintf(stdout, "\tAverage rate %d kbps - Max Rate %d kbps\n", rate, max_rate);
+		fprintf(stdout, "\tAverage rate %.2f kbps - Max Rate %.2f kbps\n", rate/1000.0, max_rate/1000.0);
 	} else {
-		fprintf(stdout, "\tAverage rate %d bps - Max Rate %d bps\n", rate, max_rate);
+		fprintf(stdout, "\tAverage rate %.2f bps - Max Rate %.2f bps\n", rate, max_rate);
 	}
 	fprintf(stdout, "\n");
 
