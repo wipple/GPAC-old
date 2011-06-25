@@ -114,6 +114,22 @@ endif
 endif
 endif
 
+uninstalldylib:
+ifeq ($(CONFIG_WIN32),yes)
+	rm -f $(prefix)/$(libdir)/libgpac.dll
+else
+ifeq ($(CONFIG_DARWIN),yes)
+	rm -f $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(DYN_LIB_SUFFIX)
+	rm -f $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(VERSION).$(DYN_LIB_SUFFIX)
+else
+	rm -f $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(DYN_LIB_SUFFIX)
+	rm -f $(DESTDIR)$(prefix)/$(libdir)/libgpac.$(DYN_LIB_SUFFIX).$(VERSION)
+ifeq ($(DESTDIR)$(prefix),$(prefix))
+	ldconfig || true
+endif
+endif
+endif
+
 install-lib:
 	mkdir -p "$(DESTDIR)$(prefix)/include/gpac"
 	$(INSTALL) $(INSTFLAGS) -m 644 $(SRC_PATH)/include/gpac/*.h "$(DESTDIR)$(prefix)/include/gpac"
@@ -135,6 +151,8 @@ uninstall-lib:
 	rm -rf "$(prefix)/include/gpac/modules"
 	rm -rf "$(prefix)/include/gpac/enst"
 	rm -rf "$(prefix)/include/gpac"
+	rm -rf "$(prefix)/$(libdir)/libgpac_static.a"
+	$(MAKE) uninstalldylib
 
 ifeq ($(CONFIG_DARWIN),yes)
 dmg:
