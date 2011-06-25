@@ -823,9 +823,9 @@ GF_Err gf_sdp_info_check(GF_SDPInfo *sdp)
 
 #define SDP_WRITE_ALLOC_INT(d, spa, sig)		\
 	if (sig < 0) { \
-		sprintf(temp, "%d", d);		\
+		sprintf(temp, "%d", (s32)d);		\
 	} else { \
-		sprintf(temp, "%ud", d);		\
+		sprintf(temp, "%u", (u32)d);		\
 	}	\
 	SDP_WRITE_ALLOC_STR_WITHOUT_CHECK(temp, spa);
 
