@@ -191,7 +191,7 @@ ifeq ($(CONFIG_DARWIN),yes)
 	@echo "dmg: creates DMG package file for OSX"
 endif
 ifeq ($(CONFIG_LINUX),yes)
-        @echo "dmg: creates DEB package file for debian based systems"
+	@echo "deb: creates DEB package file for debian based systems"
 endif
 	@echo 
 	@echo "install-lib: install gpac library (dyn and static) and headers <gpac/*.h>, <gpac/modules/*.h> and <gpac/internal/*.h>"

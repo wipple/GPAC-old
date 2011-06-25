@@ -596,8 +596,8 @@ void PrintUsage()
 			" -snode NodeName      gets SVG node syntax\n"
 			" -languages           lists supported ISO 639 languages\n"
 			"\n"
-			"-quiet                quiet mode\n"
-			"-noprog               disables progress\n"
+			" -quiet               quiet mode\n"
+			" -noprog              disables progress\n"
 			" -v                   verbose mode\n"
 			" -version             gets build version\n"
 			);
