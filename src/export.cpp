@@ -590,6 +590,7 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_sample_dts) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_sample_duration) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_sample_size) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_sample_sync) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_edit_segment_count) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_edit_segment) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_copyright_count) )
@@ -1037,6 +1038,7 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_media_change_par) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_media_change_pl) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_media_fragment_file) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_media_avc_rewrite_samples) )
 #endif /*GPAC_DISABLE_MEDIA_IMPORT*/
 
 

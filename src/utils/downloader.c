@@ -382,9 +382,11 @@ static int ssl_init(GF_DownloadManager *dm, u32 mode)
     case 0:
         meth = SSLv23_client_method();
         break;
+#if 0 /*SSL v2 is no longer supported in OpenSSL 1.0*/
     case 1:
         meth = SSLv2_client_method();
         break;
+#endif
     case 2:
         meth = SSLv3_client_method();
         break;
@@ -2203,10 +2205,9 @@ static GF_Err wait_for_header_and_parse(GF_DownloadSession *sess, char * sHTTP)
                 if (hdr_val[0] == ':') hdr_val += 1;
                 hdr_val += http_skip_space(hdr_val);
                 if (hdr_val[0] == '*') {
-                    sscanf(hdr_val, "*/%ud", &total_size);
+                    sscanf(hdr_val, "*/%u", &total_size);
                 } else {
-					/*do not use %ud here, broken on Win32 (sscanf returns 1)*/
-                    sscanf(hdr_val, "%d-%d/%d", &first_byte, &last_byte, &total_size);
+                    sscanf(hdr_val, "%u-%u/%u", &first_byte, &last_byte, &total_size);
                 }
             }
         }
@@ -2610,7 +2611,8 @@ GF_Err gf_dm_get_file_memory(const char *url, char **out_data, u32 *out_size, ch
 		gf_dm_del(dm);
         return GF_BAD_PARAM;
     }
-    dnload->use_cache_file = 1;
+    dnload->use_cache_file = 0;
+	dnload->disable_cache = 1;
     if (!e)  
 		e = gf_dm_sess_process(dnload);
     
@@ -2618,12 +2620,13 @@ GF_Err gf_dm_get_file_memory(const char *url, char **out_data, u32 *out_size, ch
 	    e = gf_cache_close_write_cache(dnload->cache_entry, dnload, e == GF_OK);
 	
 	if (!e) {
-		*out_size = ftell(f);
-		*out_data = gf_malloc(sizeof(char)* (*out_size+1));
+		u32 size = ftell(f);
+		*out_size = size;
+		*out_data = gf_malloc(sizeof(char)* ( 1 + size));
 		fseek(f, 0, SEEK_SET);
-		fread(*out_data, 1, *out_size, f);
-		*out_data[*out_size] = 0;
-		if (out_size) {
+		fread(*out_data, 1, size, f);
+		(*out_data)[size] = 0;
+		if (out_mime) {
 			const char *mime = gf_dm_sess_mime_type(dnload);
 			if (mime) *out_mime = gf_strdup(mime);
 		}

@@ -772,6 +772,7 @@ typedef struct
 	Bool can_duplicate;
 	/*controls import by time rather than by sample (otherwise we would have to remove much more samples video vs audio for example*/
 	Bool first_sample_done;
+	Bool next_sample_is_rap;
 	u32 stop_state;
 } TKInfo;
 
@@ -779,7 +780,7 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 {
 	u32 i, count, nb_tk, needs_rap_sync, cur_file, conv_type, nb_tk_done, nb_samp, nb_done, di;
 	Double max_dur, cur_file_time;
-	Bool do_add, all_duplicatable, size_exceeded, chunk_extraction;
+	Bool do_add, all_duplicatable, size_exceeded, chunk_extraction, rap_split;
 	GF_ISOFile *dest;
 	GF_ISOSample *samp;
 	GF_Err e;
@@ -788,6 +789,14 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 	Double chunk_start = (Double) chunk_start_time;
 
 	chunk_extraction = (chunk_start>=0) ? 1 : 0;
+
+	rap_split = 0;
+	if (split_size_kb==(u32) -1) rap_split = 1;
+	if (split_dur==-1) rap_split = 1;
+	if (rap_split) {
+		split_size_kb = 0;
+		split_dur = (double) GF_MAX_FLOAT;
+	}
 
 
 	strcpy(szName, inName);
@@ -894,7 +903,7 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 		gf_free(tks);
 		return GF_NOT_SUPPORTED;
 	}
-	if (max_dur<=split_dur) {
+	if (!rap_split && (max_dur<=split_dur)) {
 		fprintf(stdout, "Input file (%f) shorter than requested split duration (%f)\n", max_dur, split_dur);
 		gf_free(tks);
 		return GF_NOT_SUPPORTED;
@@ -1071,6 +1080,12 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 					fprintf(stdout, "Error cloning track %d sample %d\n", tki->tk, tki->last_sample);
 					goto err_exit;
 				}
+	
+				tki->next_sample_is_rap = 0;
+				if (rap_split && tki->has_non_raps) {
+					if ( gf_isom_get_sample_sync(mp4, tki->tk, tki->last_sample+1))
+						tki->next_sample_is_rap = 1;
+				}
 			}
 
 			/*test by size/duration*/
@@ -1095,11 +1110,20 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 				}
 				time = (Double) (s64) tki->lastDTS;
 				time /= tki->time_scale;
-				if (size_exceeded || (tki->last_sample==tki->sample_count) || (!tki->can_duplicate && (time>file_split_dur)) ) {
+				if (size_exceeded 
+					|| (tki->last_sample==tki->sample_count) 
+					|| (!tki->can_duplicate && (time>file_split_dur))
+					|| (rap_split && tki->has_non_raps && tki->next_sample_is_rap)
+				) {
 					nb_over++;
 					tki->stop_state = 1;
 					if (tki->last_sample<tki->sample_count) is_last = 0;
 					if ((!tki->can_duplicate || all_duplicatable) && (tki->last_sample==tki->sample_count)) is_last = 1;
+
+					if (rap_split && tki->next_sample_is_rap) {
+						file_split_dur = (Double) ( gf_isom_get_sample_dts(mp4, tki->tk, tki->last_sample+1) - tki->firstDTS);
+						file_split_dur /= tki->time_scale;
+					}
 				}
 				/*special tracks (not audio, not video)*/
 				else if (tki->can_duplicate) {
@@ -1128,11 +1152,18 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 				continue;
 			}
 
-			if (tki->lastDTS) {
-				time = (Double) (s64) tki->lastDTS;
+			//if (tki->lastDTS) 
+			{
+				//time = (Double) (s64) tki->lastDTS;
+				time = (Double) (s64) ( gf_isom_get_sample_dts(mp4, tki->tk, tki->last_sample+1) - tki->firstDTS);
 				time /= tki->time_scale;
 				if ((!tki->can_duplicate || all_duplicatable) && time<file_split_dur) file_split_dur = time;
+				else if (rap_split && tki->next_sample_is_rap) file_split_dur = time;
 			}
+		}
+		if (file_split_dur == (Double) GF_MAX_FLOAT) {
+			fprintf(stdout, "Cannot split file (duration too small or size too small)\n");
+			goto err_exit;
 		}
 		if (chunk_extraction) file_split_dur = split_dur;
 
@@ -1161,11 +1192,15 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 				while (1) {
 					u64 dts;
 					last_samp = gf_isom_get_sample_count(dest, tki->dst_tk);
-					if (!last_samp) break;
+					if (last_samp<=1) break;
 
 					dts = gf_isom_get_sample_dts(dest, tki->dst_tk, last_samp);
 					time = (Double) (s64) dts;
 					time /= tki->time_scale;
+
+					time = (Double) (s64) gf_isom_get_media_duration(dest, tki->dst_tk);
+					time /= tki->time_scale;
+
 					/*done*/
 					if (tki->last_sample==tki->sample_count) {
 						if (!chunk_extraction && !tki->can_duplicate) {
@@ -1173,7 +1208,11 @@ GF_Err split_isomedia_file(GF_ISOFile *mp4, Double split_dur, u32 split_size_kb,
 							break;
 						}
 					}
-					if (time /*+ (Double) GF_EPSILON_FLOAT*/ < file_split_dur) break;
+					if (rap_split) {
+						if (time <= file_split_dur) break;
+					} else {
+						if (time < file_split_dur) break;
+					}
 
 					gf_isom_remove_sample(dest, tki->dst_tk, last_samp);
 					tki->last_sample--;
@@ -1314,7 +1353,8 @@ GF_Err cat_isomedia_file(GF_ISOFile *dest, char *fileName, u32 import_flags, Dou
 		e = import_file(orig, fileName, import_flags, force_fps, frames_per_sample);
 		if (e) return e;
 	} else {
-		orig = gf_isom_open(fileName, GF_ISOM_OPEN_READ, NULL);
+		/*we open the original file in edit mode since we may have to rewrite AVC samples*/
+		orig = gf_isom_open(fileName, GF_ISOM_OPEN_EDIT, tmp_dir);
 	}
 
 	nb_samp = 0;
@@ -1397,11 +1437,7 @@ GF_Err cat_isomedia_file(GF_ISOFile *dest, char *fileName, u32 import_flags, Dou
 			if (gf_isom_get_sample_description_count(orig, i+1) != gf_isom_get_sample_description_count(dest, dst_tk)) dst_tk = 0;
 			/*if not forcing cat, check the media codec config is the same*/
 			if (!gf_isom_is_same_sample_description(orig, i+1, dest, dst_tk)) {
-				if (!force_cat) {
-					dst_tk = 0;
-				} else {
-					fprintf(stdout, "WARNING: Concatenating track ID %d even though sample descriptions do not match\n", tk_id);
-				}
+				dst_tk = 0;
 			} 
 			/*we force the same visual resolution*/
 			else if (mtype==GF_ISOM_MEDIA_VISUAL) {
@@ -1409,40 +1445,82 @@ GF_Err cat_isomedia_file(GF_ISOFile *dest, char *fileName, u32 import_flags, Dou
 				gf_isom_get_visual_info(orig, i+1, 1, &ow, &oh);
 				gf_isom_get_visual_info(dest, dst_tk, 1, &w, &h);
 				if ((ow!=w) || (oh!=h)) {
-					if (!force_cat) {
-						dst_tk = 0;
-					} else {
-						fprintf(stdout, "WARNING: Concatenating track ID %d even though visual sizes do not match\n", tk_id);
-					}
+					dst_tk = 0;
 				}
 			}
 
+			/*merge AVC config if possible*/
 			if (!dst_tk && ((stype == GF_ISOM_SUBTYPE_AVC_H264) || (stype == GF_ISOM_SUBTYPE_AVC2_H264))  ) {
 				GF_AVCConfig *avc_src, *avc_dst;
 				dst_tk = gf_isom_get_track_by_id(dest, tk_id);
 				
 				avc_src = gf_isom_avc_config_get(orig, i+1, 1);
 				avc_dst = gf_isom_avc_config_get(dest, dst_tk, 1);
-
-				if (avc_src->nal_unit_size != avc_dst->nal_unit_size) dst_tk = 0;
-				else if (avc_src->AVCLevelIndication!=avc_dst->AVCLevelIndication) dst_tk = 0;
-				else if (avc_src->AVCProfileIndication!=avc_dst->AVCProfileIndication) dst_tk = 0;
-				else {
-					while (gf_list_count(avc_src->sequenceParameterSets)) {
-						GF_AVCConfigSlot *slc = gf_list_get(avc_src->sequenceParameterSets, 0);
-						gf_list_rem(avc_src->sequenceParameterSets, 0);
-						gf_list_add(avc_dst->sequenceParameterSets, slc);
-					}
-
-					while (gf_list_count(avc_src->pictureParameterSets)) {
-						GF_AVCConfigSlot *slc = gf_list_get(avc_src->pictureParameterSets, 0);
-						gf_list_rem(avc_src->pictureParameterSets, 0);
-						gf_list_add(avc_dst->pictureParameterSets, slc);
-					}
-					gf_isom_avc_config_update(dest, dst_tk, 1, avc_dst);
-					gf_odf_avc_cfg_del(avc_src);
-					gf_odf_avc_cfg_del(avc_dst);
+				
+				if (avc_src->AVCLevelIndication!=avc_dst->AVCLevelIndication) {
+					fprintf(stdout, "Cannot concatenate files: Different AVC Level Indication between source (%d) and destination (%d)\n", avc_src->AVCLevelIndication, avc_dst->AVCLevelIndication);
+					dst_tk = 0;
+				} else if (avc_src->AVCProfileIndication!=avc_dst->AVCProfileIndication) {
+					fprintf(stdout, "Cannot concatenate files: Different AVC Profile Indication between source (%d) and destination (%d)\n", avc_src->AVCProfileIndication, avc_dst->AVCProfileIndication);
+					dst_tk = 0;
 				}
+				else {
+					u32 j, k;
+					/*rewrite all samples if using different NALU size*/
+					if (avc_src->nal_unit_size > avc_dst->nal_unit_size) {
+						gf_media_avc_rewrite_samples(dest, dst_tk, 8*avc_dst->nal_unit_size, 8*avc_src->nal_unit_size); 
+						avc_dst->nal_unit_size = avc_src->nal_unit_size;
+					} else if (avc_src->nal_unit_size < avc_dst->nal_unit_size) {
+						gf_media_avc_rewrite_samples(orig, i+1, 8*avc_src->nal_unit_size, 8*avc_dst->nal_unit_size); 
+					}
+
+					/*merge SPS*/
+					for (j=0; j<gf_list_count(avc_src->sequenceParameterSets); j++) {
+						Bool found = 0;
+						GF_AVCConfigSlot *slc = gf_list_get(avc_src->sequenceParameterSets, j);
+						for (k=0; k<gf_list_count(avc_dst->sequenceParameterSets); k++) {
+							GF_AVCConfigSlot *slc_dst = gf_list_get(avc_dst->sequenceParameterSets, k);
+							if ( (slc->size==slc_dst->size) && !memcmp(slc->data, slc_dst->data, slc->size) ) {
+								found = 1;
+								break;
+							}
+						}
+						if (!found) {
+							gf_list_rem(avc_src->sequenceParameterSets, j);
+							j--;
+							gf_list_add(avc_dst->sequenceParameterSets, slc);
+						}
+					}
+
+					/*merge PPS*/
+					for (j=0; j<gf_list_count(avc_src->pictureParameterSets); j++) {
+						Bool found = 0;
+						GF_AVCConfigSlot *slc = gf_list_get(avc_src->pictureParameterSets, j);
+						for (k=0; k<gf_list_count(avc_dst->pictureParameterSets); k++) {
+							GF_AVCConfigSlot *slc_dst = gf_list_get(avc_dst->pictureParameterSets, k);
+							if ( (slc->size==slc_dst->size) && !memcmp(slc->data, slc_dst->data, slc->size) ) {
+								found = 1;
+								break;
+							}
+						}
+						if (!found) {
+							gf_list_rem(avc_src->pictureParameterSets, j);
+							j--;
+							gf_list_add(avc_dst->pictureParameterSets, slc);
+						}
+					}
+
+					gf_isom_avc_config_update(dest, dst_tk, 1, avc_dst);
+				}
+
+
+				gf_odf_avc_cfg_del(avc_src);
+				gf_odf_avc_cfg_del(avc_dst);
+			}
+
+			if (!dst_tk && force_cat) {
+				dst_tk = gf_isom_get_track_by_id(dest, tk_id);
+				fprintf(stdout, "WARNING: Concatenating track ID %d even though sample descriptions do not match\n", tk_id);
 			}
 		}
 

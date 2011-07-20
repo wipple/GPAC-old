@@ -3704,11 +3704,12 @@ exit:
 	fclose(mdia);
 	return e;
 }
-static void avc_rewrite_samples(GF_ISOFile *file, u32 track, u32 prev_size, u32 new_size)
+
+GF_Err gf_media_avc_rewrite_samples(GF_ISOFile *file, u32 track, u32 prev_size, u32 new_size)
 {
 	u32 i, count, di, remain, msize;
 	char *buffer;
-
+	
 	msize = 4096;
 	buffer = (char*)gf_malloc(sizeof(char)*msize);
 	count = gf_isom_get_sample_count(file, track);
@@ -3739,6 +3740,7 @@ static void avc_rewrite_samples(GF_ISOFile *file, u32 track, u32 prev_size, u32 
 		gf_isom_sample_del(&samp);
 	}
 	gf_free(buffer);
+	return GF_OK;
 }
 
 #ifndef GPAC_DISABLE_AV_PARSERS
@@ -4168,7 +4170,7 @@ restart_import:
 				if (size_length+diff_size == 24) diff_size+=8;
 
 				gf_import_message(import, GF_OK, "Adjusting AVC SizeLength to %d bits", size_length+diff_size);
-				avc_rewrite_samples(import->dest, track, size_length, size_length+diff_size);
+				gf_media_avc_rewrite_samples(import->dest, track, size_length, size_length+diff_size);
 
 				/*rewrite current sample*/
 				if (sample_data) {
@@ -6136,7 +6138,8 @@ GF_Err gf_import_vobsub(GF_MediaImporter *import)
 	GF_Err		  err = GF_OK;
 	GF_ISOSample	 *samp = NULL;
 	GF_List		 *subpic;
-	u32		  total, last_samp_dur = 0;
+	u64 last_dts = 0;
+	u32 total, last_samp_dur = 0;
 	unsigned char buf[0x800];
 
 	strcpy(filename, import->in_name);
@@ -6258,6 +6261,7 @@ GF_Err gf_import_vobsub(GF_MediaImporter *import)
 	subpic = vobsub->langs[trackID].subpos;
 	total  = gf_list_count(subpic);
 
+	last_dts = 0;
 	for (c = 0; c < total; c++)
 	{
 		u32		i, left, size, psize, dsize, hsize, duration;
@@ -6332,12 +6336,18 @@ GF_Err gf_import_vobsub(GF_MediaImporter *import)
 		samp->data	 = packet;
 		samp->dataLength = psize;
 		samp->DTS	 = pos->start * 90;
+		
+		if (last_dts && (last_dts >= samp->DTS)) {
+			err = gf_import_message(import, GF_CORRUPTED_DATA, "Out of order timestamps in vobsub file");
+			goto error;
+		}
 
 		err = gf_isom_add_sample(import->dest, track, di, samp);
 		if (err) goto error;
 		gf_free(packet);
 
 		gf_set_progress("Importing VobSub", c, total);
+		last_dts = samp->DTS;
 
 		if (import->flags & GF_IMPORT_DO_ABORT) {
 			break;

@@ -245,6 +245,9 @@ In this case, any other flags are set to prefered values (typically, flag=0 or v
 */
 GF_Err gf_media_change_colorprop(GF_ISOFile *file, u32 track, s32 fullrange, s32 vidformat, s32 colorprim, s32 transfer, s32 colmatrix);
 
+/*rewrite AVC samples if nalu size_length has to be changed*/
+GF_Err gf_media_avc_rewrite_samples(GF_ISOFile *file, u32 track, u32 prev_size_in_bits, u32 new_size_in_bits);
+
 #endif /*GPAC_DISABLE_MEDIA_IMPORT*/
 
 
