@@ -52,11 +52,11 @@ endif
 #common obj
 OBJS=x11_out.o
 
-SRCS := $(OBJS:.o=.c) 
+SRCS := $(OBJS:.o=.c)
 
 LIB=gm_x11_out.$(DYN_LIB_SUFFIX)
 ifeq ($(CONFIG_WIN32),yes)
-#LDFLAGS+=-export-symbols  
+#LDFLAGS+=-export-symbols
 endif
 
 
@@ -66,23 +66,20 @@ all: $(LIB)
 $(LIB): $(OBJS)
 	$(CC) $(SHFLAGS) $(LDFLAGS) -lX11 -L../../bin/gcc -lgpac -o ../../bin/gcc/$@ $(OBJS)
 ifeq ($(STATICBUILD),yes)
-	$(CC) $(SHFLAGS) $(LDFLAGS) -o ../../bin/gcc/gm_x11_out-static.so $(OBJS) -lX11 -L../../bin/gcc -lgpac_static -lz
+	$(CC) $(SHFLAGS) $(LDFLAGS) -o ../../bin/gcc/gm_x11_out-static.$(DYN_LIB_SUFFIX) $(OBJS) -lX11 -L../../bin/gcc -lgpac_static -lz
 endif
 
-#static-bin:
-#	$(CC) $(SHFLAGS) $(LDFLAGS) -o ../../bin/gcc/gm_x11_out-static.so $(OBJS) -lX11 -L../../bin/gcc -lgpac_static -lz
-                                                                                               
 %.o: %.c
-	$(CC) $(CFLAGS) -c -o $@ $< 
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 
-clean: 
+clean:
 	rm -f $(OBJS) ../../bin/gcc/$(LIB)
 
 dep: depend
 
 depend:
-	rm -f .depend	
+	rm -f .depend
 	$(CC) -MM $(CFLAGS) $(SRCS) 1>.depend
 
 distclean: clean

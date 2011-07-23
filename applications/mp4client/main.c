@@ -129,6 +129,7 @@ void PrintUsage()
 		"\t-rti fileName:  logs run-time info (FPS, CPU, Mem usage) to file\n"
 		"\t-rtix fileName: same as -rti but driven by GPAC logs\n"
 		"\t-quiet:         removes script message, buffering and downloading status\n"
+		"\t-strict-error:  exit when the player reports its first error\n"
 		"\t-opt	option:    Overrides an option in the configuration file. String format is section:key=value\n"
 		"\t-log-file file: sets output log file. Also works with -lf\n"
 		"\t-log-level lev: sets log level. Also works with -ll. Possible values are:\n"
@@ -289,7 +290,6 @@ static void PrintTime(u64 time)
 
 static u32 rti_update_time_ms = 200;
 static FILE *rti_logs = NULL;
-static u64 memory_at_gpac_startup = 0;
 
 static void UpdateRTInfo(const char *legend)
 {
@@ -302,9 +302,6 @@ static void UpdateRTInfo(const char *legend)
 
 	if (display_rti) {
 		char szMsg[1024];
-		if (!rti.process_memory) rti.process_memory = (u32) (memory_at_gpac_startup-rti.physical_memory_avail);
-		if (!rti.gpac_memory) rti.gpac_memory = (u32) (memory_at_gpac_startup-rti.physical_memory_avail);
-
 
 		if (rti.total_cpu_usage) {
 			sprintf(szMsg, "FPS %02.2f - CPU %02d (%02d) - Mem %d kB", 
@@ -479,11 +476,11 @@ Bool GPAC_EventProc(void *ptr, GF_Event *evt)
 
 		if (evt->message.error==GF_SCRIPT_INFO) {
 			GF_LOG(GF_LOG_INFO, GF_LOG_SCRIPT, ("[Script] %s\n", evt->message.message));
-			fprintf(stdout, "%s\n", evt->message.message);
 		} else if (evt->message.error) {
 			if (!is_connected) last_error = evt->message.error;
-			fprintf(stdout, "%s %s: %s\n", evt->message.message, servName, gf_error_to_string(evt->message.error));
+			GF_LOG(GF_LOG_ERROR, GF_LOG_ALL, ("%s %s: %s\n", evt->message.message, servName, gf_error_to_string(evt->message.error)));
 		} else if (!be_quiet) 
+			/*TODO: put a GF_LOG here*/
 			fprintf(stdout, "%s %s\r", evt->message.message, servName);
 	}
 		break;
@@ -880,7 +877,6 @@ int main (int argc, char **argv)
 	Double fps = 25.0;
 	Bool ret, fill_ar, visible;
 	char *url_arg, *the_cfg, *rti_file, *views;
-	GF_SystemRTInfo rti;
 	FILE *logfile = NULL;
 	Float scale = 1;
 #ifndef WIN32
@@ -998,16 +994,22 @@ int main (int argc, char **argv)
 			i++;
 		} else if (!strcmp(arg, "-quiet")) {
 			be_quiet = 1;
+		} else if (!strcmp(arg, "-strict-error")) {
+			gf_log_set_strict_error(1);
 		} else if (!strcmp(arg, "-log-file") || !strcmp(arg, "-lf")) {
 			logfile = gf_f64_open(argv[i+1], "wt");
 			gf_log_set_callback(logfile, on_gpac_log);
 			i++;
 		} else if (!strcmp(arg, "-log-level") || !strcmp(arg, "-ll")) {
-			gf_log_set_level(gf_log_parse_level(argv[i+1]));
+			u32 flags = gf_log_parse_level(argv[i+1]);
+			if (!flags) return 1;
+			gf_log_set_level(flags);
 			logs_set = 1;
 			i++;
 		} else if (!strcmp(arg, "-log-tools") || !strcmp(arg, "-lt")) {
-			gf_log_set_tools(gf_log_parse_tools(argv[i+1]));
+			u32 flags = gf_log_parse_tools(argv[i+1]);
+			if (!flags) return 1;
+			gf_log_set_tools(flags);
 			logs_set = 1;
 			i++;
 		} else if (!strcmp(arg, "-log-clock") || !strcmp(arg, "-lc")) {
@@ -1065,6 +1067,8 @@ int main (int argc, char **argv)
 		}
 		else if (!stricmp(arg, "-run-for")) {
 			simulation_time_in_ms = atoi(argv[i+1]) * 1000;
+			if (!simulation_time_in_ms)
+				simulation_time_in_ms = 1; /*1ms*/
 			i++;
 		}
 		else if (!stricmp(arg, "-help")) {
@@ -1105,8 +1109,6 @@ int main (int argc, char **argv)
 		gf_log_set_tools(0xFFFFFFFF);
 	}
 
-	gf_sys_get_rti(500, &rti, GF_RTI_SYSTEM_MEMORY_ONLY);
-	memory_at_gpac_startup = rti.physical_memory_avail;
 	if (rti_file) init_rti_logs(rti_file, url_arg, use_rtix);
 
 	/*setup dumping options*/
@@ -1568,24 +1570,34 @@ force_input:
 
 		case 'L':
 		{
+			u32 flags;
 			char szLog[1024];
 			fprintf(stdout, "Enter new log level:\n");
 			if (1 > scanf("%s", szLog)){
 			    fprintf(stderr, "Cannot read new log level, aborting.\n");
 			    break;
 			}
-			gf_log_set_level(gf_log_parse_level(szLog));
+			flags = gf_log_parse_level(szLog);
+			if (!flags)
+				fprintf(stderr, "Wrong log level specified, aborting.\n");
+			else
+				gf_log_set_level(flags);
 		}
 			break;
 		case 'T':
 		{
+			u32 flags;
 			char szLog[1024];
 			fprintf(stdout, "Enter new log tools:\n");
-			if (1 > scanf("%s", szLog)){
+			if (1 > scanf("%s", szLog)) {
 			    fprintf(stderr, "Cannot read new log tools, aborting.\n");
 			    break;
 			}
-			gf_log_set_tools(gf_log_parse_tools(szLog));
+			flags = gf_log_parse_tools(szLog);
+			if (!flags)
+				fprintf(stderr, "Wrong log tools specified, aborting.\n");
+			else
+				gf_log_set_tools(flags);
 		}
 			break;
 		case 'g':
@@ -1705,8 +1717,6 @@ force_input:
 	}
 	return 0;
 }
-
-
 
 
 void PrintWorldInfo(GF_Terminal *term)
