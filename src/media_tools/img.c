@@ -201,7 +201,7 @@ exit:
 
 #ifdef GPAC_HAS_JPEG
 
-void _nonfatal_error2(j_common_ptr cinfo, int lev) {}
+void gf_jpeg_nonfatal_error2(j_common_ptr cinfo, int lev) {}
 
 /*JPG context while decoding*/
 typedef struct
@@ -219,26 +219,26 @@ typedef struct
 	struct jpeg_decompress_struct cinfo;
 } JPGCtx;
 
-void _output_message (j_common_ptr cinfo){
+static void gf_jpeg_output_message (j_common_ptr cinfo){
 	char buffer[JMSG_LENGTH_MAX];
 	/* Create the message */
 	(*cinfo->err->format_message) (cinfo, buffer);
 	GF_LOG(GF_LOG_ERROR, GF_LOG_CODEC, ("[JPEG OUTPUT MESSAGE]: %s\n", buffer));
 }
 
-void _fatal_error(j_common_ptr cinfo)
+static void gf_jpeg_fatal_error(j_common_ptr cinfo)
 {
 	JPGErr *err = (JPGErr *) cinfo->err;
-	_output_message(cinfo);
+	gf_jpeg_output_message(cinfo);
 	longjmp(err->jmpbuf, 1);
 }
 
-void stub(j_decompress_ptr cinfo) {}
+void gf_jpeg_stub(j_decompress_ptr cinfo) {}
 
 /*a JPEG is always carried in a complete, single MPEG4 AU so no refill*/
-boolean fill_input_buffer(j_decompress_ptr cinfo) { return 0; }
+static boolean gf_jpeg_fill_input_buffer(j_decompress_ptr cinfo) { return 0; }
 
-void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
+static void gf_jpeg_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 {
 	JPGCtx *jpx = (JPGCtx *) cinfo->src;
 	if (num_bytes > (long) jpx->src.bytes_in_buffer) {
@@ -266,9 +266,9 @@ GF_Err gf_img_jpeg_dec(char *jpg, u32 jpg_size, u32 *width, u32 *height, u32 *pi
 	JPGCtx jpx;
 
 	jpx.cinfo.err = jpeg_std_error(&(jper.pub));
-	jper.pub.error_exit = _fatal_error;
-	jper.pub.output_message = _output_message;
-	jper.pub.emit_message = _nonfatal_error2;
+	jper.pub.error_exit = gf_jpeg_fatal_error;
+	jper.pub.output_message = gf_jpeg_output_message;
+	jper.pub.emit_message = gf_jpeg_nonfatal_error2;
 	if (setjmp(jper.jmpbuf)) {
 		GF_LOG(GF_LOG_ERROR, GF_LOG_CODEC, ("[JPEGDecode] : Failed to decode\n"));
 		jpeg_destroy_decompress(&jpx.cinfo);
@@ -279,11 +279,11 @@ GF_Err gf_img_jpeg_dec(char *jpg, u32 jpg_size, u32 *width, u32 *height, u32 *pi
 	jpeg_create_decompress(&jpx.cinfo);
 
 	/*prepare IO*/
-	jpx.src.init_source = stub;
-	jpx.src.fill_input_buffer = fill_input_buffer;
-	jpx.src.skip_input_data = skip_input_data;
+	jpx.src.init_source = gf_jpeg_stub;
+	jpx.src.fill_input_buffer = gf_jpeg_fill_input_buffer;
+	jpx.src.skip_input_data = gf_jpeg_skip_input_data;
 	jpx.src.resync_to_restart = jpeg_resync_to_restart;
-	jpx.src.term_source = stub;
+	jpx.src.term_source = gf_jpeg_stub;
 	jpx.skip = 0;
 	jpx.src.next_input_byte = jpg;
         jpx.src.bytes_in_buffer = jpg_size;
@@ -395,7 +395,7 @@ typedef struct
 	u32 size;
 } GFpng;
 
-static void user_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
+static void gf_png_user_read_data(png_structp png_ptr, png_bytep data, png_size_t length)
 {
 	GFpng *ctx = (GFpng*)png_get_io_ptr(png_ptr);
 
@@ -406,7 +406,7 @@ static void user_read_data(png_structp png_ptr, png_bytep data, png_size_t lengt
 		ctx->pos += length;
 	}
 }
-static void user_error_fn(png_structp png_ptr,png_const_charp error_msg)
+static void gf_png_user_error_fn(png_structp png_ptr,png_const_charp error_msg)
 {
  	longjmp(png_jmpbuf(png_ptr), 1);
 }
@@ -471,8 +471,8 @@ GF_Err gf_img_png_dec(char *png, u32 png_size, u32 *width, u32 *height, u32 *pix
 		png_destroy_read_struct(&png_ptr, (png_infopp)NULL, (png_infopp)NULL);
 		return GF_IO_ERR;
 	}
-    png_set_read_fn(png_ptr, &udta, (png_rw_ptr) user_read_data);
-	png_set_error_fn(png_ptr, &udta, (png_error_ptr) user_error_fn, NULL);
+	png_set_read_fn(png_ptr, &udta, (png_rw_ptr) gf_png_user_read_data);
+	png_set_error_fn(png_ptr, &udta, (png_error_ptr) gf_png_user_error_fn, NULL);
 
 	png_read_info(png_ptr, info_ptr);
 
@@ -536,13 +536,13 @@ GF_Err gf_img_png_dec(char *png, u32 png_size, u32 *width, u32 *height, u32 *pix
 }
 
 
-void my_png_write(png_structp png, png_bytep data, png_size_t size)
+void gf_png_write(png_structp png, png_bytep data, png_size_t size)
 {
 	GFpng *p = (GFpng *)png_get_io_ptr(png);
 	memcpy(p->buffer+p->pos, data, sizeof(char)*size);
 	p->pos += size;
 }
-void my_png_flush(png_structp png)
+void gf_png_flush(png_structp png)
 {
 }
 
@@ -608,7 +608,7 @@ GF_Err gf_img_png_enc(char *data, u32 width, u32 height, s32 stride, u32 pixel_f
 
 	udta.buffer = dst;
 	udta.pos = 0;
-	png_set_write_fn(png_ptr, &udta, my_png_write, my_png_flush);
+	png_set_write_fn(png_ptr, &udta, gf_png_write, gf_png_flush);
 
 	png_set_IHDR(png_ptr, info_ptr, width, height, 8, type, PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_BASE, PNG_FILTER_TYPE_BASE);
 
