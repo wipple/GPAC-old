@@ -76,9 +76,8 @@ static GFINLINE void usage(const char * progname)
                     "\t-bifs-pes              carries BIFS over PES instead of sections\n"
                     "\t-bifs-pes-ex           carries BIFS over PES without writing timestamps in SL\n"
 					"\t\n"
-					"\t-ll=LogLevel           specifies log level to use (by default error)\n"
-					"\t-lt=LogTools           specifies log tools to use (by default all)\n"
-					"\t-h or -help             Print this screen\n"
+					"\t-logs                  set log tools and levels, formatted as a ':'-separated list of toolX[:toolZ]@levelX\n"
+					"\t-h or -help            print this screen\n"
 					"\n", progname, DEFAULT_PCR_OFFSET
 		);
 }
@@ -1520,7 +1519,7 @@ static GFINLINE GF_Err parse_args(int argc, char **argv, u32 *mux_rate, u32 *car
 #ifdef GPAC_MEMORY_TRACKING
 			gf_sys_close();
 			gf_sys_init(1);
-			gf_log_set_tools(gf_log_get_tools()|GF_LOG_MEMORY);
+			gf_log_set_tool_level(GF_LOG_MEMORY, GF_LOG_DEBUG);
 #else
 			fprintf(stdout, "WARNING - GPAC not compiled with Memory Tracker - ignoring \"-mem-track\"\n"); 
 #endif
@@ -1565,14 +1564,9 @@ static GFINLINE GF_Err parse_args(int argc, char **argv, u32 *mux_rate, u32 *car
 	for (i=1; i<argc; i++) {		
 		arg = argv[i];		
 		if (arg[0]=='-') {
-			if (!strnicmp(arg, "-ll=", 4)) {
-				u32 flags = gf_log_parse_level(argv[i]+4);
-				if (!flags) return GF_BAD_PARAM;
-				gf_log_set_level(flags);
-			} else if (!strnicmp(arg, "-lt=", 4)) {
-				u32 flags = gf_log_parse_tools(argv[i]+4);
-				if (!flags) return GF_BAD_PARAM;
-				gf_log_set_tools(flags);
+			if (!strnicmp(arg, "-logs=", 6)) {
+				if (gf_log_set_tools_levels(argv[i+1]+6) != GF_OK)
+					return GF_BAD_PARAM;
 			} else if (!strnicmp(arg, "-prog=", 6)) {
 				u32 res;
 				prog_name = arg+6;
@@ -1794,8 +1788,7 @@ int main(int argc, char **argv)
 	/*   gpac init   */
 	/*****************/
 	gf_sys_init(0);
-	gf_log_set_level(GF_LOG_WARNING);
-	gf_log_set_tools(GF_LOG_CONTAINER|GF_LOG_SCENE|GF_LOG_PARSER|GF_LOG_AUTHOR|GF_LOG_CODING);
+	gf_log_set_tools_levels("container@warning:scene@warning:parser@warning:author@warning:coding@warning");
 
 	/***********************/
 	/*   initialisations   */

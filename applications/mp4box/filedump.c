@@ -153,8 +153,6 @@ GF_Err dump_file_text(char *file, char *inName, u32 dump_mode, Bool do_log)
 	GF_SceneGraph *sg;
 	GF_SceneLoader load;
 	u32 ftype;
-	u32 prev_level = gf_log_get_level();
-	u32 prev_tools = gf_log_get_tools();
 	gf_log_cbk prev_logs = NULL;
 	FILE *logs = NULL;
 	e = GF_OK;
@@ -198,16 +196,14 @@ GF_Err dump_file_text(char *file, char *inName, u32 dump_mode, Bool do_log)
 		sprintf(szLog, "%s_dec.logs", inName);
 		logs = gf_f64_open(szLog, "wt");
 
-		gf_log_set_tools(GF_LOG_CODING);
-		gf_log_set_level(GF_LOG_DEBUG);
+		gf_log_set_tool_level(GF_LOG_CODING, GF_LOG_DEBUG);
 		prev_logs = gf_log_set_callback(logs, scene_coding_log);
 	}
 	e = gf_sm_load_init(&load);
 	if (!e) e = gf_sm_load_run(&load);
 	gf_sm_load_done(&load);
 	if (logs) {
-		gf_log_set_tools(prev_tools);
-		gf_log_set_level(prev_level);
+		gf_log_set_tool_level(GF_LOG_CODING, GF_LOG_ERROR);
 		gf_log_set_callback(NULL, prev_logs);
 		fclose(logs);
 	}
@@ -2172,7 +2168,8 @@ static void on_m2ts_dump_event(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 		break;
 	case GF_M2TS_EVT_PMT_FOUND:
 		prog = (GF_M2TS_Program*)par;
-		if (prog->number != dumper->prog_number) break;
+		if (gf_list_count(ts->programs)>1 && prog->number!=dumper->prog_number)
+			break;
 		if (index_info->start_indexing) {
 			if (!index_info->first_pmt_position_valid) {
 				index_info->first_pmt_position_valid = 1;
@@ -2205,7 +2202,8 @@ static void on_m2ts_dump_event(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 		break;
 	case GF_M2TS_EVT_PMT_UPDATE:
 		prog = (GF_M2TS_Program*)par;
-		if (prog->number != dumper->prog_number) break;
+		if (gf_list_count(ts->programs)>1 && prog->number!=dumper->prog_number)
+			break;
 		fprintf(stdout, "Program list updated - %d streams\n", gf_list_count( ((GF_M2TS_Program*)par)->streams) );
 		if (index_info->start_indexing) {
 			if (!index_info->first_pmt_position_valid) {
@@ -2220,7 +2218,8 @@ static void on_m2ts_dump_event(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 		break;
 	case GF_M2TS_EVT_PMT_REPEAT:
 		prog = (GF_M2TS_Program*)par;
-		if (prog->number != dumper->prog_number) break;
+		if (gf_list_count(ts->programs)>1 && prog->number!=dumper->prog_number)
+			break;
 		if (index_info->start_indexing) {
 			if (!index_info->first_pmt_position_valid) {
 				index_info->first_pmt_position_valid = 1;
@@ -2254,12 +2253,14 @@ static void on_m2ts_dump_event(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 		break;
 	case GF_M2TS_EVT_PES_TIMING:
 		pck = par;
-		if (pck->stream->program->number != dumper->prog_number) break;
+		if (gf_list_count(ts->programs)>1 && pck->stream->program->number != dumper->prog_number)
+			break;
 
 		break;
 	case GF_M2TS_EVT_PES_PCK:
 		pck = par;
-		if (pck->stream->program->number != dumper->prog_number) break;
+		if (gf_list_count(ts->programs)>1 && pck->stream->program->number != dumper->prog_number)
+			break;
 		if (dumper->has_seen_pat) {
 			if (dumper->timestamps_info_file) {
 				GF_M2TS_PES *pes = pck->stream;
@@ -2319,7 +2320,8 @@ static void on_m2ts_dump_event(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 		break;
 	case GF_M2TS_EVT_PES_PCR:
 		pck = par;
-		if (pck->stream->program->number != dumper->prog_number) break;
+		if (gf_list_count(ts->programs)>1 && pck->stream->program->number != dumper->prog_number)
+			break;
 		if (dumper->timestamps_info_file) {
 			fprintf(dumper->timestamps_info_file, "%u\t%d\t%f\t\t\t\t%d\n", pck->stream->program->last_pcr_value_pck_number, pck->stream->pid, pck->PTS / (300*90000.0), (pck->flags & GF_M2TS_PES_PCK_DISCONTINUITY ? 1 : 0));
 		}

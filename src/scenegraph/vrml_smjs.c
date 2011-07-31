@@ -157,11 +157,11 @@ typedef struct
 } GF_RouteToFunction;
 
 
-#define _ScriptMessage(_c, _e, _msg) {	\
+#define _ScriptMessage(_c, _msg) {	\
 		GF_Node *_n = (GF_Node *) JS_GetContextPrivate(_c);	\
 		if (_n->sgprivate->scenegraph->script_action) {\
 			GF_JSAPIParam par;	\
-			par.info.e = (_e);			\
+			par.info.e = GF_SCRIPT_INFO;			\
 			par.info.msg = (_msg);		\
 			_n->sgprivate->scenegraph->script_action(_n->sgprivate->scenegraph->script_action_cbck, GF_JSAPI_OP_MESSAGE, NULL, &par);\
 		}	\
@@ -477,7 +477,7 @@ static JSBool SMJS_FUNCTION(JSPrint)
 	SMJS_ARGS	
 	if (JSVAL_IS_STRING(argv[0])) {
 		char *str = SMJS_CHARS(c, argv[0]);
-		_ScriptMessage(c, GF_SCRIPT_INFO, str);
+		_ScriptMessage(c, str);
 		SMJS_FREE(c, str);
 	}
 	return JS_TRUE;
@@ -996,7 +996,7 @@ static JSBool SMJS_FUNCTION(createVrmlFromString)
 	GF_ScriptPriv *priv;
 	GF_FieldInfo field;
 	/*BT/VRML from string*/
-	GF_List *gf_sm_load_bt_from_string(GF_SceneGraph *in_scene, char *node_str);
+	GF_List *gf_sm_load_bt_from_string(GF_SceneGraph *in_scene, char *node_str, Bool force_wrl);
 	char *str;
 	GF_List *nlist;
 	SMJS_ARGS
@@ -1005,7 +1005,7 @@ static JSBool SMJS_FUNCTION(createVrmlFromString)
 
 	if (!JSVAL_IS_STRING(argv[0])) return JS_FALSE;
 	str = SMJS_CHARS(c, argv[0]);
-	nlist = gf_sm_load_bt_from_string(sc_node->sgprivate->scenegraph, str);
+	nlist = gf_sm_load_bt_from_string(sc_node->sgprivate->scenegraph, str, 1);
 	SMJS_FREE(c, str);
 	if (!nlist) return JS_FALSE;
 

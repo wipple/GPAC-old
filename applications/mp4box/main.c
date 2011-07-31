@@ -164,8 +164,9 @@ void PrintGeneralUsage()
 {
 	fprintf(stdout, "General Options:\n"
 #ifdef GPAC_MEMORY_TRACKING
-			"\t-mem-track:  enables memory tracker\n"
+			" -mem-track:  enables memory tracker\n"
 #endif
+			" -strict-error        exits after the first error is reported\n"
 			" -inter time_in_ms    interleaves file data (track chunks of time_in_ms)\n"
 			"                       * Note 1: Interleaving is 0.5s by default\n"
 			"                       * Note 2: Performs drift checking accross tracks\n"
@@ -242,6 +243,9 @@ void PrintGeneralUsage()
 			" -frags-per-sidx N    sets the number of segments to be written in each SIDX box\n"
 			"                       If 0, a single SIDX box is used per segment\n"
 			"                       If -1, no SIDX box is used\n"
+			" -rap                 segments begin with random access points\n"
+			"                       Note: segment duration may not be exactly what asked by\n"
+			"                       \"-dash\" since raw video data is not modified\n"
 			" -segment-name name   sets the segment name for generated segments\n"
 			"                       If not set (default), segments are concatenated in output file\n"
 			" -segment-ext name    sets the segment extension. Default is m4s\n"
@@ -249,6 +253,7 @@ void PrintGeneralUsage()
 			"                       Ignored if segments are stored in the output file.\n"
 			" -daisy-chain         Uses daisy-chain SIDX instead of hierarchical. Ignored if frags/sidx is 0.\n"
 			" -dash-ctx FILE       Stores/restore DASH timing from FILE.\n"
+			" -dash-ts-prog N      program_number to be considered in case of an MPTS input file.\n"
 			"\n");
 }
 
@@ -623,6 +628,7 @@ void PrintUsage()
 			" -quiet               quiet mode\n"
 			" -noprog              disables progress\n"
 			" -v                   verbose mode\n"
+			" -logs                set log tools and levels, formatted as a ':'-separated list of toolX[:toolZ]@levelX\n"
 			" -version             gets build version\n"
 			);
 }
@@ -1227,13 +1233,12 @@ int mp4boxMain(int argc, char **argv)
 	GF_ISOFile *file;
 	Bool stream_rtp=0;
 	Bool live_scene=0;
-#ifdef GPAC_MEMORY_TRACKING
 	Bool enable_mem_tracker = 0;
-#endif
 	Bool dump_iod=0;
 	Bool daisy_chain_sidx=0;
 	Bool use_url_template=0;
 	Bool seg_at_rap =0;
+	char *gf_logs = NULL;
 	char *seg_ext = "m4s";
 
 	if (argc < 2) {
@@ -1290,6 +1295,11 @@ int mp4boxMain(int argc, char **argv)
 		else if (!stricmp(arg, "-version")) { PrintVersion(); return 0; }
 		else if (!stricmp(arg, "-sdp")) print_sdp = 1;
 		else if (!stricmp(arg, "-quiet")) quiet = 2;
+		else if (!stricmp(arg, "-logs")) {
+			CHECK_NEXT_ARG
+			gf_logs = argv[i+1];
+			i++;
+		}
 		else if (!stricmp(arg, "-noprog")) quiet = 1;
 		else if (!stricmp(arg, "-info")) {
 			print_info = 1;
@@ -1479,8 +1489,9 @@ int mp4boxMain(int argc, char **argv)
 #else
 			fprintf(stdout, "WARNING - GPAC not compiled with Memory Tracker - ignoring \"-mem-track\"\n");
 #endif
-		}
-		else if (!stricmp(arg, "-inter") || !stricmp(arg, "-old-inter")) {
+		} else if (!strcmp(arg, "-strict-error")) {
+			gf_log_set_strict_error(1);
+		} else if (!stricmp(arg, "-inter") || !stricmp(arg, "-old-inter")) {
 			CHECK_NEXT_ARG
 			InterleavingTime = atof(argv[i+1]) / 1000;
 			open_edit = 1;
@@ -2145,29 +2156,28 @@ int mp4boxMain(int argc, char **argv)
 		return 0;
 	}
 
-	{
-		u32 logtools = GF_LOG_CONTAINER|GF_LOG_SCENE|GF_LOG_PARSER|GF_LOG_AUTHOR|GF_LOG_CODING;
-#ifdef GPAC_MEMORY_TRACKING
-		if (enable_mem_tracker) logtools |= GF_LOG_MEMORY;
-#endif
+	/*init libgpac*/
+	gf_sys_init(enable_mem_tracker);
 
-		//gf_log_set_level((verbose>1) ? GF_LOG_DEBUG : (verbose ? GF_LOG_INFO : GF_LOG_WARNING) );
-		gf_log_set_level(verbose ? GF_LOG_DEBUG : GF_LOG_INFO);
-		gf_log_set_tools(logtools);
+	if (gf_logs) {
+		gf_log_set_tools_levels(gf_logs);
+	} else {
+		u32 level = verbose ? GF_LOG_DEBUG : GF_LOG_INFO;
+		gf_log_set_tool_level(GF_LOG_CONTAINER, level);
+		gf_log_set_tool_level(GF_LOG_SCENE, level);
+		gf_log_set_tool_level(GF_LOG_PARSER, level);
+		gf_log_set_tool_level(GF_LOG_AUTHOR, level);
+		gf_log_set_tool_level(GF_LOG_CODING, level);
+#ifdef GPAC_MEMORY_TRACKING
+		if (enable_mem_tracker)
+			gf_log_set_tool_level(GF_LOG_MEMORY, level);
+#endif
 		if (quiet) {
-			if (quiet==2) gf_log_set_level(0);
+			if (quiet==2) gf_log_set_tool_level(GF_LOG_ALL, GF_LOG_QUIET);
 			gf_set_progress_callback(NULL, progress_quiet);
 
 		}
-
 	}
-
-	/*init libgpac*/
-#ifdef GPAC_MEMORY_TRACKING
-	gf_sys_init(enable_mem_tracker);
-#else
-	gf_sys_init(0);
-#endif
 
 	if (do_mpd) {
 		Bool remote = 0;

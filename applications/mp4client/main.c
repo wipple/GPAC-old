@@ -133,13 +133,14 @@ void PrintUsage()
 		"\t-strict-error:  exit when the player reports its first error\n"
 		"\t-opt	option:    Overrides an option in the configuration file. String format is section:key=value\n"
 		"\t-log-file file: sets output log file. Also works with -lf\n"
-		"\t-log-level lev: sets log level. Also works with -ll. Possible values are:\n"
+		"\t-logs log_args: sets log tools and levels, formatted as a ':'-separated list of toolX[:toolZ]@levelX\n"
+		"\t                 levelX can be one of:\n"
+		"\t        \"quiet\"      : skip logs\n"
 		"\t        \"error\"      : logs only error messages\n"
 		"\t        \"warning\"    : logs error+warning messages\n"
 		"\t        \"info\"       : logs error+warning+info messages\n"
 		"\t        \"debug\"      : logs all messages\n"
-		"\n"
-		"\t-log-tools lt:  sets tool(s) to log. Also works with -lt. List of \':\'-separated values:\n"
+		"\t                 toolX can be one of:\n"
 		"\t        \"core\"       : libgpac core\n"
 		"\t        \"coding\"     : bitstream formats (audio, video, scene)\n"
 		"\t        \"container\"  : container formats (ISO File, MPEG-2 TS, AVI, ...)\n"
@@ -153,11 +154,18 @@ void PrintUsage()
 		"\t        \"scene\"      : scene graph and scene manager\n"
 		"\t        \"script\"     : scripting engine messages\n"
 		"\t        \"interact\"   : interaction engine (events, scripts, etc)\n"
+		"\t        \"smil\"       : SMIL timing engine\n"
 		"\t        \"compose\"    : composition engine (2D, 3D, etc)\n"
-		"\t        \"service\"    : network service management\n"
 		"\t        \"mmio\"       : Audio/Video HW I/O management\n"
-		"\t        \"none\"       : no tool logged\n"
-		"\t        \"all\"        : all tools logged\n"
+		"\t        \"rti\"        : various run-time stats\n"
+		"\t        \"cache\"      : HTTP cache subsystem\n"
+		"\t        \"audio\"      : Audio renderer and mixers\n"
+#ifdef GPAC_MEMORY_TRACKING
+		"\t        \"mem\"        : GPAC memory tracker\n"
+#endif
+		"\t        \"module\"     : GPAC modules debugging\n"
+		"\t        \"mutex\"      : mutex\n"
+		"\t        \"all\"        : all tools logged - other tools can be specified afterwards.\n"
 		"\n"
 		"\t-size WxH:      specifies visual size (default: scene size)\n"
 #if defined(__DARWIN__) || defined(__APPLE__)
@@ -475,14 +483,15 @@ Bool GPAC_EventProc(void *ptr, GF_Event *evt)
 
 		if (!evt->message.message) return 0;
 
-		if (evt->message.error==GF_SCRIPT_INFO) {
-			GF_LOG(GF_LOG_INFO, GF_LOG_SCRIPT, ("[Script] %s\n", evt->message.message));
-		} else if (evt->message.error) {
+		if (evt->message.error) {
 			if (!is_connected) last_error = evt->message.error;
-			GF_LOG(GF_LOG_ERROR, GF_LOG_ALL, ("%s %s: %s\n", evt->message.message, servName, gf_error_to_string(evt->message.error)));
+			if (evt->message.error==GF_SCRIPT_INFO) {
+				GF_LOG(GF_LOG_INFO, GF_LOG_CONSOLE, ("%s\n", evt->message.message));
+			} else {
+				GF_LOG(GF_LOG_ERROR, GF_LOG_CONSOLE, ("%s %s: %s\n", servName, evt->message.message, gf_error_to_string(evt->message.error)));
+			}
 		} else if (!be_quiet) 
-			/*TODO: put a GF_LOG here*/
-			fprintf(stdout, "%s %s\r", evt->message.message, servName);
+			GF_LOG(GF_LOG_INFO, GF_LOG_CONSOLE, ("%s %s\n", servName, evt->message.message));
 	}
 		break;
 	case GF_EVENT_PROGRESS:
@@ -844,8 +853,7 @@ static void init_rti_logs(char *rti_file, char *url, Bool use_rtix)
 		/*turn on RTI loging*/
 		if (use_rtix) {
 			gf_log_set_callback(NULL, on_gpac_log);
-			gf_log_set_level(GF_LOG_DEBUG);
-			gf_log_set_tools(GF_LOG_RTI);
+			gf_log_set_tool_level(GF_LOG_RTI, GF_LOG_DEBUG);
 
 			GF_LOG(GF_LOG_DEBUG, GF_LOG_RTI, ("[RTI] System state when enabling log\n"));
 		} else if (log_time_start) {
@@ -924,7 +932,10 @@ int main (int argc, char **argv)
 	cfg_file = gf_cfg_init(the_cfg, NULL);
 	if (!cfg_file) {
 		fprintf(stdout, "Error: Configuration File not found\n");
-		if (logfile) fclose(logfile);
+		return 1;
+	}
+	/*if logs are specified, use them*/
+	if (gf_log_set_tools_levels( gf_cfg_get_key(cfg_file, "General", "Logs") ) != GF_OK) {
 		return 1;
 	}
 
@@ -1001,16 +1012,10 @@ int main (int argc, char **argv)
 			logfile = gf_f64_open(argv[i+1], "wt");
 			gf_log_set_callback(logfile, on_gpac_log);
 			i++;
-		} else if (!strcmp(arg, "-log-level") || !strcmp(arg, "-ll")) {
-			u32 flags = gf_log_parse_level(argv[i+1]);
-			if (!flags) return 1;
-			gf_log_set_level(flags);
-			logs_set = 1;
-			i++;
-		} else if (!strcmp(arg, "-log-tools") || !strcmp(arg, "-lt")) {
-			u32 flags = gf_log_parse_tools(argv[i+1]);
-			if (!flags) return 1;
-			gf_log_set_tools(flags);
+		} else if (!strcmp(arg, "-logs") ) {
+			if (gf_log_set_tools_levels(argv[i+1]) != GF_OK) {
+				return 1;
+			}
 			logs_set = 1;
 			i++;
 		} else if (!strcmp(arg, "-log-clock") || !strcmp(arg, "-lc")) {
@@ -1106,8 +1111,7 @@ int main (int argc, char **argv)
 	if (dump_mode) rti_file = NULL;
 
 	if (!logs_set) {
-		gf_log_set_level(GF_LOG_ERROR);
-		gf_log_set_tools(0xFFFFFFFF);
+		gf_log_set_tool_level(GF_LOG_ALL, GF_LOG_ERROR);
 	}
 
 	if (rti_file) init_rti_logs(rti_file, url_arg, use_rtix);
@@ -1135,7 +1139,7 @@ int main (int argc, char **argv)
 		if (logfile) fclose(logfile);
 		return 1;
 	}
-	fprintf(stdout, "Modules Loaded (%d found in %s)\n", i, str);
+	fprintf(stdout, "Modules Found (%d in dir %s)\n", i, str);
 
 	user.config = cfg_file;
 	user.EventProc = GPAC_EventProc;
@@ -1148,6 +1152,7 @@ int main (int argc, char **argv)
 	if (threading_flags & (GF_TERM_NO_DECODER_THREAD|GF_TERM_NO_COMPOSITOR_THREAD) ) term_step = 1;
 
 	fprintf(stdout, "Loading GPAC Terminal\n");	
+	i = gf_sys_clock();
 	term = gf_term_new(&user);
 	if (!term) {
 		fprintf(stdout, "\nInit error - check you have at least one video out and one rasterizer...\nFound modules:\n");
@@ -1158,7 +1163,7 @@ int main (int argc, char **argv)
 		if (logfile) fclose(logfile);
 		return 1;
 	}
-	fprintf(stdout, "Terminal Loaded\n");
+	fprintf(stdout, "Terminal Loaded in %d ms\n", gf_sys_clock()-i);
 
 	if (dump_mode) {
 //		gf_term_set_option(term, GF_OPT_VISIBLE, 0);
@@ -1571,36 +1576,17 @@ force_input:
 
 		case 'L':
 		{
-			u32 flags;
-			char szLog[1024];
-			fprintf(stdout, "Enter new log level:\n");
-			if (1 > scanf("%s", szLog)){
+			char szLog[1024], *cur_logs;
+			cur_logs = gf_log_get_tools_levels();
+			fprintf(stdout, "Enter new log level (current tools %s):\n", cur_logs);
+			if (scanf("%s", szLog) < 1) {
 			    fprintf(stderr, "Cannot read new log level, aborting.\n");
 			    break;
 			}
-			flags = gf_log_parse_level(szLog);
-			if (!flags)
-				fprintf(stderr, "Wrong log level specified, aborting.\n");
-			else
-				gf_log_set_level(flags);
+			gf_log_modify_tools_levels(szLog);
 		}
 			break;
-		case 'T':
-		{
-			u32 flags;
-			char szLog[1024];
-			fprintf(stdout, "Enter new log tools:\n");
-			if (1 > scanf("%s", szLog)) {
-			    fprintf(stderr, "Cannot read new log tools, aborting.\n");
-			    break;
-			}
-			flags = gf_log_parse_tools(szLog);
-			if (!flags)
-				fprintf(stderr, "Wrong log tools specified, aborting.\n");
-			else
-				gf_log_set_tools(flags);
-		}
-			break;
+
 		case 'g':
 		{
 			GF_SystemRTInfo rti;
@@ -1697,13 +1683,14 @@ force_input:
 		}
 	}
 
+	i = gf_sys_clock();
 	gf_term_disconnect(term);
 	if (rti_file) UpdateRTInfo("Disconnected\n");
 
 	fprintf(stdout, "Deleting terminal... ");
 	if (playlist) fclose(playlist);
 	gf_term_del(term);
-	fprintf(stdout, "OK\n");
+	fprintf(stdout, "done (in %d ms)\n", gf_sys_clock() - i);
 
 	fprintf(stdout, "GPAC cleanup ...\n");
 	gf_modules_del(user.modules);
@@ -1816,7 +1803,6 @@ void ViewOD(GF_Terminal *term, u32 OD_ID, u32 number)
 	GF_MediaInfo odi;
 	u32 i, j, count, d_enum,id;
 	GF_Err e;
-	char code[5];
 	NetStatCommand com;
 	GF_ObjectManager *odm, *root_odm = gf_term_get_root_object(term);
 	if (!root_odm) return;
@@ -1925,64 +1911,42 @@ void ViewOD(GF_Terminal *term, u32 OD_ID, u32 number)
 		if (esd->dependsOnESID) fprintf(stdout, "\tDepends on Stream ID %d for decoding\n", esd->dependsOnESID);
 
 		switch (esd->decoderConfig->streamType) {
-		case GF_STREAM_OD: fprintf(stdout, "\tOD Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
-		case GF_STREAM_OCR: fprintf(stdout, "\tOCR Stream\n"); break;
-		case GF_STREAM_SCENE: fprintf(stdout, "\tScene Description Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
+		case GF_STREAM_OD:
+			fprintf(stdout, "\tOD Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
+		case GF_STREAM_OCR:
+			fprintf(stdout, "\tOCR Stream\n");
+			break;
+		case GF_STREAM_SCENE:
+			fprintf(stdout, "\tScene Description Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
 		case GF_STREAM_VISUAL:
-			fprintf(stdout, "\tVisual Stream - media type: ");
-			switch (esd->decoderConfig->objectTypeIndication) {
-			case GPAC_OTI_VIDEO_MPEG4_PART2: fprintf(stdout, "MPEG-4\n"); break;
-			case GPAC_OTI_VIDEO_MPEG2_SIMPLE: fprintf(stdout, "MPEG-2 Simple Profile\n"); break;
-			case GPAC_OTI_VIDEO_MPEG2_MAIN: fprintf(stdout, "MPEG-2 Main Profile\n"); break;
-			case GPAC_OTI_VIDEO_MPEG2_SNR: fprintf(stdout, "MPEG-2 SNR Profile\n"); break;
-			case GPAC_OTI_VIDEO_MPEG2_SPATIAL: fprintf(stdout, "MPEG-2 Spatial Profile\n"); break;
-			case GPAC_OTI_VIDEO_MPEG2_HIGH: fprintf(stdout, "MPEG-2 High Profile\n"); break;
-			case GPAC_OTI_VIDEO_MPEG2_422: fprintf(stdout, "MPEG-2 422 Profile\n"); break;
-			case GPAC_OTI_VIDEO_MPEG1: fprintf(stdout, "MPEG-1\n"); break;
-			case GPAC_OTI_IMAGE_JPEG: fprintf(stdout, "JPEG\n"); break;
-			case GPAC_OTI_IMAGE_PNG: fprintf(stdout, "PNG\n"); break;
-			case GPAC_OTI_IMAGE_JPEG_2000: fprintf(stdout, "JPEG2000\n"); break;
-				
-			case GPAC_OTI_MEDIA_GENERIC:
-				memcpy(code, esd->decoderConfig->decoderSpecificInfo->data, 4);
-				code[4] = 0;
-				fprintf(stdout, "GPAC Intern (%s)\n", code);
-				break;
-			default:
-				fprintf(stdout, "Private Type (0x%x)\n", esd->decoderConfig->objectTypeIndication);
-				break;
-			}
+			fprintf(stdout, "\tVisual Stream - media type: %s", gf_esd_get_textual_description(esd));
 			break;
-
 		case GF_STREAM_AUDIO:
-			fprintf(stdout, "\tAudio Stream - media type: ");
-			switch (esd->decoderConfig->objectTypeIndication) {
-			case GPAC_OTI_AUDIO_AAC_MPEG4: fprintf(stdout, "MPEG-4\n"); break;
-			case GPAC_OTI_AUDIO_AAC_MPEG2_MP: fprintf(stdout, "MPEG-2 AAC Main Profile\n"); break;
-			case GPAC_OTI_AUDIO_AAC_MPEG2_LCP: fprintf(stdout, "MPEG-2 AAC LowComplexity Profile\n"); break;
-			case GPAC_OTI_AUDIO_AAC_MPEG2_SSRP: fprintf(stdout, "MPEG-2 AAC Scalable Sampling Rate Profile\n"); break;
-			case GPAC_OTI_AUDIO_MPEG2_PART3: fprintf(stdout, "MPEG-2 Audio\n"); break;
-			case GPAC_OTI_AUDIO_MPEG1: fprintf(stdout, "MPEG-1 Audio\n"); break;
-			case GPAC_OTI_AUDIO_EVRC_VOICE: fprintf(stdout, "EVRC Audio\n"); break;
-			case GPAC_OTI_AUDIO_SMV_VOICE: fprintf(stdout, "SMV Audio\n"); break;
-			case GPAC_OTI_AUDIO_13K_VOICE: fprintf(stdout, "QCELP Audio\n"); break;
-			case GPAC_OTI_MEDIA_GENERIC:
-				memcpy(code, esd->decoderConfig->decoderSpecificInfo->data, 4);
-				code[4] = 0;
-				fprintf(stdout, "GPAC Intern (%s)\n", code);
-				break;
-			default:
-				fprintf(stdout, "Private Type (0x%x)\n", esd->decoderConfig->objectTypeIndication);
-				break;
-			}
+			fprintf(stdout, "\tAudio Stream - media type: %s", gf_esd_get_textual_description(esd));
 			break;
-		case GF_STREAM_MPEG7: fprintf(stdout, "\tMPEG-7 Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
-		case GF_STREAM_IPMP: fprintf(stdout, "\tIPMP Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
-		case GF_STREAM_OCI: fprintf(stdout, "\tOCI Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
-		case GF_STREAM_MPEGJ: fprintf(stdout, "\tMPEGJ Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
-		case GF_STREAM_INTERACT: fprintf(stdout, "\tUser Interaction Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
-		case GF_STREAM_TEXT: fprintf(stdout, "\tStreaming Text Stream - version %d\n", esd->decoderConfig->objectTypeIndication); break;
-		default: fprintf(stdout, "Unknown Stream\r\n"); break;
+		case GF_STREAM_MPEG7:
+			fprintf(stdout, "\tMPEG-7 Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
+		case GF_STREAM_IPMP:
+			fprintf(stdout, "\tIPMP Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
+		case GF_STREAM_OCI:
+			fprintf(stdout, "\tOCI Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
+		case GF_STREAM_MPEGJ:
+			fprintf(stdout, "\tMPEGJ Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
+		case GF_STREAM_INTERACT:
+			fprintf(stdout, "\tUser Interaction Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
+		case GF_STREAM_TEXT:
+			fprintf(stdout, "\tStreaming Text Stream - version %d\n", esd->decoderConfig->objectTypeIndication);
+			break;
+		default:
+			fprintf(stdout, "\tUnknown Stream\n");
+			break;
 		}
 
 		fprintf(stdout, "\tBuffer Size %d\n\tAverage Bitrate %d bps\n\tMaximum Bitrate %d bps\n", esd->decoderConfig->bufferSizeDB, esd->decoderConfig->avgBitrate, esd->decoderConfig->maxBitrate);

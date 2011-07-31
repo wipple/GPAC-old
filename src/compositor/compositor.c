@@ -1837,7 +1837,7 @@ static void gf_sc_recompute_ar(GF_Compositor *compositor, GF_Node *top_node)
 #ifndef GPAC_DISABLE_LOG
 		u32 time=0;
 		
-		if ((gf_log_get_level() >= GF_LOG_DEBUG) && (gf_log_get_tools() & GF_LOG_RTI)) { 
+		if (gf_log_tool_level_on(GF_LOG_RTI, GF_LOG_DEBUG)) { 
 			time = gf_sys_clock();
 		}
 #endif
@@ -1856,7 +1856,7 @@ static void gf_sc_recompute_ar(GF_Compositor *compositor, GF_Node *top_node)
 		gf_sc_next_frame_state(compositor, GF_SC_DRAW_NONE);
 
 #ifndef GPAC_DISABLE_LOG
-		if ((gf_log_get_level() >= GF_LOG_DEBUG) && (gf_log_get_tools() & GF_LOG_RTI)) { 
+		if (gf_log_tool_level_on(GF_LOG_RTI, GF_LOG_DEBUG)) { 
 			compositor->visual_config_time = gf_sys_clock() - time;
 		}
 #endif
@@ -2410,6 +2410,7 @@ void gf_sc_traverse_subscene(GF_Compositor *compositor, GF_Node *inline_parent, 
 		gf_mx_copy(mx_bck, tr_state->model_matrix);
 
 		gf_mx_from_mx2d(&mx, &transf);
+
 		/*copy over z scale*/
 		mx.m[10] = mx.m[5];
 		gf_mx_add_matrix(&tr_state->model_matrix, &mx);
@@ -2552,7 +2553,11 @@ static Bool gf_sc_on_event_ex(GF_Compositor *compositor , GF_Event *event, Bool 
 		}
 		break;
 	case GF_EVENT_SIZE:
-		/*resize message from plugin: if we own the output, resize*/
+		/*user consummed the resize event, do nothing*/
+		if ( gf_term_send_event(compositor->term, event) ) 
+			return 1;
+
+		/*not consummed and compositor "owns" the output window (created by the output module), resize*/
 		if (!compositor->user->os_window_handler) {
 			/*EXTRA CARE HERE: the caller (video output) is likely a different thread than the compositor one, and the
 			compositor may be locked on the video output (flush or whatever)!!
@@ -2569,11 +2574,7 @@ static Bool gf_sc_on_event_ex(GF_Compositor *compositor , GF_Event *event, Bool 
 			}
 			if (lock_ok) gf_sc_lock(compositor, 0);
 		}
-		/*otherwise let the user decide*/
-		else {
-			return gf_term_send_event(compositor->term, event);
-		}
-		break;
+		return 0;
 
 	case GF_EVENT_KEYDOWN:
 	case GF_EVENT_KEYUP:

@@ -126,65 +126,187 @@ void gf_set_progress_callback(void *_user_cbk, gf_on_progress_cbk _prog_cbk)
 	user_cbk = _user_cbk;
 }
 
+/*ENTRIES MUST BE IN THE SAME ORDER AS LOG_TOOL DECLARATION IN <gpac/tools.h>*/
+static struct log_tool_info {u32 type;  const char *name; u32 level; } global_log_tools [] =
+{
+	{ GF_LOG_CORE, "core", GF_LOG_ERROR },
+	{ GF_LOG_CODING, "coding", GF_LOG_ERROR },
+	{ GF_LOG_CONTAINER, "container", GF_LOG_ERROR },
+	{ GF_LOG_NETWORK, "network", GF_LOG_ERROR },
+	{ GF_LOG_RTP, "rtp", GF_LOG_ERROR },
+	{ GF_LOG_AUTHOR, "author", GF_LOG_ERROR },
+	{ GF_LOG_SYNC, "sync", GF_LOG_ERROR },
+	{ GF_LOG_CODEC, "codec", GF_LOG_ERROR },
+	{ GF_LOG_PARSER, "parser", GF_LOG_ERROR },
+	{ GF_LOG_MEDIA, "media", GF_LOG_ERROR },
+	{ GF_LOG_SCENE, "scene", GF_LOG_ERROR },
+	{ GF_LOG_SCRIPT, "script", GF_LOG_ERROR },
+	{ GF_LOG_INTERACT, "interact", GF_LOG_ERROR },
+	{ GF_LOG_COMPOSE, "compose", GF_LOG_ERROR },
+	{ GF_LOG_CACHE, "cache", GF_LOG_ERROR },
+	{ GF_LOG_MMIO, "mmio", GF_LOG_ERROR },
+	{ GF_LOG_RTI, "rti", GF_LOG_ERROR },
+	{ GF_LOG_SMIL, "smil", GF_LOG_ERROR },
+	{ GF_LOG_MEMORY, "mem", GF_LOG_ERROR },
+	{ GF_LOG_AUDIO, "audio", GF_LOG_ERROR },
+	{ GF_LOG_MODULE, "module", GF_LOG_ERROR },
+	{ GF_LOG_MUTEX, "mutex", GF_LOG_ERROR },
+	{ GF_LOG_CONSOLE, "console", GF_LOG_INFO }
+};
 
-u32 global_log_level = 0;
-u32 global_log_tools = 0;
-
-u32 gf_log_parse_level(const char *val)
+GF_EXPORT
+GF_Err gf_log_modify_tools_levels(const char *val)
 {
 #ifndef GPAC_DISABLE_LOG
-	if (!val) return 0;
-	if (!stricmp(val, "error")) return GF_LOG_ERROR;
-	if (!stricmp(val, "warning")) return GF_LOG_WARNING;
-	if (!stricmp(val, "info")) return GF_LOG_INFO;
-	if (!stricmp(val, "debug")) return GF_LOG_DEBUG;
-	fprintf(stderr, "Unknown log level specified: %s\n", val);
-#endif
-	return 0;
-}
-
-u32 gf_log_parse_tools(const char *val)
-{
-	u32 flags = 0;
-#ifndef GPAC_DISABLE_LOG
-	char *sep;
-	while (val) {
-		sep = strchr(val, ':');
-		if (sep) sep[0] = 0;
-		if (!stricmp(val, "core")) flags |= GF_LOG_CORE;
-		else if (!stricmp(val, "coding")) flags |= GF_LOG_CODING;
-		else if (!stricmp(val, "container")) flags |= GF_LOG_CONTAINER;
-		else if (!stricmp(val, "network")) flags |= GF_LOG_NETWORK;
-		else if (!stricmp(val, "rtp")) flags |= GF_LOG_RTP;
-		else if (!stricmp(val, "author")) flags |= GF_LOG_AUTHOR;
-		else if (!stricmp(val, "sync")) flags |= GF_LOG_SYNC;
-		else if (!stricmp(val, "codec")) flags |= GF_LOG_CODEC;
-		else if (!stricmp(val, "parser")) flags |= GF_LOG_PARSER;
-		else if (!stricmp(val, "media")) flags |= GF_LOG_MEDIA;
-		else if (!stricmp(val, "scene")) flags |= GF_LOG_SCENE;
-		else if (!stricmp(val, "script")) flags |= GF_LOG_SCRIPT;
-		else if (!stricmp(val, "interact")) flags |= GF_LOG_INTERACT;
-		else if (!stricmp(val, "smil")) flags |= GF_LOG_SMIL;
-		else if (!stricmp(val, "compose")) flags |= GF_LOG_COMPOSE;
-		else if (!stricmp(val, "mmio")) flags |= GF_LOG_MMIO;
-		else if (!stricmp(val, "rti")) flags |= GF_LOG_RTI;
-		else if (!stricmp(val, "cache")) flags |= GF_LOG_CACHE;
-		else if (!stricmp(val, "audio")) flags |= GF_LOG_AUDIO;
-		else if (!stricmp(val, "mem")) flags |= GF_LOG_MEMORY;
-		else if (!stricmp(val, "module")) flags |= GF_LOG_MODULE;
-		else if (!stricmp(val, "mutex")) flags |= GF_LOG_MUTEX;
-		else if (!stricmp(val, "none")) flags = 0;
-		else if (!stricmp(val, "all")) flags = 0xFFFFFFFF;
-		else {
-			fprintf(stderr, "Unknown log tool specified: %s\n", val);
-			return 0;
+	u32 level;
+	char *sep, *sep_level;
+	while (val && strlen(val)) {
+		const char *next_val = NULL;
+		const char *tools = NULL;
+		/*look for log level*/
+		sep_level = strchr(val, '@');
+		if (!sep_level) {
+			fprintf(stderr, "Unrecognized log format %s - expecting logTool@logLevel\n", val);
+			return GF_BAD_PARAM;
 		}
-		if (!sep) break;
-		sep[0] = ':';
-		val = sep+1;
+
+		level = 0;
+		if (!strnicmp(sep_level+1, "error", 5)) {
+			level = GF_LOG_ERROR;
+			next_val = sep_level+1 + 5;
+		}
+		else if (!strnicmp(sep_level+1, "warning", 7)) {
+			level = GF_LOG_WARNING;
+			next_val = sep_level+1 + 7;
+		}
+		else if (!strnicmp(sep_level+1, "info", 4)) {
+			level = GF_LOG_INFO;
+			next_val = sep_level+1 + 4;
+		}
+		else if (!strnicmp(sep_level+1, "debug", 5)) {
+			level = GF_LOG_DEBUG;
+			next_val = sep_level+1 + 5;
+		}
+		else if (!strnicmp(sep_level+1, "quiet", 5)) {
+			level = GF_LOG_QUIET;
+			next_val = sep_level+1 + 5;
+		}
+		else {
+			fprintf(stderr, "Unknown log level specified: %s\n", sep_level+1);
+			return GF_BAD_PARAM;
+		}
+	
+		sep_level[0] = 0;
+		tools = val;
+		while (tools) {
+			u32 i;
+
+			sep = strchr(tools, ':');
+			if (sep) sep[0] = 0;
+
+			if (!stricmp(tools, "all")) {
+				for (i=0; i<GF_LOG_TOOL_MAX - 1; i++) 
+					global_log_tools[i].level = level;
+			}
+			else {
+				Bool found = 0;
+				for (i=0; i<GF_LOG_TOOL_MAX - 1; i++) {
+					if (!strcmp(global_log_tools[i].name, tools)) {
+						global_log_tools[i].level = level;
+						found = 1;
+					}
+				}
+				if (!found) {
+					sep_level[0] = '@';
+					if (sep) sep[0] = ':';
+					fprintf(stderr, "Unknown log tool specified: %s\n", val);
+					return GF_BAD_PARAM;
+				}
+			}
+
+			if (!sep) break;
+			sep[0] = ':';
+			tools = sep+1;
+		}
+
+		sep_level[0] = '@';
+		if (!next_val[0]) break;
+		val = next_val+1;
 	}
 #endif
-	return flags;
+	return GF_OK;
+}
+
+GF_EXPORT
+GF_Err gf_log_set_tools_levels(const char *val)
+{
+#ifndef GPAC_DISABLE_LOG
+	u32 i;
+	for (i=0; i<GF_LOG_TOOL_MAX - 1; i++) 
+		global_log_tools[i].level = GF_LOG_ERROR;
+
+	return gf_log_modify_tools_levels(val);
+#else
+	return GF_OK;
+#endif
+}
+
+GF_EXPORT
+char *gf_log_get_tools_levels()
+{
+#ifndef GPAC_DISABLE_LOG
+	u32 i, level, len;
+	char szLogs[GF_MAX_PATH];
+	char szLogTools[GF_MAX_PATH];
+	strcpy(szLogTools, "");
+	
+	level = GF_LOG_QUIET;
+	while (level <= GF_LOG_DEBUG) {
+		u32 nb_tools = 0;
+		strcpy(szLogs, "");
+		for (i=0; i<GF_LOG_TOOL_MAX - 1; i++) {
+			if (global_log_tools[i].level == level) {
+				strcat(szLogs, global_log_tools[i].name);
+				strcat(szLogs, ":");
+				nb_tools++;
+			}
+		}
+		if (nb_tools) {
+			char *levelstr = "@error";
+			if (level==GF_LOG_QUIET) levelstr = "&quiet";
+			else if (level==GF_LOG_ERROR) levelstr = "@error";
+			else if (level==GF_LOG_WARNING) levelstr = "@warning";
+			else if (level==GF_LOG_INFO) levelstr = "@info";
+			else if (level==GF_LOG_DEBUG) levelstr = "@debug";
+
+			if (nb_tools>GF_LOG_TOOL_MAX/2) {
+				strcpy(szLogs, szLogTools);
+				strcpy(szLogTools, "all");
+				strcat(szLogTools, levelstr);
+				if (strlen(szLogs)) {
+					strcat(szLogTools, ":");
+					strcat(szLogTools, szLogs);
+				}
+			} else {
+				if (strlen(szLogTools)) {
+					strcat(szLogTools, ":");
+				}
+				/*remove last ':' from tool*/
+				szLogs[ strlen(szLogs) - 1 ] = 0;
+				strcat(szLogTools, szLogs);
+				strcat(szLogTools, levelstr);
+			}
+		}
+		level++;
+	}
+	len = strlen(szLogTools);
+	if (len) {
+		/*remove last ':' from level*/
+		if (szLogTools[ len-1 ] == ':') szLogTools[ len-1 ] = 0;
+		return gf_strdup(szLogTools);
+	}
+#endif
+	return gf_strdup("all@quiet");
 }
 
 #ifndef GPAC_DISABLE_LOG
@@ -192,10 +314,12 @@ u32 call_lev = 0;
 u32 call_tool = 0;
 
 GF_EXPORT
-u32 gf_log_get_level() { return global_log_level; }
-
-GF_EXPORT
-u32 gf_log_get_tools() { return global_log_tools; }
+Bool gf_log_tool_level_on(u32 log_tool, u32 log_level)
+{
+	assert(log_tool<GF_LOG_TOOL_MAX); 
+	if (global_log_tools[log_tool].level >= log_level) return 1;
+	return 0;
+}
 
 void default_log_callback(void *cbck, u32 level, u32 tool, const char* fmt, va_list vlist)
 {
@@ -220,21 +344,22 @@ void gf_log(const char *fmt, ...)
 }
 
 GF_EXPORT
-void gf_log_set_level(u32 level)
-{
-	global_log_level = level;
-}
-
-GF_EXPORT
 void gf_log_set_strict_error(Bool strict)
 {
 	log_exit_on_error = strict;
 }
 
 GF_EXPORT
-void gf_log_set_tools(u32 modules)
+void gf_log_set_tool_level(u32 tool, u32 level)
 {
-	global_log_tools = modules;
+	assert(tool<=GF_LOG_TOOL_MAX); 
+	if (tool==GF_LOG_ALL) {
+		u32 i;
+		for (i=0; i<GF_LOG_TOOL_MAX-1; i++)
+			global_log_tools[i].level = level;
+	} else {
+		global_log_tools[tool].level = level;
+	}
 }
 
 GF_EXPORT
@@ -253,6 +378,7 @@ gf_log_cbk gf_log_set_callback(void *usr_cbk, gf_log_cbk cbk)
 	user_log_cbk = usr_cbk;
 	return prev_cbk;
 }
+
 #else
 GF_EXPORT
 void gf_log(const char *fmt, ...)
@@ -263,28 +389,15 @@ void gf_log_lt(u32 ll, u32 lt)
 {
 }
 GF_EXPORT
-void gf_log_set_level(u32 level)
-{
-}
-GF_EXPORT
 void gf_log_set_strict_error(Bool strict)
 {
 }
-GF_EXPORT
-void gf_log_set_tools(u32 modules)
-{
-}
+
 GF_EXPORT
 gf_log_cbk gf_log_set_callback(void *usr_cbk, gf_log_cbk cbk)
 {
 	return NULL;
 }
-GF_EXPORT
-u32 gf_log_get_level() { return 0; }
-
-GF_EXPORT
-u32 gf_log_get_tools() { return 0; }
-
 #endif
 
 
@@ -292,8 +405,6 @@ GF_EXPORT
 const char *gf_error_to_string(GF_Err e)
 {
 	switch (e) {
-	case GF_SCRIPT_INFO:
-		return "Script message";
 	case GF_EOS:
 		return "End Of Stream / File";
 	case GF_OK:

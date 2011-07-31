@@ -23,17 +23,17 @@
 #define gf_iphone_set_sdl_audio_module _gf_iphone_set_sdl_audio_module
 #define gf_term_step_clocks _gf_term_step_clocks
 #define gf_prompt_set_echo_off _gf_prompt_set_echo_off
-#define gf_log_get_tools _gf_log_get_tools
-#define gf_log_get_level _gf_log_get_level
+#define gf_log_tool_level_on _gf_log_tool_level_on
 #define gf_cfg_set_key _gf_cfg_set_key
 #define gf_cfg_get_section_count _gf_cfg_get_section_count
 #define gf_term_get_service_info _gf_term_get_service_info
 #define gf_term_set_size _gf_term_set_size
 #define gf_sys_get_rti _gf_sys_get_rti
-#define gf_log_set_tools _gf_log_set_tools
 #define gf_term_play_from_time _gf_term_play_from_time
 #define gf_malloc _gf_malloc
-#define gf_log_set_level _gf_log_set_level
+#define gf_log_set_tools_levels _gf_log_set_tools_levels
+#define gf_log_set_tool_level _gf_log_set_tool_level
+#define gf_log_modify_tools_levels _gf_log_modify_tools_levels
 #define gf_iphone_set_sdl_video_module _gf_iphone_set_sdl_video_module
 #define gf_term_get_option _gf_term_get_option
 #define gf_term_user_event _gf_term_user_event
@@ -89,8 +89,6 @@
 #define gf_term_get_root_object _gf_term_get_root_object
 #define gf_term_get_time_in_ms _gf_term_get_time_in_ms
 #define gf_term_connect_with_path _gf_term_connect_with_path
-#define gf_log_parse_tools _gf_log_parse_tools
-#define gf_log_parse_level _gf_log_parse_level
 #define gf_term_switch_quality _gf_term_switch_quality
 #define gf_term_release_screen_buffer _gf_term_release_screen_buffer
 #define gf_term_get_screen_buffer _gf_term_get_screen_buffer
@@ -141,10 +139,8 @@ extern void (*gf_iphone_set_sdl_audio_module)(void* (*SDL_Module) (void));
 extern GF_Err (*gf_term_step_clocks)(GF_Terminal * term, u32 ms_diff);
 #undef gf_prompt_set_echo_off
 extern void (*gf_prompt_set_echo_off)(Bool echo_off);
-#undef gf_log_get_tools
-extern u32 (*gf_log_get_tools)();
-#undef gf_log_get_level
-extern u32 (*gf_log_get_level)();
+#undef gf_log_tool_level_on
+extern u32 (*gf_log_tool_level_on)();
 #undef gf_cfg_set_key
 extern GF_Err (*gf_cfg_set_key)(GF_Config *cfgFile, const char *secName, const char *keyName, const char *keyValue);
 #undef gf_cfg_get_section_count
@@ -155,14 +151,16 @@ extern GF_Err (*gf_term_get_service_info)(GF_Terminal *term, GF_ObjectManager *o
 extern GF_Err (*gf_term_set_size)(GF_Terminal *term, u32 NewWidth, u32 NewHeight);
 #undef gf_sys_get_rti
 extern Bool (*gf_sys_get_rti)(u32 refresh_time_ms, GF_SystemRTInfo *rti, u32 flags);
-#undef gf_log_set_tools
-extern void (*gf_log_set_tools)(u32 tools);
 #undef gf_term_play_from_time
 extern u32 (*gf_term_play_from_time)(GF_Terminal *term, u64 from_time, u32 pause_at_first_frame);
 #undef gf_malloc
 extern void *(*gf_malloc)(size_t size);
-#undef gf_log_set_level
-extern void (*gf_log_set_level)(u32 level);
+#undef gf_log_set_tools_levels
+extern void (*gf_log_set_tools_levels)(const char *tools);
+#undef gf_log_set_tool_level
+extern void (*gf_log_set_tool_level)(u32 tool, u32 level);
+#undef gf_log_modify_tools_levels
+extern GF_Err (*gf_log_modify_tools_levels)(const char *val);
 #undef gf_iphone_set_sdl_video_module
 extern void (*gf_iphone_set_sdl_video_module)(void* (*SDL_Module) (void));
 #undef gf_term_get_option
@@ -275,10 +273,6 @@ extern u32 (*gf_term_get_time_in_ms)(GF_Terminal *term);
 extern void (*gf_term_connect_with_path)(GF_Terminal *term, const char *URL, const char *parent_URL);
 #undef gf_log_set_callback
 extern gf_log_cbk (*gf_log_set_callback)(void *usr_cbk, gf_log_cbk cbk);
-#undef gf_log_parse_tools
-extern u32 (*gf_log_parse_tools)(const char *val);
-#undef gf_log_parse_level
-extern u32 (*gf_log_parse_level)(const char *val);
 #undef gf_term_switch_quality
 extern void (*gf_term_switch_quality)(GF_Terminal *term, Bool up);
 #undef gf_term_release_screen_buffer
