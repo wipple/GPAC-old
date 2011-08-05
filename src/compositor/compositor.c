@@ -44,6 +44,8 @@ void gf_sc_next_frame_state(GF_Compositor *compositor, u32 state)
 {
 	GF_LOG(GF_LOG_DEBUG, GF_LOG_COMPOSE, ("[Compositor] Forcing frame redraw state: %d\n", state));
 	compositor->frame_draw_type = state;
+	if (state==GF_SC_DRAW_FLUSH)
+		compositor->skip_flush = 2;
 }
 
 
@@ -474,7 +476,7 @@ GF_Compositor *gf_sc_new(GF_User *user, Bool self_threaded, GF_Terminal *term)
 
 		/*wait until init is done*/
 		while (tmp->video_th_state < GF_COMPOSITOR_THREAD_RUN) {
-			gf_sleep(0);
+			gf_sleep(1);
 		}
 		/*init failure*/		
 		if (tmp->video_th_state == GF_COMPOSITOR_THREAD_INIT_FAILED) {
@@ -1001,6 +1003,14 @@ void gf_sc_reload_config(GF_Compositor *compositor)
 	/*changing drivers needs exclusive access*/
 	gf_sc_lock(compositor, 1);
 	
+
+	sOpt = gf_cfg_get_key(compositor->user->config, "Compositor", "FrameRate");
+	if (!sOpt) {
+		sOpt = "30.0";
+		gf_cfg_set_key(compositor->user->config, "Compositor", "FrameRate", "30.0");
+	}
+	gf_sc_set_fps(compositor, atof(sOpt));
+
 	sOpt = gf_cfg_get_key(compositor->user->config, "Compositor", "ForceSceneSize");
 	if (sOpt && ! stricmp(sOpt, "yes")) {
 		compositor->override_size_flags = 1;
@@ -1885,13 +1895,18 @@ static void gf_sc_draw_scene(GF_Compositor *compositor)
 
 	flags = compositor->traverse_state->immediate_draw;
 
-	if (! visual_draw_frame(compositor->visual, top_node, compositor->traverse_state, 1))
-		compositor->skip_flush = 1;
-	
-		/*if using OpenGL, flush even if no changes as the display may be dirty (as seen on android, likely other devices)*/
+	if (! visual_draw_frame(compositor->visual, top_node, compositor->traverse_state, 1)) {
+		/*android backend uses opengl without telling it to us, we need an ugly hack here ...*/
 #ifdef GPAC_ANDROID
-		 compositor->skip_flush = 0;
+		compositor->skip_flush = 0;
+#else
+		if (compositor->skip_flush==2) {
+			compositor->skip_flush = 0;
+		} else {
+			compositor->skip_flush = 1;
+		}
 #endif
+	}
 
 
 	compositor->traverse_state->immediate_draw = flags;
@@ -2155,7 +2170,7 @@ void gf_sc_simulation_tick(GF_Compositor *compositor)
 
 		if(compositor->user->init_flags & GF_TERM_INIT_HIDE) compositor->skip_flush = 1;
 
-		if (!compositor->skip_flush) {
+		if (compositor->skip_flush!=1) {
 			rc.x = rc.y = 0; 
 			rc.w = compositor->display_width;	
 			rc.h = compositor->display_height;		
@@ -2245,7 +2260,7 @@ void gf_sc_simulation_tick(GF_Compositor *compositor)
 
 	/*TO CHECK - THERE WAS A BUG HERE WITH TRISCOPE@SHIX*/
 	if (end_time > compositor->frame_duration) {
-		gf_sleep(0);
+		gf_sleep(1);
 		return;
 	}
 

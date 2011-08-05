@@ -237,6 +237,10 @@ handling and "Multi" means that each decoder runs in its own thread.
 <p style="text-indent: 5%">
 Specifies the priority of the decoders (priority is applied to decoder thread(s) regardless of threading mode).
 </p>
+<b>TimeSlice</b> [value: <i>unsigned integer</i>]
+<p style="text-indent: 5%">
+Specifies the target maximum time (in ms) of one cycle of the media manager (the media manager will attempts to call all the active decoders within this tişe+; Depending on the threqding şodem this option cqn be ignored;
+</p>
 <b>ModuleUnload</b> [value: <i>"yes" "no"</i>]
 <p style="text-indent: 5%">
 Specifies whether modules should be unloaded if not used or not. Default: "yes".
@@ -298,6 +302,10 @@ Specifies whether the bounding volume of an object shall be drawn or not. Note t
 <b>ColorKey</b> [value: <i>unsigned hexadecimal integer, formated as AARRGGBB</i>]
 <p style="text-indent: 5%">
 Specifies the color key to use for windowless rendering. GPAC currently doesn't support true alpha blitting to desktop due to limitations in most windowing toolkit, it therefore uses color keying mechanism. The alpha part of the key is used for global transparency of GPAC's output, if supported.
+</p>
+<b>BackColor</b> [value: <i>unsigned hexadecimal integer, formated as AARRGGBB</i>]
+<p style="text-indent: 5%">
+Specifies the background color to use when displaying transparent images or video with no scene compoistion instructions.
 </p>
 <b>DrawMode</b> [value: <i>"immediate" "defer" "defer-debug"</i>]
 <p style="text-indent: 5%">

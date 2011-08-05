@@ -652,6 +652,14 @@ Fixed gf_asin(_a) { return (Float) asin(_a); }
 
 #endif
 
+GF_EXPORT
+Fixed gf_v2d_distance(GF_Point2D *a, GF_Point2D *b)
+{
+	GF_Point2D d;
+	d.x = a->x - b->x;
+	d.y = a->y - b->y;
+	return gf_v2d_len(&d);
+}
 
 GF_EXPORT
 Fixed gf_angle_diff(Fixed angle1, Fixed angle2)

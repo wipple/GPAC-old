@@ -56,7 +56,6 @@ GF_ObjectManager *gf_odm_new()
 
 void gf_odm_del(GF_ObjectManager *odm)
 {
-	Bool lock;
 #ifndef GPAC_DISABLE_VRML
 	u32 i;
 	MediaSensorStack *media_sens;
@@ -68,7 +67,14 @@ void gf_odm_del(GF_ObjectManager *odm)
 	gf_list_del_item(odm->term->media_queue, odm);
 	gf_term_lock_media_queue(odm->term, 0);
 
-	lock = gf_mx_try_lock(odm->mx);
+	/*detach media object as referenced by the scene - this should ensures that any attempt to lock the ODM from the 
+	compositor will fail as the media object is no longer linked to object manager*/
+	gf_mx_p(odm->mx);
+	if (odm->mo) odm->mo->odm = NULL;
+	gf_mx_v(odm->mx);
+	
+	/*relock the mutex for final object destruction*/
+	gf_mx_p(odm->mx);
 
 #ifndef GPAC_DISABLE_VRML
 	i=0;
@@ -86,7 +92,6 @@ void gf_odm_del(GF_ObjectManager *odm)
 	}
 	gf_list_del(odm->mc_stack);
 #endif
-	if (odm->mo) odm->mo->odm = NULL;
 
 	if (odm->raw_frame_sema) gf_sema_del(odm->raw_frame_sema);
 
@@ -95,7 +100,7 @@ void gf_odm_del(GF_ObjectManager *odm)
 	gf_odf_desc_del((GF_Descriptor *)odm->OD);
 	odm->OD = NULL;
 	assert (!odm->net_service);
-	if (lock) gf_mx_v(odm->mx);
+	gf_mx_v(odm->mx);
 	gf_mx_del(odm->mx);
 	gf_free(odm);
 }
