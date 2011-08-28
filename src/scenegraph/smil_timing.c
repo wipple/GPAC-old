@@ -307,7 +307,8 @@ static void gf_smil_mark_modified(SMIL_Timing_RTI *rti, Bool remove)
 
 /* Attributes from the timed elements are not easy to use during runtime, 
    the runtime info is a set of easy to use structures. 
-   This function initializes them (intervals, status ...). */
+   This function initializes them (intervals, status ...) 
+   and registers the element with the scenegraph */
 GF_EXPORT
 void gf_smil_timing_init_runtime_info(GF_Node *timed_elt)
 {
@@ -332,6 +333,7 @@ void gf_smil_timing_init_runtime_info(GF_Node *timed_elt)
 	e->timingp->repeatDur	= all_atts.repeatDur;
 	e->timingp->restart		= all_atts.restart;
 	timingp = e->timingp;
+	if (!timingp) return;
 
 	if (tag == TAG_SVG_audio || tag == TAG_SVG_video) {
 		/* if the dur attribute is not set, then it should be set to media 
@@ -347,8 +349,6 @@ void gf_smil_timing_init_runtime_info(GF_Node *timed_elt)
 			e->timingp->dur->type = SMIL_DURATION_MEDIA;
 		}
 	}
-
-	if (!timingp) return;
 
 	GF_SAFEALLOC(rti, SMIL_Timing_RTI)
 	timingp->runtime = rti;
