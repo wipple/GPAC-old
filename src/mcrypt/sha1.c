@@ -27,7 +27,7 @@
 #define _CRT_SECURE_NO_DEPRECATE 1
 #endif
 
-#include <gpac/crypt.h>
+#include "../../include/gpac/crypt.h"
 
 /*
  * 32-bit integer manipulation macros (big endian)

@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/internal/mesh.h>
+#include "../../include/gpac/internal/mesh.h"
 
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
-#include <gpac/color.h>
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
+#include "../../include/gpac/color.h"
 
 #ifndef GPAC_DISABLE_3D
 

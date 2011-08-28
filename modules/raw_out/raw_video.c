@@ -25,12 +25,12 @@
 
 
 /*driver interfaces*/
-#include <gpac/modules/video_out.h>
-#include <gpac/user.h>
-#include <gpac/list.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/modules/video_out.h"
+#include "../../include/gpac/user.h"
+#include "../../include/gpac/list.h"
+#include "../../include/gpac/constants.h"
 
-#include <gpac/setup.h>
+#include "../../include/gpac/setup.h"
 
 typedef struct
 {

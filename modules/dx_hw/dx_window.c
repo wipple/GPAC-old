@@ -24,7 +24,7 @@
 
 
 #include "dx_hw.h"
-#include <gpac/user.h>
+#include "../../include/gpac/user.h"
 #include "resource.h"
 
 /*crude redef of winuser.h due to windows/winsock2 conflicts*/

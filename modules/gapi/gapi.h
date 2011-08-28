@@ -26,10 +26,10 @@
 #ifndef _GAPI_H
 #define _GAPI_H
 
-#include <gpac/list.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/list.h"
+#include "../../include/gpac/thread.h"
 /*driver interface*/
-#include <gpac/modules/video_out.h>
+#include "../../include/gpac/modules/video_out.h"
 
 #ifdef GPAC_USE_OGL_ES
 #include "GLES/egl.h"

@@ -29,12 +29,12 @@
 /*for anchor*/
 #include "mpeg4_grouping.h"
 /*for anchor processing, which needs to be filtered at the inline scene level*/
-#include <gpac/internal/terminal_dev.h>
+#include "../../include/gpac/internal/terminal_dev.h"
 
 #ifndef GPAC_DISABLE_VRML
 
 /*for event DOM filtering type ...*/
-#include <gpac/scenegraph_svg.h>
+#include "../../include/gpac/scenegraph_svg.h"
 
 
 static void mpeg4_sensor_deleted(GF_Node *node, GF_SensorHandler *hdl)

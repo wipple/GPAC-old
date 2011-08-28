@@ -1,6 +1,6 @@
 #include "RTP_serv_sender.h"
-#include <gpac/internal/ietf_dev.h>
-#include <gpac/ietf.h>
+#include "../../../include/gpac/internal/ietf_dev.h"
+#include "../../../include/gpac/ietf.h"
 #include "debug.h"
 
 

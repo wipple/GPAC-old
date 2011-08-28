@@ -46,8 +46,8 @@ include first to avoid Bool type redef between X11 and gpac
 #include "menubtn.h"
 
 /*include gpac AFTER wx in case we override malloc/realloc/free for mem tracking*/
-#include <gpac/terminal.h>
-#include <gpac/term_info.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/term_info.h"
 
 class wxOsmo4App : public wxApp
 {

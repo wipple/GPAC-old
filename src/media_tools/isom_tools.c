@@ -24,9 +24,9 @@
 
 
 
-#include <gpac/media_tools.h>
-#include <gpac/constants.h>
-#include <gpac/config_file.h>
+#include "../../include/gpac/media_tools.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/config_file.h"
 
 #ifndef GPAC_DISABLE_ISOM
 

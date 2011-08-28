@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <gpac/setup.h>
+#include "setup.h"
 
 
 /*! \file "gpac/tools.h"
@@ -60,7 +60,7 @@ extern "C" {
 /*KEEP SPACE SEPARATORS FOR MAKE / GREP (SEE MAIN MAKEFILE)!!!, and NO SPACE in GPAC_VERSION for proper install*/
 #define GPAC_VERSION       "0.4.6-DEV"
 
-#include <gpac/version.h>
+#include "version.h"
 #define GPAC_FULL_VERSION       GPAC_VERSION"-git-"GPAC_GIT_REVISION
 
 /*!

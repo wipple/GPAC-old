@@ -1,4 +1,4 @@
-#include <gpac/isomedia.h>
+#include "../../../include/gpac/isomedia.h"
 
 void PrintUsage()
 {

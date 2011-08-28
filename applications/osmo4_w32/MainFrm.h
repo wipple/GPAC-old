@@ -9,10 +9,10 @@
 #pragma once
 #endif // _MSC_VER > 1000
 
-#include <gpac/tools.h>
-#include <gpac/constants.h>
-#include <gpac/modules/service.h>
-#include <gpac/options.h>
+#include "../../include/gpac/tools.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/options.h"
 
 #include "FileProps.h"
 #include "Options.h"

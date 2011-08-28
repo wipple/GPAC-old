@@ -1,9 +1,9 @@
 #include "V4SceneGraph.h"
 #include "V4StudioFrame.h"
 
-#include <gpac/scene_manager.h>
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 #include "V4Service.h"
 

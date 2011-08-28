@@ -37,7 +37,7 @@ class MAknsControlContext; // for skins support
 #endif
 
 
-#include <gpac/user.h>
+#include "../../include/gpac/user.h"
 
 class CEikTextListBox; //For list box
 

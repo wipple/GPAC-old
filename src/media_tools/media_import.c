@@ -24,13 +24,13 @@
 
 
 
-#include <gpac/internal/media_dev.h>
-#include <gpac/internal/avilib.h>
-#include <gpac/internal/ogg.h>
-#include <gpac/internal/vobsub.h>
-#include <gpac/xml.h>
-#include <gpac/mpegts.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/media_dev.h"
+#include "../../include/gpac/internal/avilib.h"
+#include "../../include/gpac/internal/ogg.h"
+#include "../../include/gpac/internal/vobsub.h"
+#include "../../include/gpac/xml.h"
+#include "../../include/gpac/mpegts.h"
+#include "../../include/gpac/constants.h"
 /*since 0.2.2, we use zlib for xmt/x3d reading to handle gz files*/
 #include <zlib.h>
 

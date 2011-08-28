@@ -23,8 +23,8 @@
  */
 
 #include "texturing.h"
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/options.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/options.h"
 
 #include "nodes_stacks.h"
 

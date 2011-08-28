@@ -23,10 +23,10 @@
  */
 
 
-#include <gpac/modules/font.h>
-#include <gpac/list.h>
-#include <gpac/utf.h>
-#include <gpac/tools.h>
+#include "../../include/gpac/modules/font.h"
+#include "../../include/gpac/list.h"
+#include "../../include/gpac/utf.h"
+#include "../../include/gpac/tools.h"
 
 #include <ft2build.h>
 #include FT_FREETYPE_H

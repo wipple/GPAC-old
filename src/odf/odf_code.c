@@ -22,8 +22,8 @@
  *
  */
 
-#include <gpac/internal/odf_dev.h>
-#include <gpac/utf.h>
+#include "../../include/gpac/internal/odf_dev.h"
+#include "../../include/gpac/utf.h"
 
 #define DATE_CODING_BIT_LEN	40
 

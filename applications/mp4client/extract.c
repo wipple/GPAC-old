@@ -24,9 +24,9 @@
  */
 
 
-#include <gpac/terminal.h>
-#include <gpac/options.h>
-#include <gpac/media_tools.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/media_tools.h"
 
 #ifdef WIN32
 #include <windows.h>
@@ -59,9 +59,9 @@ typedef struct tagBITMAPINFOHEADER{
 #endif
 
 
-#include <gpac/internal/avilib.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/avilib.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
 
 extern Bool is_connected;
 extern GF_Terminal *term;
@@ -214,7 +214,7 @@ void write_bmp(GF_VideoSurface *fb, char *rad_name, u32 img_num)
 	fclose(fout);
 }
 
-#include <gpac/avparse.h>
+#include "../../include/gpac/avparse.h"
 
 void write_png(GF_VideoSurface *fb, char *rad_name, u32 img_num)
 {

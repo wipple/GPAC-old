@@ -23,9 +23,9 @@
  */
 
 /*driver interface*/
-#include <gpac/modules/video_out.h>
-#include <gpac/modules/audio_out.h>
-#include <gpac/modules/codec.h>
+#include "../../include/gpac/modules/video_out.h"
+#include "../../include/gpac/modules/audio_out.h"
+#include "../../include/gpac/modules/codec.h"
 
 #include <w32std.h>
 

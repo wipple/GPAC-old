@@ -25,8 +25,8 @@
 #include "nodes_stacks.h"
 #include "visual_manager.h"
 /*for default scene view*/
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/options.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/options.h"
 
 
 GF_Err gf_sc_get_viewpoint(GF_Compositor *compositor, u32 viewpoint_idx, const char **outName, Bool *is_bound)

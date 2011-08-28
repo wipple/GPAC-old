@@ -21,7 +21,7 @@
  *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
  *
  */
-#include <gpac/ringbuffer.h>
+#include "../../include/gpac/ringbuffer.h"
 
 GF_Ringbuffer * gf_ringbuffer_new(u32 sz)
 {

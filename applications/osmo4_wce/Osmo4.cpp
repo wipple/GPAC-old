@@ -4,8 +4,8 @@
 #include "stdafx.h"
 #include "Osmo4.h"
 
-#include <gpac/options.h>
-#include <gpac/modules/service.h>
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/modules/service.h"
 #include "MainFrm.h"
 #include "OpenDlg.h"
 #include "Options.h"
@@ -486,7 +486,7 @@ CString COsmo4::GetFileFilter()
 		if (!sMime) continue;
 		CString sOpt;
 		const char *opt = gf_cfg_get_key(m_user.config, "MimeTypes", sMime);
-		/*remove #include <gpac/options.h>
+		/*remove #include "../../include/gpac/options.h"
  name*/
 		strcpy(szKeyList, opt+1);
 		sKey = strrchr(szKeyList, '\"');

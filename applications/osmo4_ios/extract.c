@@ -56,9 +56,9 @@ typedef struct tagBITMAPINFOHEADER{
 #endif
 
 
-#include <gpac/internal/avilib.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/avilib.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
 
 extern Bool is_connected;
 extern GF_Terminal *term;

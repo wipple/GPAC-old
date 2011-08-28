@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include <gpac/user.h>
+#include "user.h"
 
 /*creates a new terminal for a userApp callback*/
 GF_Terminal *gf_term_new(GF_User *user);
@@ -178,7 +178,7 @@ void gf_term_string_input(GF_Terminal *term, u32 character);
 
 
 /*framebuffer access*/
-#include <gpac/color.h>
+#include "color.h"
 
 /*gets screen buffer - this locks the scene graph too until released is called*/
 GF_Err gf_term_get_screen_buffer(GF_Terminal *term, GF_VideoSurface *framebuffer);

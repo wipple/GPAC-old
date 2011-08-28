@@ -1,6 +1,6 @@
 #include "safe_include.h" 
-#include <gpac/terminal.h>
-#include <gpac/options.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/options.h"
 
 #include "wx/wxprec.h"
 

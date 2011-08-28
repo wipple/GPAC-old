@@ -23,18 +23,18 @@
  *
  */
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 /*base SVG type*/
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/nodes_svg.h"
 /*dom events*/
-#include <gpac/events.h>
+#include "../../include/gpac/events.h"
 /*dom text event*/
-#include <gpac/utf.h>
+#include "../../include/gpac/utf.h"
 
-#include <gpac/download.h>
-#include <gpac/network.h>
-#include <gpac/xml.h>
+#include "../../include/gpac/download.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/xml.h"
 
 #ifndef GPAC_DISABLE_SVG
 
@@ -46,7 +46,7 @@
 #endif /* XP_UNIX */
 #endif
 
-#include <gpac/internal/smjs_api.h>
+#include "../../include/gpac/internal/smjs_api.h"
 
 
 static GFINLINE Bool ScriptAction(GF_SceneGraph *scene, u32 type, GF_Node *node, GF_JSAPIParam *param)

@@ -23,13 +23,13 @@
  */
 
 #include "module_wrap.h"
-#include <gpac/config_file.h>
-#include <gpac/tools.h>
+#include "../../include/gpac/config_file.h"
+#include "../../include/gpac/tools.h"
 
 
 #if defined(TARGET_OS_IPHONE) || defined(TARGET_IPHONE_SIMULATOR)
-#include <gpac/modules/video_out.h>
-#include <gpac/modules/audio_out.h>
+#include "../../include/gpac/modules/video_out.h"
+#include "../../include/gpac/modules/audio_out.h"
 #include "sdl_out.h"
 
 /*hack I'm not proud of. If you're young and innocent never do that*/

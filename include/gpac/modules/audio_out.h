@@ -39,7 +39,7 @@ extern "C" {
 #endif
 
 /*include event system*/
-#include <gpac/module.h>
+#include "../module.h"
 
 
 /*

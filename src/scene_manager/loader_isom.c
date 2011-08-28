@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/scene_manager.h>
-#include <gpac/constants.h>
-#include <gpac/bifs.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/bifs.h"
 #ifndef GPAC_DISABLE_LASER
-#include <gpac/laser.h>
+#include "../../include/gpac/laser.h"
 #endif
 
 

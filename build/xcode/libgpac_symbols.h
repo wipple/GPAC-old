@@ -97,22 +97,22 @@
 #define utf8_to_ucs4 _utf8_to_ucs4
 
 /*includes both terminal and od browser*/
-#include <gpac/terminal.h>
-#include <gpac/term_info.h>
-#include <gpac/constants.h>
-#include <gpac/options.h>
-#include <gpac/modules/service.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/term_info.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/modules/service.h"
 
 /*ISO 639 languages*/
-#include <gpac/iso639.h>
+#include "../../include/gpac/iso639.h"
 #include "sdl_out.h"
 #include "dlfcn.h"
 
 
 /*exports for dlopen*/
-#include <gpac/internal/avilib.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/avilib.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
 #undef gf_log_lt
 extern void (*gf_log_lt)(u32 ll, u32 lt);
 #undef AVI_close

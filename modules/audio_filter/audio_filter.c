@@ -25,8 +25,8 @@
  */
 
 
-#include <gpac/modules/audio_out.h>
-#include <gpac/math.h>
+#include "../../include/gpac/modules/audio_out.h"
+#include "../../include/gpac/math.h"
 
 #ifndef PI
 #define PI GF_PI

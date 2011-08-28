@@ -36,31 +36,31 @@
 #define _WIDGETMAN_H_
 
 /*base SVG type*/
-#include <gpac/modules/js_usr.h>
+#include "../../include/gpac/modules/js_usr.h"
 
 #ifdef GPAC_HAS_SPIDERMONKEY
 
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
+#include "../../include/gpac/nodes_svg.h"
 /*dom events*/
-#include <gpac/events.h>
+#include "../../include/gpac/events.h"
 
-#include <gpac/download.h>
-#include <gpac/crypt.h>
-#include <gpac/network.h>
-#include <gpac/xml.h>
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/download.h"
+#include "../../include/gpac/crypt.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/xml.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 
-#include <gpac/isomedia.h>
+#include "../../include/gpac/isomedia.h"
 
 #include "unzip.h"
 
-#include <gpac/internal/smjs_api.h>
+#include "../../include/gpac/internal/smjs_api.h"
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
 
 
 JSBool gf_sg_js_event_add_listener(JSContext *c, JSObject *obj, uintN argc, jsval *argv, jsval *rval, GF_Node *vrml_node);

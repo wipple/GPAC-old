@@ -26,8 +26,8 @@
 #ifndef _GF_MEDIA_DEV_H_
 #define _GF_MEDIA_DEV_H_
 
-#include <gpac/media_tools.h>
-#include <gpac/ietf.h>
+#include "../media_tools.h"
+#include "../ietf.h"
 
 #ifndef GPAC_DISABLE_ISOM
 void gf_media_get_sample_average_infos(GF_ISOFile *file, u32 Track, u32 *avgSize, u32 *MaxSize, u32 *TimeDelta, u32 *maxCTSDelta, u32 *const_duration, u32 *bandwidth);

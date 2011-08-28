@@ -39,11 +39,11 @@ extern "C" {
 #endif
 
 /*include module system*/
-#include <gpac/module.h>
+#include "../module.h"
 /*include event system*/
-#include <gpac/events.h>
+#include "../events.h"
 /*include framebuffer definition*/
-#include <gpac/color.h>
+#include "../color.h"
 
 /*
 		Video hardware output module

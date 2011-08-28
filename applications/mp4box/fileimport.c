@@ -23,11 +23,11 @@
  */
 
 
-#include <gpac/scene_manager.h>
-#include <gpac/bifs.h>
-#include <gpac/media_tools.h>
-#include <gpac/constants.h>
-#include <gpac/scenegraph.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/bifs.h"
+#include "../../include/gpac/media_tools.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/scenegraph.h"
 
 
 #ifndef GPAC_DISABLE_ISOM_WRITE
@@ -2168,7 +2168,7 @@ exit:
 #endif
 }
 
-#include <gpac/xml.h>
+#include "../../include/gpac/xml.h"
 
 void sax_node_start(void *sax_cbck, const char *node_name, const char *name_space, const GF_XMLAttribute *attributes, u32 nb_attributes)
 {

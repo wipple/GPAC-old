@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/scene_manager.h>
-#include <gpac/xml.h>
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/nodes_svg.h>
-#include <gpac/nodes_mpeg4.h>
+#include "../../../include/gpac/scene_manager.h"
+#include "../../../include/gpac/xml.h"
+#include "../../../include/gpac/internal/scenegraph_dev.h"
+#include "../../../include/gpac/nodes_svg.h"
+#include "../../../include/gpac/nodes_mpeg4.h"
 
 typedef struct {
 	GF_SAXParser *sax_parser;

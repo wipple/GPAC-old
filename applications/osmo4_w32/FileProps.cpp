@@ -7,7 +7,7 @@
 #include "MainFrm.h"
 
 /*ISO 639 languages*/
-#include <gpac/iso639.h>
+#include "../../include/gpac/iso639.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

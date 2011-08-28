@@ -26,8 +26,8 @@
 #ifndef _GF_MESH_H_
 #define _GF_MESH_H_
 
-#include <gpac/scenegraph_vrml.h>
-#include <gpac/path2d.h>
+#include "../scenegraph_vrml.h"
+#include "../path2d.h"
 
 /*by default we store each color on 32 bit rather than 4 floats (128 bits)*/
 

@@ -25,11 +25,11 @@
 #ifndef OGG_IN_H
 #define OGG_IN_H
 
-#include <gpac/modules/service.h>
-#include <gpac/modules/codec.h>
-#include <gpac/avparse.h>
-#include <gpac/constants.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/avparse.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/thread.h"
 
 GF_InputService *OGG_LoadDemux();
 void OGG_DeleteDemux(void *ifce);

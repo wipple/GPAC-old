@@ -23,10 +23,10 @@
 *
 */
 
-#include <gpac/internal/mpd.h>
-#include <gpac/download.h>
-#include <gpac/internal/m3u8.h>
-#include <gpac/network.h>
+#include "../../include/gpac/internal/mpd.h"
+#include "../../include/gpac/download.h"
+#include "../../include/gpac/internal/m3u8.h"
+#include "../../include/gpac/network.h"
 
 static u32 gf_mpd_parse_duration(char *duration) {
 	u32 i;

@@ -23,9 +23,9 @@
  */
 
 
-#include <gpac/internal/bifs_dev.h>
-#include <gpac/mpeg4_odf.h>
-#include <gpac/nodes_x3d.h>
+#include "../../include/gpac/internal/bifs_dev.h"
+#include "../../include/gpac/mpeg4_odf.h"
+#include "../../include/gpac/nodes_x3d.h"
 
 #ifndef GPAC_DISABLE_BIFS
 

@@ -45,7 +45,7 @@ extern "C" {
  *	@{
  */
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 
 typedef struct __tag_config GF_Config;

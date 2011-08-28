@@ -7,7 +7,7 @@
 #include "MainFrm.h"
 #include "resource.h"
 
-#include <gpac/network.h>
+#include "../../include/gpac/network.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

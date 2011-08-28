@@ -37,7 +37,7 @@
 #include "NptMap.h"
 #include "NptStack.h"
 
-#include <gpac/thread.h>
+#include "../../include/gpac/thread.h"
 
 typedef struct PLT_BrowseData {
     NPT_SharedVariable shared_var;

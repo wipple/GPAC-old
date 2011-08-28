@@ -2,8 +2,8 @@
 #define _DIRECTFB_OUT_H_
 
 
-#include <gpac/modules/video_out.h>
-#include <gpac/scenegraph_svg.h> 
+#include "../../include/gpac/modules/video_out.h"
+#include "../../include/gpac/scenegraph_svg.h" 
 
 /* DirectFB */
 #define __DIRECT__STDTYPES__	//prevent u8, s8, ... definitions by directFB as we have them in GPAC

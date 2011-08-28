@@ -23,10 +23,10 @@
  */
 
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
-#include <gpac/sync_layer.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
+#include "../../include/gpac/sync_layer.h"
+#include "../../include/gpac/constants.h"
 
 #include "media_memory.h"
 #include "media_control.h"

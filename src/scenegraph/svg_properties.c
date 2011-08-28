@@ -23,12 +23,12 @@
  *
  */
 
-#include <gpac/scenegraph_svg.h>
+#include "../../include/gpac/scenegraph_svg.h"
 
 #ifndef GPAC_DISABLE_SVG
 
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/nodes_svg.h"
 /* 
 	Initialization of properties at the top level before any rendering 
 	The value shall not use the 'inherit' value, it uses the initial value.

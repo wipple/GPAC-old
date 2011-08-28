@@ -25,7 +25,7 @@
 
 /*hybrid media interface implementation generating fake audio consisting in beeps every second in pull mode*/
 
-#include <gpac/thread.h>
+#include "../../include/gpac/thread.h"
 #include "hyb_in.h"
 
 /**********************************************************************************************************************/

@@ -31,13 +31,13 @@
 extern "C" {
 #endif
 
-#include <gpac/list.h>
+#include "list.h"
 
 #ifndef GPAC_DISABLE_STREAMING
 
-#include <gpac/bitstream.h>
-#include <gpac/sync_layer.h>
-#include <gpac/network.h>
+#include "bitstream.h"
+#include "sync_layer.h"
+#include "network.h"
 
 
 /****************************************************************************

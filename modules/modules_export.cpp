@@ -24,7 +24,7 @@
  */
 
 /*this file is only used with Win32&MSVC to export the module interface symbols from each module DLL*/
-#include <gpac/setup.h>
+#include "../include/gpac/setup.h"
 
 #ifdef _WIN32_WCE
 #define EXPORT_SYMBOL(a) "/export:"#a

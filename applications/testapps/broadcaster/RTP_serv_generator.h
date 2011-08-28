@@ -2,11 +2,11 @@
 #define _RTP_SERV_GENERATOR_H_
 #include <stdlib.h>
 
-#include <gpac/ietf.h>
-#include <gpac/network.h> // sockets
-#include <gpac/internal/media_dev.h>
-#include <gpac/thread.h>
-#include <gpac/scene_engine.h>
+#include "../../../include/gpac/ietf.h"
+#include "../../../include/gpac/network.h" // sockets
+#include "../../../include/gpac/internal/media_dev.h"
+#include "../../../include/gpac/thread.h"
+#include "../../../include/gpac/scene_engine.h"
 
 #include <time.h>
 #define RECV_BUFFER_SIZE_FOR_COMMANDS 262144

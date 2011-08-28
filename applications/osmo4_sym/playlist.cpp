@@ -27,7 +27,7 @@
 #include <eiktxlbm.h>
 
 
-#include <gpac/utf.h>
+#include "../../include/gpac/utf.h"
 
 // INCLUDE FILES
 #include "osmo4_ui.h"

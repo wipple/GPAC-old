@@ -37,12 +37,12 @@
 #include "PltDeviceHost.h"
 #include "PltService.h"
 
-#include <gpac/thread.h>
-#include <gpac/list.h>
+#include "../../include/gpac/thread.h"
+#include "../../include/gpac/list.h"
 
 #ifdef GPAC_HAS_SPIDERMONKEY
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/internal/smjs_api.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/internal/smjs_api.h"
 #endif
 
 class GF_UPnP;

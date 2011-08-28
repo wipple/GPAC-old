@@ -75,7 +75,7 @@
 static int wsa_init = 0;
 
 
-#include <gpac/network.h>
+#include "../../include/gpac/network.h"
 
 
 /*end-win32*/
@@ -100,7 +100,7 @@ static int wsa_init = 0;
 #include <sys/types.h>
 #include <arpa/inet.h>
 
-#include <gpac/network.h>
+#include "../../include/gpac/network.h"
 
 /*not defined on solaris*/
 #if !defined(INADDR_NONE)

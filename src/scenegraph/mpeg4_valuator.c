@@ -23,9 +23,9 @@
  */
 
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 /*MPEG4 tags (for internal nodes)*/
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/nodes_mpeg4.h"
 
 
 #ifndef GPAC_DISABLE_VRML

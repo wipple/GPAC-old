@@ -25,9 +25,9 @@
 #include "visual_manager.h"
 #include "nodes_stacks.h"
 #include "mpeg4_grouping.h"
-#include <gpac/options.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/utf.h>
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/utf.h"
 
 static GF_Node *browse_parent_for_focus(GF_Compositor *compositor, GF_Node *elt, Bool prev_focus);
 

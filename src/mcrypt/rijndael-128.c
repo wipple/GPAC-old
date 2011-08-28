@@ -21,7 +21,7 @@
 
 /* $Id: rijndael-128.c,v 1.3 2009-07-31 07:37:43 jeanlf Exp $ */
 
-#include <gpac/internal/crypt_dev.h>
+#include "../../include/gpac/internal/crypt_dev.h"
 
 #if !defined(GPAC_DISABLE_MCRYPT)
 

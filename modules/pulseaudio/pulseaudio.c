@@ -35,7 +35,7 @@
 #include <poll.h>
 #include <pulse/pulseaudio.h>
 #include <pulse/simple.h>
-#include <gpac/modules/audio_out.h>
+#include "../../include/gpac/modules/audio_out.h"
 
 typedef struct
 {

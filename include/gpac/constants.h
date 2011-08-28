@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 /*! \addtogroup cst_grp constants
  *	\brief Constants used within GPAC

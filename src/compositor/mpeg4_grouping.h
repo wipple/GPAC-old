@@ -25,7 +25,7 @@
 #ifndef MPEG4_GROUPING_H
 #define MPEG4_GROUPING_H
 
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/compositor_dev.h"
 
 enum
 {

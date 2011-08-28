@@ -22,10 +22,10 @@
  *
  */
 
-#include <gpac/modules/service.h>
-#include <gpac/avparse.h>
-#include <gpac/constants.h>
-#include <gpac/modules/codec.h>
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/avparse.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/modules/codec.h"
 
 #ifndef GPAC_DISABLE_AV_PARSERS
 

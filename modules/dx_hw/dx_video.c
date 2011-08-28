@@ -25,7 +25,7 @@
 
 #include "dx_hw.h"
 
-#include <gpac/user.h>
+#include "../../include/gpac/user.h"
 
 
 #ifdef _WIN32_WCE

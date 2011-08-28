@@ -8,7 +8,7 @@
 #define _V4Node_
 
 #include "safe_include.h"
-#include <gpac/scenegraph.h> // GF_Node structure
+#include "../../include/gpac/scenegraph.h" // GF_Node structure
 
 #include <wx/wx.h>
 

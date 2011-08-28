@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include <gpac/path2d.h>
+#include "path2d.h"
 
 
 

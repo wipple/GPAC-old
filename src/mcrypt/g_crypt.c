@@ -24,7 +24,7 @@
 
 /* The GPAC crypto lib is a simplified version of libmcrypt. */
 
-#include <gpac/internal/crypt_dev.h>
+#include "../../include/gpac/internal/crypt_dev.h"
 
 #if !defined(GPAC_DISABLE_MCRYPT)
 

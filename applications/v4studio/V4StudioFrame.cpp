@@ -10,9 +10,9 @@
 #include "wx/xrc/xmlres.h"
 
 
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/internal/terminal_dev.h> // GF_Terminal
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/internal/terminal_dev.h" // GF_Terminal
+#include "../../include/gpac/nodes_mpeg4.h"
 
 V4StudioFrame::V4StudioFrame():
     wxFrame((wxFrame *) NULL, -1, "V4Studio", wxPoint(50, 50), wxSize(800, 700))

@@ -23,8 +23,8 @@
  */
 
 
-#include <gpac/internal/mesh.h>
-#include <gpac/color.h>
+#include "../../include/gpac/internal/mesh.h"
+#include "../../include/gpac/color.h"
 
 #ifndef GPAC_DISABLE_3D
 

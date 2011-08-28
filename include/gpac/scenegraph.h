@@ -31,8 +31,8 @@
 extern "C" {
 #endif
 
-#include <gpac/list.h>
-#include <gpac/math.h>
+#include "list.h"
+#include "math.h"
 
 /*
 	TAG definitions are static, in order to be able to mix nodes from different standard

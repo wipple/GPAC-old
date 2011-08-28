@@ -24,10 +24,10 @@
 
 
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
-#include <gpac/constants.h>
-#include <gpac/crypt.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/crypt.h"
 #include "media_memory.h"
 #include "media_control.h"
 #include "input_sensor.h"

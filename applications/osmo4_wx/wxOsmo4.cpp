@@ -28,10 +28,10 @@
 #include "wxGPACControl.h"
 #include "fileprops.h"
 #include <wx/image.h>
-#include <gpac/modules/service.h>
-#include <gpac/network.h>
-#include <gpac/constants.h>
-#include <gpac/options.h>
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/options.h"
 
 
 IMPLEMENT_APP(wxOsmo4App)

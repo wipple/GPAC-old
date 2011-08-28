@@ -23,7 +23,7 @@
 #ifndef _GF_OGG_H_
 #define _GF_OGG_H_
 
-#include <gpac/tools.h>
+#include "../tools.h"
 
 #ifndef GPAC_DISABLE_OGG
 

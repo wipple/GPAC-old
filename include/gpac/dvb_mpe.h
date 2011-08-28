@@ -26,7 +26,7 @@
 #ifndef _GF_DVB_MPE_H_
 #define _GF_DVB_MPE_H_
 
-#include <gpac/mpegts.h>
+#include "mpegts.h"
 #include <string.h>
 
 typedef struct tag_m2ts_section_mpe GF_M2TS_SECTION_MPE;

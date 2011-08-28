@@ -22,7 +22,7 @@
 *
 */
 
-#include <gpac/carousel.h>
+#include "../../include/gpac/carousel.h"
 
 
 GF_M2TS_ES *gf_ait_section_new(u32 service_id)

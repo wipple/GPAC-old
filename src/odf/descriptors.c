@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/internal/odf_dev.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/odf_dev.h"
+#include "../../include/gpac/constants.h"
 
 #ifndef GPAC_DISABLE_AV_PARSERS
-#include <gpac/avparse.h>
+#include "../../include/gpac/avparse.h"
 #endif
 
 GF_EXPORT
@@ -635,7 +635,7 @@ GF_Err gf_odf_del_text_cfg(GF_TextConfig *desc)
 }
 
 /*we need box parsing*/
-#include <gpac/internal/isomedia_dev.h>
+#include "../../include/gpac/internal/isomedia_dev.h"
 GF_EXPORT
 GF_Err gf_odf_get_text_config(GF_DefaultDescriptor *dsi, u8 oti, GF_TextConfig *cfg)
 {

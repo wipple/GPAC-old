@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 /* ESI input control commands*/
 enum

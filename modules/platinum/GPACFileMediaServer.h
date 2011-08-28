@@ -34,7 +34,7 @@
 
 #include "PltFileMediaServer.h"
 
-#include <gpac/list.h>
+#include "../../include/gpac/list.h"
 
 #define MAX_PATH_LENGTH 1024
 

@@ -4,16 +4,16 @@
 #include <string.h>
 
 /* includes for gpac library */
-#include <gpac/scene_engine.h>
-#include <gpac/config_file.h>
-#include <gpac/thread.h>
-#include <gpac/network.h>
-#include <gpac/ietf.h>
-#include <gpac/mpeg4_odf.h>
-#include <gpac/base_coding.h>
-#include <gpac/constants.h>
-#include <gpac/scene_manager.h>
-#include <gpac/bifs.h>
+#include "../../../include/gpac/scene_engine.h"
+#include "../../../include/gpac/config_file.h"
+#include "../../../include/gpac/thread.h"
+#include "../../../include/gpac/network.h"
+#include "../../../include/gpac/ietf.h"
+#include "../../../include/gpac/mpeg4_odf.h"
+#include "../../../include/gpac/base_coding.h"
+#include "../../../include/gpac/constants.h"
+#include "../../../include/gpac/scene_manager.h"
+#include "../../../include/gpac/bifs.h"
 
 /* includes for BIFS carousel */
 /* RTP sends */

@@ -23,7 +23,7 @@
  */
 
 
-#include <gpac/internal/odf_dev.h>
+#include "../../include/gpac/internal/odf_dev.h"
 
 
 GF_Err gf_odf_parse_command(GF_BitStream *bs, GF_ODCom **com, u32 *com_size)

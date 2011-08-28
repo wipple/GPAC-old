@@ -26,7 +26,7 @@
 
 /*hybrid media interface implementation using MMB Tools from the Communication Research Center Canada (http://mmbtools.crc.ca/)*/
 
-#include <gpac/thread.h>
+#include "../../include/gpac/thread.h"
 
 #if 0
 

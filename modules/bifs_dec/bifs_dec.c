@@ -22,9 +22,9 @@
  *
  */
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/bifs.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/bifs.h"
+#include "../../include/gpac/constants.h"
 
 #ifndef GPAC_DISABLE_BIFS
 

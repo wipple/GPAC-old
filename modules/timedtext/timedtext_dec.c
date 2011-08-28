@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/isomedia_dev.h>
-#include <gpac/utf.h>
-#include <gpac/constants.h>
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/isomedia_dev.h"
+#include "../../include/gpac/utf.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/nodes_mpeg4.h"
 
 #if !defined(GPAC_DISABLE_VRML) && !defined(GPAC_DISABLE_ISOM)
 

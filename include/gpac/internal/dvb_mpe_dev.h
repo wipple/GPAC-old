@@ -26,8 +26,8 @@
 #ifndef _GF_DVB_MPE_DEV_H_
 #define _GF_DVB_MPE_DEV_H_
 
-#include <gpac/dvb_mpe.h>
-#include <gpac/internal/reedsolomon.h>
+#include "../dvb_mpe.h"
+#include "reedsolomon.h"
 
 
 /*INT object*/

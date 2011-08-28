@@ -1,5 +1,5 @@
-#include <gpac/internal/dvb_mpe_dev.h>
-#include <gpac/network.h>
+#include "../../include/gpac/internal/dvb_mpe_dev.h"
+#include "../../include/gpac/network.h"
 #include <string.h>
 
 static void gf_m2ts_Delete_IpPacket(GF_M2TS_IP_Packet *ip_packet);

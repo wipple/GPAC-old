@@ -22,9 +22,9 @@
  *
  */
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/network.h>
-#include <gpac/cache.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/cache.h"
 #include "media_memory.h"
 
 

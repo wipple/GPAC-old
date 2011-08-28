@@ -24,7 +24,7 @@
 
 #include "nodes_stacks.h"
 
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/nodes_mpeg4.h"
 
 #ifndef GPAC_DISABLE_VRML
 

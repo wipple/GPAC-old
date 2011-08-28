@@ -3,10 +3,10 @@
 
 
 #include "safe_include.h" 
-#include <gpac/scenegraph.h>
-#include <gpac/compositor.h>
+#include "../../include/gpac/scenegraph.h"
+#include "../../include/gpac/compositor.h"
 /*for service connection...*/
-#include <gpac/internal/terminal_dev.h>
+#include "../../include/gpac/internal/terminal_dev.h"
 
 class V4SceneManager;
 class V4Service;

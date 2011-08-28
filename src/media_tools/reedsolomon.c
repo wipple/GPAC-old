@@ -13,8 +13,8 @@
  
 #include <stdio.h>  
 #include <ctype.h>  
-#include <gpac/tools.h>
-#include <gpac/internal/reedsolomon.h>
+#include "../../include/gpac/tools.h"
+#include "../../include/gpac/internal/reedsolomon.h"
 
 /* This is one of 14 irreducible polynomials
  * of degree 8 and cycle length 255. (Ch 5, pp. 275, Magnetic Recording)

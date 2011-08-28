@@ -1,5 +1,5 @@
 #include "ts_muxer.h"
-#include <gpac/mpegts.h>
+#include "../../include/gpac/mpegts.h"
 
 struct avr_ts_muxer {
     GF_M2TS_Mux *muxer;

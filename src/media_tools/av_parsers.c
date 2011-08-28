@@ -22,10 +22,10 @@
  *
  */
 
-#include <gpac/internal/media_dev.h>
-#include <gpac/internal/ogg.h>
-#include <gpac/constants.h>
-#include <gpac/math.h>
+#include "../../include/gpac/internal/media_dev.h"
+#include "../../include/gpac/internal/ogg.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/math.h"
 
 
 GF_EXPORT

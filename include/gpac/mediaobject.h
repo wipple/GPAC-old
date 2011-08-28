@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#include <gpac/scenegraph_vrml.h>
+#include "scenegraph_vrml.h"
 
 
 /*

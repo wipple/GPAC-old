@@ -22,7 +22,7 @@
  *
  */
 
-#include <gpac/scene_manager.h>
+#include "../../include/gpac/scene_manager.h"
 
 #ifdef GPAC_DISABLE_ISOM
 
@@ -30,15 +30,15 @@
 
 #else
 
-#include <gpac/nodes_x3d.h>
-#include <gpac/internal/bifs_dev.h>
-#include <gpac/constants.h>
-#include <gpac/avparse.h>
+#include "../../include/gpac/nodes_x3d.h"
+#include "../../include/gpac/internal/bifs_dev.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/avparse.h"
 /*for asctime and gmtime*/
 #include <time.h>
 /*ISO 639 languages*/
-#include <gpac/iso639.h>
-#include <gpac/mpegts.h>
+#include "../../include/gpac/iso639.h"
+#include "../../include/gpac/mpegts.h"
 
 
 extern u32 swf_flags;
@@ -1786,7 +1786,7 @@ void DumpMovieInfo(GF_ISOFile *file)
 
 
 #ifndef GPAC_DISABLE_MPEG2TS
-#include <gpac/internal/isomedia_dev.h>
+#include "../../include/gpac/internal/isomedia_dev.h"
 
 typedef struct
 {	

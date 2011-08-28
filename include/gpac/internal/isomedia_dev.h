@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <gpac/isomedia.h>
+#include "../isomedia.h"
 
 #ifndef GPAC_DISABLE_ISOM
 

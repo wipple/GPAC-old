@@ -23,8 +23,8 @@
  */
 
 
-#include <gpac/list.h>
-#include <gpac/internal/vobsub.h>
+#include "../../include/gpac/list.h"
+#include "../../include/gpac/internal/vobsub.h"
 
 typedef struct _tag_lang_type
 {

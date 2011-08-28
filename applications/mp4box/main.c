@@ -23,8 +23,8 @@
  */
 
 
-#include <gpac/scene_manager.h>
-#include <gpac/download.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/download.h"
 
 #ifdef GPAC_DISABLE_ISOM
 
@@ -32,13 +32,13 @@
 
 #else
 
-#include <gpac/media_tools.h>
+#include "../../include/gpac/media_tools.h"
 /*RTP packetizer flags*/
-#include <gpac/ietf.h>
-#include <gpac/ismacryp.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/ietf.h"
+#include "../../include/gpac/ismacryp.h"
+#include "../../include/gpac/constants.h"
 
-#include <gpac/internal/mpd.h>
+#include "../../include/gpac/internal/mpd.h"
 
 #include <time.h>
 

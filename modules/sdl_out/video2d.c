@@ -23,6 +23,6 @@
  */
 
 #include "sdl_out.h"
-#include <gpac/constants.h>
+#include "../../include/gpac/constants.h"
 
 

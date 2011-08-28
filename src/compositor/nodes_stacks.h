@@ -26,11 +26,11 @@
 #ifndef NODES_STACKS_H
 #define NODES_STACKS_H
 
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
 
 #ifndef GPAC_DISABLE_SVG
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/nodes_svg.h"
 #endif
 
 #include "drawable.h"

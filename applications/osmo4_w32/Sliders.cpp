@@ -4,7 +4,7 @@
 #include "stdafx.h"
 #include "osmo4.h"
 #include "Sliders.h"
-#include <gpac/options.h>
+#include "../../include/gpac/options.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

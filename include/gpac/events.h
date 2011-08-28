@@ -31,8 +31,8 @@
 extern "C" {
 #endif
 
-#include <gpac/math.h>
-#include <gpac/tools.h>
+#include "math.h"
+#include "tools.h"
 
 /*
 		minimal event system

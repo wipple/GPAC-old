@@ -43,7 +43,7 @@ extern "C" {
  *	@{
  */
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 typedef struct _tag_array GF_List;
 

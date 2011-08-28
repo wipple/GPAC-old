@@ -27,7 +27,7 @@
 #include "visual_manager.h"
 
 #ifndef GPAC_DISABLE_3D
-#include <gpac/internal/mesh.h>
+#include "../../include/gpac/internal/mesh.h"
 #endif
 
 typedef struct

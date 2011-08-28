@@ -23,11 +23,11 @@
  */
 
 
-#include <gpac/internal/odf_dev.h>
-#include <gpac/token.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/odf_dev.h"
+#include "../../include/gpac/token.h"
+#include "../../include/gpac/constants.h"
 /*for import flags*/
-#include <gpac/media_tools.h>
+#include "../../include/gpac/media_tools.h"
 
 
 #if !defined(GPAC_DISABLE_LOADER_BT) && !defined(GPAC_DISABLE_LOADER_XMT)
@@ -132,7 +132,7 @@ u32 gf_odf_get_tag_by_name(char *descName)
 	return 0;
 }
 
-#include <gpac/internal/odf_parse_common.h>
+#include "../../include/gpac/internal/odf_parse_common.h"
 
 void OD_ParseBinData(char *val, char **out_data, u32 *out_data_size)
 {

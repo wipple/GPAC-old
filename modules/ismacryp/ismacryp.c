@@ -23,12 +23,12 @@
  *
  */
 
-#include <gpac/modules/ipmp.h>
-#include <gpac/crypt.h>
-#include <gpac/ismacryp.h>
-#include <gpac/base_coding.h>
-#include <gpac/download.h>
-#include <gpac/internal/terminal_dev.h>
+#include "../../include/gpac/modules/ipmp.h"
+#include "../../include/gpac/crypt.h"
+#include "../../include/gpac/ismacryp.h"
+#include "../../include/gpac/base_coding.h"
+#include "../../include/gpac/download.h"
+#include "../../include/gpac/internal/terminal_dev.h"
 
 #ifndef GPAC_DISABLE_MCRYPT
 

@@ -27,9 +27,9 @@
 #ifndef _MEDIA_CONTROL_H_
 #define _MEDIA_CONTROL_H_
 
-#include <gpac/internal/terminal_dev.h>
+#include "../../include/gpac/internal/terminal_dev.h"
 /*MediaControl definition*/
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/nodes_mpeg4.h"
 
 
 /*restart object and takes care of media control/clock dependencies*/

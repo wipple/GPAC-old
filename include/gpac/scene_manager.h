@@ -30,9 +30,9 @@
 extern "C" {
 #endif
 
-#include <gpac/isomedia.h>
-#include <gpac/mpeg4_odf.h>
-#include <gpac/scenegraph_vrml.h>
+#include "isomedia.h"
+#include "mpeg4_odf.h"
+#include "scenegraph_vrml.h"
 
 /*
 		Memory scene management

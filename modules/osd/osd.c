@@ -23,10 +23,10 @@
  *
  */
 
-#include <gpac/modules/term_ext.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/modules/term_ext.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
+#include "../../include/gpac/nodes_mpeg4.h"
 
 
 typedef struct

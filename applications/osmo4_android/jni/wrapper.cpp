@@ -27,12 +27,12 @@
 
 #include <jni.h>
 
-#include <gpac/terminal.h>
-#include <gpac/thread.h>
-#include <gpac/options.h>
-#include <gpac/modules/service.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../../include/gpac/terminal.h"
+#include "../../../include/gpac/thread.h"
+#include "../../../include/gpac/options.h"
+#include "../../../include/gpac/modules/service.h"
+#include "../../../include/gpac/internal/terminal_dev.h"
+#include "../../../include/gpac/internal/compositor_dev.h"
 
 #include "wrapper.h"
 #include "wrapper_jni.c"

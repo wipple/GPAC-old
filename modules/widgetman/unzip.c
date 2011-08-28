@@ -27,7 +27,7 @@
 #endif
 
 #include "unzip.h"
-#include <gpac/tools.h>
+#include "../../include/gpac/tools.h"
 
 
 

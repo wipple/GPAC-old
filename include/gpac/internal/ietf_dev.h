@@ -25,11 +25,11 @@
 #ifndef	_GF_IETF_DEV_H_
 #define _GF_IETF_DEV_H_
 
-#include <gpac/ietf.h>
+#include "../ietf.h"
 
 #ifndef GPAC_DISABLE_STREAMING
 
-#include <gpac/thread.h>
+#include "../thread.h"
 
 /*
 			RTP intern

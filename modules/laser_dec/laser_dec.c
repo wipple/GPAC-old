@@ -23,9 +23,9 @@
  *
  */
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/laser.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/laser.h"
+#include "../../include/gpac/constants.h"
 
 #ifndef GPAC_DISABLE_LASER
 

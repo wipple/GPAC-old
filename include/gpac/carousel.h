@@ -26,9 +26,9 @@
 #ifndef _GF_CAROUSSEL_H_
 #define _GF_CAROUSSEL_H_
 
-#include <gpac/mpegts.h>
+#include "mpegts.h"
 #include <string.h>
-#include <gpac/bitstream.h>
+#include "bitstream.h"
 
 #define AIT_SECTION_LENGTH_MAX 1021
 #define APPLICATION_TYPE_HTTP_APPLICATION 16

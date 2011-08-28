@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/internal/ietf_dev.h>
+#include "../../include/gpac/internal/ietf_dev.h"
 
 #ifndef GPAC_DISABLE_STREAMING
 
-#include <gpac/constants.h>
+#include "../../include/gpac/constants.h"
 
 static void rtp_amr_flush(GP_RTPPacketizer *builder)
 {

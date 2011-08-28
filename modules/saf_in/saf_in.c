@@ -23,10 +23,10 @@
  *
  */
 
-#include <gpac/modules/service.h>
-#include <gpac/modules/codec.h>
-#include <gpac/constants.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/thread.h"
 
 typedef struct
 {

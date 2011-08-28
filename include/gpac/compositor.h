@@ -31,11 +31,11 @@ extern "C" {
 
 
 /*include scene graph API*/
-#include <gpac/scenegraph.h>
+#include "scenegraph.h"
 /*GF_User and GF_Terminal */
-#include <gpac/user.h>
+#include "user.h"
 /*frame buffer definition*/
-#include <gpac/color.h>
+#include "color.h"
 
 typedef struct __tag_compositor GF_Compositor;
 

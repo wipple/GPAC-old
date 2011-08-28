@@ -43,8 +43,8 @@ extern "C" {
  *	@{
  */
 
-#include <gpac/ietf.h>
-#include <gpac/isomedia.h>
+#include "ietf.h"
+#include "isomedia.h"
 
 #ifndef GPAC_DISABLE_STREAMING
     

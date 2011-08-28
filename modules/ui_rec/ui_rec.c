@@ -24,9 +24,9 @@
  */
 
 /*base SVG type*/
-#include <gpac/modules/term_ext.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/modules/term_ext.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
 
 
 typedef struct __ui_rec

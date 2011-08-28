@@ -31,7 +31,7 @@
 
 #ifndef GPAC_DISABLE_3D
 
-#include <gpac/options.h>
+#include "../../include/gpac/options.h"
 
 
 void drawable_3d_base_traverse(GF_Node *n, void *rs, Bool is_destroy, void (*build_shape)(GF_Node*,Drawable3D *,GF_TraverseState *) )

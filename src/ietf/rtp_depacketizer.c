@@ -22,15 +22,15 @@
  *		
  */
 
-#include <gpac/internal/ietf_dev.h>
+#include "../../include/gpac/internal/ietf_dev.h"
 
 #ifndef GPAC_DISABLE_STREAMING
 
-#include <gpac/esi.h>
-#include <gpac/base_coding.h>
-#include <gpac/constants.h>
-#include <gpac/mpeg4_odf.h>
-#include <gpac/avparse.h>
+#include "../../include/gpac/esi.h"
+#include "../../include/gpac/base_coding.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/mpeg4_odf.h"
+#include "../../include/gpac/avparse.h"
 
 
 

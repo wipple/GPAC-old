@@ -31,9 +31,9 @@
 extern "C" {
 #endif
 
-//#include <gpac/math.h>
-#include <gpac/events.h>
-#include <gpac/module.h>
+//#include "math.h"
+#include "events.h"
+#include "module.h"
 
 /*GPAC client terminal*/
 typedef struct _tag_terminal GF_Terminal;

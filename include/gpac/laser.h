@@ -30,12 +30,12 @@
 extern "C" {
 #endif
 
-#include <gpac/nodes_svg.h>
+#include "nodes_svg.h"
 
 #ifndef GPAC_DISABLE_LASER
 
 /*for LASeRConfig*/
-#include <gpac/mpeg4_odf.h>
+#include "mpeg4_odf.h"
 
 typedef struct __tag_laser_codec GF_LASeRCodec;
 

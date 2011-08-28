@@ -30,7 +30,7 @@
 #endif
 
 #ifndef GPAC_DISABLE_3D
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/compositor_dev.h"
 
 #ifdef GPAC_USE_OGL_ES
 

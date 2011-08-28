@@ -22,13 +22,13 @@
  *
  */
 
-#include <gpac/scene_manager.h>
-#include <gpac/constants.h>
-#include <gpac/utf.h>
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/nodes_x3d.h>
-#include <gpac/nodes_svg.h>
-#include <gpac/events.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/utf.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/nodes_x3d.h"
+#include "../../include/gpac/nodes_svg.h"
+#include "../../include/gpac/events.h"
 
 #ifndef __SYMBIAN32__
 #include <wchar.h>

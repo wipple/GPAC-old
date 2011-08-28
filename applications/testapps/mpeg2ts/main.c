@@ -1,4 +1,4 @@
-#include <gpac/mpegts.h>
+#include "../../../include/gpac/mpegts.h"
 
 u32 dump_pid = 130;
 FILE *dest = NULL;

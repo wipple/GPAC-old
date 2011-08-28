@@ -25,18 +25,18 @@
 
 
 /*for OD service types*/
-#include <gpac/constants.h>
+#include "../../include/gpac/constants.h"
 /*for URL concatenation*/
-#include <gpac/network.h>
-#include <gpac/internal/terminal_dev.h>
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/internal/terminal_dev.h"
 #include "media_control.h"
-#include <gpac/compositor.h>
-#include <gpac/nodes_x3d.h>
-#include <gpac/crypt.h>
+#include "../../include/gpac/compositor.h"
+#include "../../include/gpac/nodes_x3d.h"
+#include "../../include/gpac/crypt.h"
 
 /*SVG properties*/
 #ifndef GPAC_DISABLE_SVG
-#include <gpac/scenegraph_svg.h>
+#include "../../include/gpac/scenegraph_svg.h"
 #endif
 
 

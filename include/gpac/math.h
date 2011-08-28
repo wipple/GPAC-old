@@ -34,7 +34,7 @@ extern "C" {
  *	\brief math and trigo functions.
  */
 
-#include <gpac/setup.h>
+#include "setup.h"
 	
 /*NOTE: there is a conflict on Win32 VC6 with C++ and gpac headers when including <math.h>*/
 #if !defined(__cplusplus) || defined(__SYMBIAN32__)

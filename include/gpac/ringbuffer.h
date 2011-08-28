@@ -25,8 +25,8 @@
 #ifndef _GF_RINGBUFFER_H
 #define _GF_RINGBUFFER_H
 
-#include <gpac/tools.h>
-#include <gpac/thread.h>
+#include "tools.h"
+#include "thread.h"
 
 #ifdef __cplusplus
 extern "C" {

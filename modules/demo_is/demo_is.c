@@ -24,8 +24,8 @@
  */
 
 
-#include <gpac/modules/codec.h>
-#include <gpac/scenegraph_vrml.h>
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/scenegraph_vrml.h"
 
 static Bool DEV_RegisterDevice(struct __input_device *ifce, const char *urn, GF_BitStream *dsi, void (*AddField)(struct __input_device *_this, u32 fieldType, const char *name))
 {

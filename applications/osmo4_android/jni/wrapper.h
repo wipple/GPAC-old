@@ -27,10 +27,10 @@
 
 #include <jni.h>
 
-#include <gpac/terminal.h>
-#include <gpac/thread.h>
-#include <gpac/options.h>
-#include <gpac/modules/service.h>
+#include "../../../include/gpac/terminal.h"
+#include "../../../include/gpac/thread.h"
+#include "../../../include/gpac/options.h"
+#include "../../../include/gpac/modules/service.h"
 
 //#define		MAX_PATH	255
 

@@ -24,9 +24,9 @@
 
 #include "visual_manager.h"
 #include "nodes_stacks.h"
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/nodes_mpeg4.h"
 #ifndef GPAC_DISABLE_SVG
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/nodes_svg.h"
 #endif
 
 static Bool visual_draw_bitmap_stub(GF_VisualManager *visual, GF_TraverseState *tr_state, struct _drawable_context *ctx, GF_ColorKey *col_key)

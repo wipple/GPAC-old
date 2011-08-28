@@ -27,8 +27,8 @@
 #define __GDIP_PRIV_H
 
 #include <math.h>
-#include <gpac/modules/raster2d.h>
-#include <gpac/modules/font.h>
+#include "../../include/gpac/modules/raster2d.h"
+#include "../../include/gpac/modules/font.h"
 #include <windows.h>
 
 #ifndef ULONG_PTR 

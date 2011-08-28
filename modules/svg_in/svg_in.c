@@ -24,9 +24,9 @@
  */
 
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/scene_manager.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/constants.h"
 #include <zlib.h>
 
 #ifndef GPAC_DISABLE_SVG

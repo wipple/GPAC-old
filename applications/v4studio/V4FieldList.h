@@ -2,7 +2,7 @@
 #define _V4_FIELD_LIST_H
 
 #include "safe_include.h" 
-#include <gpac/scenegraph.h>
+#include "../../include/gpac/scenegraph.h"
 
 #include <wx/grid.h>
 

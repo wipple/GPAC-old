@@ -23,11 +23,11 @@
  */
 
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 #ifndef GPAC_DISABLE_SVG
 
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/nodes_svg.h"
 
 enum
 {
@@ -1013,7 +1013,7 @@ GF_Node *gf_xml_node_clone(GF_SceneGraph *inScene, GF_Node *orig, GF_Node *clone
 }
 
 /*TODO FIXME, this is ugly, add proper cache system*/
-#include <gpac/base_coding.h>
+#include "../../include/gpac/base_coding.h"
 
 
 static u32 check_existing_file(char *base_file, char *ext, char *data, u32 data_size, u32 idx)

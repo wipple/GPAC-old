@@ -26,14 +26,14 @@
 #define RTP_IN_H
 
 /*module interface*/
-#include <gpac/modules/service.h>
+#include "../../include/gpac/modules/service.h"
 #ifndef GPAC_DISABLE_STREAMING
 
-#include <gpac/thread.h>
-#include <gpac/constants.h>
-#include <gpac/base_coding.h>
+#include "../../include/gpac/thread.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/base_coding.h"
 /*IETF lib*/
-#include <gpac/ietf.h>
+#include "../../include/gpac/ietf.h"
 
 
 #define RTP_BUFFER_SIZE			0x100000ul

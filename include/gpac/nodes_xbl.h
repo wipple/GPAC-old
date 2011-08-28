@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/svg_types.h>
+#include "internal/scenegraph_dev.h"
+#include "svg_types.h"
 
 #define XBL_String_datatype SVG_String_datatype 
 

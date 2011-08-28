@@ -37,8 +37,8 @@
 #endif
 
 
-#include <gpac/terminal.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/thread.h"
 
 
 // CLASS DECLARATION

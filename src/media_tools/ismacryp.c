@@ -24,12 +24,12 @@
 
 
 
-#include <gpac/ismacryp.h>
-#include <gpac/xml.h>
-#include <gpac/base_coding.h>
-#include <gpac/constants.h>
-#include <gpac/internal/isomedia_dev.h>
-#include <gpac/crypt.h>
+#include "../../include/gpac/ismacryp.h"
+#include "../../include/gpac/xml.h"
+#include "../../include/gpac/base_coding.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/internal/isomedia_dev.h"
+#include "../../include/gpac/crypt.h"
 
 
 typedef struct 

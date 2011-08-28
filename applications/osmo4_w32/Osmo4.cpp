@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "Osmo4.h"
-#include <gpac/network.h>
+#include "../../include/gpac/network.h"
 #include <direct.h>
 #include "MainFrm.h"
 #include "OpenUrl.h"

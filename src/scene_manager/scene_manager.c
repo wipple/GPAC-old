@@ -22,12 +22,12 @@
  *
  */
 
-#include <gpac/scene_manager.h>
-#include <gpac/constants.h>
-#include <gpac/media_tools.h>
-#include <gpac/bifs.h>
-#include <gpac/xml.h>
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/media_tools.h"
+#include "../../include/gpac/bifs.h"
+#include "../../include/gpac/xml.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 
 GF_EXPORT

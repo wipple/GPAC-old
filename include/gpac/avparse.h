@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include <gpac/bitstream.h>
+#include "bitstream.h"
 
 /*basic MPEG (1,2,4) visual object parser (DSI extraction and timing/framing)*/
 typedef struct

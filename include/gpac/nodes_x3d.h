@@ -36,7 +36,7 @@
 extern "C" {
 #endif
 
-#include <gpac/scenegraph_vrml.h>
+#include "scenegraph_vrml.h"
 
 #ifndef GPAC_DISABLE_X3D
 

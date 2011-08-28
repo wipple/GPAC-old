@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-#include <gpac/module.h>
-#include <gpac/scenegraph.h>
+#include "../module.h"
+#include "../scenegraph.h"
 
 /*interface name and version for JavaScript User Extensions*/
 #define GF_JS_USER_EXT_INTERFACE		GF_4CC('G','J','S', '1')

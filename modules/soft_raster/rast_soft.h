@@ -27,7 +27,7 @@
 #ifndef _RAST_SOFT_H_
 #define _RAST_SOFT_H_
 
-#include <gpac/modules/raster2d.h>
+#include "../../include/gpac/modules/raster2d.h"
 
 #ifdef __cplusplus
 extern "C" {

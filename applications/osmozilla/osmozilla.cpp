@@ -28,9 +28,9 @@
 #include <windows.h>
 #endif
 
-#include <gpac/options.h>
-#include <gpac/terminal.h>
-#include <gpac/term_info.h>
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/term_info.h"
 
 
 short Osmozilla_GetURL(NPP instance, const char *url, const char *target);

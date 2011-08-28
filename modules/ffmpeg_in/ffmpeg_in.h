@@ -29,11 +29,11 @@
 
 
 /*include net API*/
-#include <gpac/modules/service.h>
+#include "../../include/gpac/modules/service.h"
 /*include decoder API*/
-#include <gpac/modules/codec.h>
-#include <gpac/constants.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/thread.h"
 
 
 //#define DISABLE_FFMPEG_DEMUX

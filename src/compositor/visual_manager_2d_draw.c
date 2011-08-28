@@ -26,7 +26,7 @@
 #include "drawable.h"
 #include "nodes_stacks.h"
 #include "texturing.h"
-#include <gpac/options.h>
+#include "../../include/gpac/options.h"
 
 //#define SKIP_DRAW
 

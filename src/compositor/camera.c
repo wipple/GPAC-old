@@ -22,9 +22,9 @@
  *
  */
 
-#include <gpac/internal/camera.h>
+#include "../../include/gpac/internal/camera.h"
 
-#include <gpac/options.h>
+#include "../../include/gpac/options.h"
 #include "visual_manager.h"
 
 #define FORCE_CAMERA_3D

@@ -54,7 +54,7 @@
 extern "C" {
 #endif
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 #ifndef GPAC_DISABLE_MCRYPT
 

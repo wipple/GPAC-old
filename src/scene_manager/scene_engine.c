@@ -23,25 +23,25 @@
  *
  */
 
-#include <gpac/scene_engine.h>
+#include "../../include/gpac/scene_engine.h"
 
 #ifndef GPAC_DISABLE_SENG
-#include <gpac/scene_manager.h>
+#include "../../include/gpac/scene_manager.h"
 
 #ifndef GPAC_DISABLE_BIFS_ENC
-#include <gpac/bifs.h>
+#include "../../include/gpac/bifs.h"
 #endif
 
 #ifndef GPAC_DISABLE_VRML
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/nodes_mpeg4.h"
 #endif
 
 #ifndef GPAC_DISABLE_LASER
-#include <gpac/laser.h>
+#include "../../include/gpac/laser.h"
 #endif
 
-#include <gpac/constants.h>
-#include <gpac/base_coding.h>
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/base_coding.h"
 
 #include <time.h>
 

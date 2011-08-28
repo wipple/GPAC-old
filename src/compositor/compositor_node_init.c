@@ -24,8 +24,8 @@
 
 #include "nodes_stacks.h"
 
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
 
 
 void compositor_init_afx_node(GF_Compositor *compositor, GF_Node *node, MFURL *url)
