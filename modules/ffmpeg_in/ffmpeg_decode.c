@@ -23,7 +23,7 @@
  */
 
 #include "ffmpeg_in.h"
-#include <gpac/avparse.h>
+#include "../../include/gpac/avparse.h"
 
 #ifndef FFMPEG_OLD_HEADERS
 

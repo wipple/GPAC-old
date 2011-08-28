@@ -22,8 +22,8 @@
  *
  */
 
-#include <gpac/internal/media_dev.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/media_dev.h"
+#include "../../include/gpac/constants.h"
 
 #ifdef GPAC_HAS_PNG
 

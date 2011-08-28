@@ -28,23 +28,23 @@
 extern "C" {
 #endif
 
-#include <gpac/compositor.h>
+#include "../compositor.h"
 /*include scene graph API*/
-#include <gpac/thread.h>
+#include "../thread.h"
 /*bridge between the rendering engine and the systems media engine*/
-#include <gpac/mediaobject.h>
+#include "../mediaobject.h"
 
 /*raster2D API*/
-#include <gpac/modules/raster2d.h>
+#include "../modules/raster2d.h"
 /*font engine API*/
-#include <gpac/modules/font.h>
+#include "../modules/font.h"
 /*AV hardware API*/
-#include <gpac/modules/video_out.h>
-#include <gpac/modules/audio_out.h>
+#include "../modules/video_out.h"
+#include "../modules/audio_out.h"
 
 /*SVG properties*/
 #ifndef GPAC_DISABLE_SVG
-#include <gpac/scenegraph_svg.h>
+#include "../scenegraph_svg.h"
 #endif
 
 
@@ -87,8 +87,8 @@ typedef struct _traversing_state GF_TraverseState;
 typedef struct _gf_ft_mgr GF_FontManager;
 
 #ifndef GPAC_DISABLE_3D
-#include <gpac/internal/camera.h>
-#include <gpac/internal/mesh.h>
+#include "camera.h"
+#include "mesh.h"
 
 typedef struct 
 {

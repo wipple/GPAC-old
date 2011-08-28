@@ -23,9 +23,9 @@
  */
 
 
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/internal/swf_dev.h>
-#include <gpac/avparse.h>
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/internal/swf_dev.h"
+#include "../../include/gpac/avparse.h"
 
 #include <zlib.h>
 

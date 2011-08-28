@@ -23,7 +23,7 @@
  */
 
 
-#include <gpac/internal/odf_dev.h>
+#include "../../include/gpac/internal/odf_dev.h"
 
 #ifndef GPAC_MINIMAL_ODF
 
@@ -141,7 +141,7 @@ u32 gf_ipmpx_get_field_type(GF_IPMPX_Data *p, char *fieldName)
 	return 0;
 }
 
-#include <gpac/internal/odf_parse_common.h>
+#include "../../include/gpac/internal/odf_parse_common.h"
 
 void GF_IPMPX_ParseBinData(char *val, char **out_data, u32 *out_data_size)
 {

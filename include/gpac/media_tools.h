@@ -30,8 +30,8 @@
 extern "C" {
 #endif
 
-#include <gpac/isomedia.h>
-#include <gpac/avparse.h>
+#include "isomedia.h"
+#include "avparse.h"
 
 
 #ifndef GPAC_DISABLE_ISOM

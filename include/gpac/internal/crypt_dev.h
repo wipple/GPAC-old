@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <gpac/crypt.h>
+#include "../crypt.h"
 
 #ifndef GPAC_DISABLE_MCRYPT
 

@@ -22,8 +22,8 @@
  *
  */
 
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/nodes_svg.h"
 
 #ifndef GPAC_DISABLE_LOG
 u32 time_spent_in_anim = 0;

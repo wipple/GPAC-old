@@ -26,8 +26,8 @@
 #include "visual_manager.h"
 #include "mpeg4_grouping.h"
 #include "texturing.h"
-#include <gpac/utf.h>
-#include <gpac/options.h>
+#include "../../include/gpac/utf.h"
+#include "../../include/gpac/options.h"
 
 #ifndef GPAC_DISABLE_VRML
 

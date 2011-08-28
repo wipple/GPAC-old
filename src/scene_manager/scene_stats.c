@@ -22,9 +22,9 @@
  *
  */
 
-#include <gpac/scene_manager.h>
-#include <gpac/constants.h>
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 #ifndef GPAC_DISABLE_SCENE_STATS
 

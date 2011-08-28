@@ -43,7 +43,7 @@ extern "C" {
  *	@{
  */
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 /*!
  *\brief base64 encoder

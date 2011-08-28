@@ -1,10 +1,10 @@
-#include <gpac/base_coding.h>
-#include <gpac/constants.h>
-#include <gpac/scene_manager.h>
-#include <gpac/bifs.h>
-#include <gpac/scene_engine.h>
-#include <gpac/network.h>
-#include <gpac/internal/ietf_dev.h>
+#include "../../../include/gpac/base_coding.h"
+#include "../../../include/gpac/constants.h"
+#include "../../../include/gpac/scene_manager.h"
+#include "../../../include/gpac/bifs.h"
+#include "../../../include/gpac/scene_engine.h"
+#include "../../../include/gpac/network.h"
+#include "../../../include/gpac/internal/ietf_dev.h"
 #include "RTP_serv_generator.h"
 
 /* structure definitions */

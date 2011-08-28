@@ -26,7 +26,7 @@
 
 #include "visual_manager.h"
 #include "nodes_stacks.h"
-#include <gpac/options.h>
+#include "../../include/gpac/options.h"
 
 #ifdef OPENGL_RASTER
 #include "gl_inc.h"

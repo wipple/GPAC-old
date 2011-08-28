@@ -1,4 +1,4 @@
-#include <gpac/unicode.h>
+#include "../../include/gpac/unicode.h"
 /**
  * This code has been adapted from http://www.ietf.org/rfc/rfc2640.txt
  * Full Copyright Statement

@@ -25,9 +25,9 @@
 
 
 /*decoder Interface*/
-#include <gpac/modules/codec.h>
-#include <gpac/modules/service.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/constants.h"
 
 #if (defined(WIN32) || defined (_WIN32_WCE)) && defined(GPAC_HAS_AMR_FT)
 /*AMR NB*/

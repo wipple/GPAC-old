@@ -25,7 +25,7 @@
 #ifndef __MPEG2_PS_H__
 #define __MPEG2_PS_H__ 1
 
-#include <gpac/avparse.h>
+#include "../../include/gpac/avparse.h"
 
 #ifndef GPAC_DISABLE_MPEG2PS
 

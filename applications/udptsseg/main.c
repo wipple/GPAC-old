@@ -21,11 +21,11 @@
 *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
 *
 */
-#include <gpac/media_tools.h>
-#include <gpac/constants.h>
-#include <gpac/base_coding.h>
-#include <gpac/ietf.h>
-#include <gpac/mpegts.h>
+#include "../../include/gpac/media_tools.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/base_coding.h"
+#include "../../include/gpac/ietf.h"
+#include "../../include/gpac/mpegts.h"
 
 #define UDP_BUFFER_SIZE	64484
 

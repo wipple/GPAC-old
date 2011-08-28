@@ -3,7 +3,7 @@
 
 */
 #include "safe_include.h"
-#include <gpac/scenegraph_vrml.h>
+#include "../../include/gpac/scenegraph_vrml.h"
 
 #include "V4NodePool.h"
 

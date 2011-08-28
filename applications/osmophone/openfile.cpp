@@ -4,7 +4,7 @@
 
 #include <aygshell.h>
 
-#include <gpac/config_file.h>
+#include "../../include/gpac/config_file.h"
 #include "resource.h"
 
 static HINSTANCE g_hInst = NULL;

@@ -22,19 +22,19 @@
  *
  */
 
-#include <gpac/mpegts.h>
+#include "../../include/gpac/mpegts.h"
 
-#include <gpac/carousel.h>
+#include "../../include/gpac/carousel.h"
 
 
 #ifndef GPAC_DISABLE_MPEG2TS
 
-#include <gpac/constants.h>
-#include <gpac/internal/media_dev.h>
-#include <gpac/math.h>
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/internal/media_dev.h"
+#include "../../include/gpac/math.h"
 #include <string.h>
-#include <gpac/carousel.h>
-#include <gpac/download.h>
+#include "../../include/gpac/carousel.h"
+#include "../../include/gpac/download.h"
 
 #ifdef GPAC_CONFIG_LINUX
 #include <unistd.h>
@@ -44,7 +44,7 @@
 //#define FORCE_DISABLE_MPEG4SL_OVER_MPEG2TS
 
 #ifdef DUMP_MPE_IP_DATAGRAMS
-#include <gpac/dvb_mpe.h>
+#include "../../include/gpac/dvb_mpe.h"
 #endif
 
 #define DEBUG_TS_PACKET 0

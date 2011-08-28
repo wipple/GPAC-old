@@ -33,10 +33,10 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/nodes_svg.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/nodes_svg.h"
+#include "../../include/gpac/constants.h"
 
 #ifdef GPAC_HAS_SPIDERMONKEY
 

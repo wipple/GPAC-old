@@ -24,16 +24,16 @@
  */
 
 /*base SVG type*/
-#include <gpac/nodes_svg.h>
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
+#include "../../include/gpac/nodes_svg.h"
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
 /*dom events*/
-#include <gpac/events.h>
+#include "../../include/gpac/events.h"
 
-#include <gpac/download.h>
-#include <gpac/network.h>
-#include <gpac/options.h>
-#include <gpac/xml.h>
+#include "../../include/gpac/download.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/xml.h"
 
 
 #ifdef GPAC_HAS_SPIDERMONKEY
@@ -46,12 +46,12 @@
 #  pragma comment(lib, "js32")
 #endif
 
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/internal/smjs_api.h> 
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/internal/smjs_api.h" 
 
-#include <gpac/modules/js_usr.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/modules/js_usr.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
 
 #define GPAC_JS_RTI_REFRESH_RATE	200
 

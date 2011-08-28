@@ -39,7 +39,7 @@
 #include <jack/types.h>
 #include <jack/jack.h>
 #include <jack/ringbuffer.h>
-#include <gpac/modules/audio_out.h>
+#include "../../include/gpac/modules/audio_out.h"
 
 #ifndef WIN32
 #include <unistd.h>

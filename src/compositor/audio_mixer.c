@@ -22,7 +22,7 @@
  *
  */
 
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/compositor_dev.h"
 
 /*max number of channels we support in mixer*/
 #define GF_SR_MAX_CHANNELS	16

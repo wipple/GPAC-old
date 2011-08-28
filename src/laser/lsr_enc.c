@@ -23,15 +23,15 @@
  *
  */
 
-#include <gpac/internal/laser_dev.h>
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/bitstream.h>
-#include <gpac/math.h>
+#include "../../include/gpac/internal/laser_dev.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/bitstream.h"
+#include "../../include/gpac/math.h"
 
 #ifndef GPAC_DISABLE_LASER
 
 
-#include <gpac/events.h>
+#include "../../include/gpac/events.h"
 
 
 #define GF_LSR_WRITE_INT(_codec, _val, _nbBits, _str)	{\

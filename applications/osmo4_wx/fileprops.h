@@ -34,7 +34,7 @@
 
 #include <wx/treectrl.h>
 
-#include <gpac/terminal.h>
+#include "../../include/gpac/terminal.h"
 
 /*abstract class for all items in the tree*/
 class ODTreeData : public wxTreeItemData

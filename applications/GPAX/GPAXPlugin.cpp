@@ -26,8 +26,8 @@
 #include "stdafx.h"
 #include "GPAX.h"
 #include "GPAXPlugin.h"
-#include <gpac/network.h>
-#include <gpac/utf.h>
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/utf.h"
 #include <shlobj.h>
 
 #ifndef _WIN32_WCE

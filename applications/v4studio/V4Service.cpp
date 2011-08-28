@@ -1,6 +1,6 @@
 #include "V4Service.h"
 
-#include <gpac/constants.h>
+#include "../../include/gpac/constants.h"
 
 #define V4_PRIVATE_SCENE_OTI 0xFF
 

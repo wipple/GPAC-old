@@ -22,7 +22,7 @@
  *
  */
 
-#include <gpac/list.h>
+#include "../../include/gpac/list.h"
 
 /* GF_List modes, ONLY ONE CAN BE DEFINED
 

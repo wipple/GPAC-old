@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/scene_manager.h>
-#include <gpac/constants.h>
-#include <gpac/network.h>
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/nodes_mpeg4.h"
 
 #ifndef GPAC_DISABLE_VRML
 

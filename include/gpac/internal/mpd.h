@@ -25,10 +25,10 @@
 #ifndef _MPD_IN_H_
 #define _MPD_IN_H_
 
-#include <gpac/constants.h>
-#include <gpac/xml.h>
-#include <gpac/media_tools.h>
-#include <gpac/internal/terminal_dev.h>
+#include "../constants.h"
+#include "../xml.h"
+#include "../media_tools.h"
+#include "terminal_dev.h"
 
 typedef struct
 {

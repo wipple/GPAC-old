@@ -28,7 +28,7 @@
 #ifndef _GF_AVILIB_H_
 #define _GF_AVILIB_H_
 
-#include <gpac/tools.h>
+#include "../tools.h"
 
 #ifndef GPAC_DISABLE_AVILIB
 

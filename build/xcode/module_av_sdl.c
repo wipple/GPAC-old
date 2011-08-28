@@ -7,7 +7,7 @@
  *
  */
 
-#include <gpac/tools.h>
+#include "../../include/gpac/tools.h"
 #include "sdl_out.h"
 
 static Bool is_init = 0;

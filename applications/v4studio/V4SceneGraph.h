@@ -2,9 +2,9 @@
 #define _V4SCENEGRAPH_H
 
 #include "safe_include.h" 
-#include <gpac/scene_manager.h>
-#include <gpac/compositor.h>
-#include <gpac/internal/terminal_dev.h> // MPEG4CLIENT
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/compositor.h"
+#include "../../include/gpac/internal/terminal_dev.h" // MPEG4CLIENT
 
 
 #include <wx/gdicmn.h>

@@ -26,12 +26,12 @@
 #ifndef _ISMO_IN_H_
 #define _ISMO_IN_H_
 
-#include <gpac/constants.h>
-#include <gpac/modules/service.h>
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/modules/service.h"
 
 #ifndef GPAC_DISABLE_ISOM
 
-#include <gpac/media_tools.h>
+#include "../../include/gpac/media_tools.h"
 /*
 			reader module
 

@@ -28,7 +28,7 @@
 
 #include "script.h"
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 #if !defined(GPAC_DISABLE_BIFS) && defined(GPAC_HAS_SPIDERMONKEY)
 

@@ -45,7 +45,7 @@
 extern "C" {
 #endif
 
-#include <gpac/tools.h>
+#include "tools.h"
 
     /**
      * Handle for Cache Entries.

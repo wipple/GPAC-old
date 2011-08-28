@@ -21,9 +21,9 @@
 *		
 */
 
-#include <gpac/tools.h>
-#include <gpac/modules/audio_out.h>
-#include <gpac/modules/video_out.h>
+#include "../../include/gpac/tools.h"
+#include "../../include/gpac/modules/audio_out.h"
+#include "../../include/gpac/modules/video_out.h"
 
 /*interface query*/
 const u32 *QueryInterfaces() 

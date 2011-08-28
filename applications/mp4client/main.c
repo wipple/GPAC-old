@@ -23,16 +23,16 @@
  */
 
 /*includes both terminal and od browser*/
-#include <gpac/terminal.h>
-#include <gpac/term_info.h>
-#include <gpac/constants.h>
-#include <gpac/media_tools.h>
-#include <gpac/options.h>
-#include <gpac/modules/service.h>
-#include <gpac/avparse.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/term_info.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/media_tools.h"
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/avparse.h"
 
 /*ISO 639 languages*/
-#include <gpac/iso639.h>
+#include "../../include/gpac/iso639.h"
 
 #ifndef WIN32
 #include <dlfcn.h>

@@ -498,13 +498,13 @@ static void gf_memory_del(memory_list *p)
 #endif /*GPAC_MEMORY_TRACKING*/
 
 
-#include <gpac/tools.h>
+#include "../../include/gpac/tools.h"
 
 
 /*GPAC memory tracking*/
 #ifdef GPAC_MEMORY_TRACKING
 
-#include <gpac/thread.h>
+#include "../../include/gpac/thread.h"
 
 /*global lists of allocations and deallocations*/
 memory_list memory_add = NULL, memory_rem = NULL;

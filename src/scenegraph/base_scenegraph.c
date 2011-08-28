@@ -22,15 +22,15 @@
  *
  */
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 /*svg proto*/
-#include <gpac/scenegraph_svg.h>
+#include "../../include/gpac/scenegraph_svg.h"
 /*MPEG4 tags (for internal nodes)*/
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/nodes_mpeg4.h"
 /*X3D tags (for internal nodes)*/
-#include <gpac/nodes_x3d.h>
-#include <gpac/events.h>
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/nodes_x3d.h"
+#include "../../include/gpac/events.h"
+#include "../../include/gpac/nodes_svg.h"
 
 static void ReplaceDEFNode(GF_Node *FromNode, GF_Node *node, GF_Node *newNode, Bool updateOrderedGroup);
 

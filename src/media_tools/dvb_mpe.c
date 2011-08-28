@@ -1,5 +1,5 @@
-#include <gpac/internal/dvb_mpe_dev.h>
-#include <gpac/network.h>
+#include "../../include/gpac/internal/dvb_mpe_dev.h"
+#include "../../include/gpac/network.h"
 #include <string.h>
 
 

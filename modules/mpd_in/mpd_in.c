@@ -23,13 +23,13 @@
 	 *
 	 */
 
-	#include <gpac/modules/service.h>
-	#include <gpac/internal/terminal_dev.h>
-	#include <gpac/thread.h>
-	#include <gpac/network.h>
-	#include <gpac/crypt.h>
-	#include <gpac/internal/mpd.h>
-	#include <gpac/internal/m3u8.h>
+	#include "../../include/gpac/modules/service.h"
+	#include "../../include/gpac/internal/terminal_dev.h"
+	#include "../../include/gpac/thread.h"
+	#include "../../include/gpac/network.h"
+	#include "../../include/gpac/crypt.h"
+	#include "../../include/gpac/internal/mpd.h"
+	#include "../../include/gpac/internal/m3u8.h"
 	#include <string.h>
 
 
@@ -57,7 +57,7 @@
 	    char *url;
 	} segment_cache_entry;
 
-	typedef struct __mpd_group 
+	typedef struct __mpd_group
 	{
 		GF_List *representations;
 		u32 group_id;
@@ -168,8 +168,8 @@
 		if (group->done) {
 			gf_dm_sess_abort(group->segment_dnload);
 			return;
-		}	
-		
+		}
+
 	    if ((param->msg_type == GF_NETIO_PARSE_HEADER) && !strcmp(param->name, "Content-Type")) {
 			if (!group->service_mime) {
 				group->service_mime = gf_strdup(param->value);
@@ -502,7 +502,7 @@ static GF_Err MPD_ClientQuery(GF_InputService *ifce, GF_NetworkCommand *param)
 			if (group->selected && (group->service == ifce)) break;
 			group = NULL;
 		}
-		
+
 		if (!group) {
 	        gf_mx_v(mpdin->dl_mutex);
 			return GF_SERVICE_ERROR;
@@ -580,7 +580,7 @@ static GF_Err MPD_LoadMediaService(GF_MPD_In *mpdin, GF_MPD_Group *group, const 
 		for (i=0; i< gf_modules_get_count(mpdin->service->term->user->modules); i++) {
 			GF_InputService *ifce = (GF_InputService *) gf_modules_load_interface(mpdin->service->term->user->modules, i, GF_NET_CLIENT_INTERFACE);
 			if (!ifce) continue;
-			
+
 			if (ifce->CanHandleURL && ifce->CanHandleURL(ifce, init_segment_name)) {
 				group->service = ifce;
 				group->service->proxy_udta = mpdin;
@@ -609,7 +609,7 @@ GF_Err MPD_downloadWithRetry( GF_ClientService * service, GF_DownloadSession **s
 	GF_LOG(GF_LOG_DEBUG, GF_LOG_MODULE, ("[MPD_IN] Downloading %s...\n", url));
 	if (! *sess) {
 		u32 flags = GF_NETIO_SESSION_NOT_THREADED;
-		if (persistent) flags |= GF_NETIO_SESSION_PERSISTENT; 
+		if (persistent) flags |= GF_NETIO_SESSION_PERSISTENT;
 		*sess = gf_term_download_new(service, url, flags, user_io, usr_cbk);
 		if (!(*sess)){
 			assert(0);
@@ -719,7 +719,7 @@ static GF_Err MPD_DownloadInitSegment(GF_MPD_In *mpdin, GF_MPD_Group *group)
     if (!mpdin || !group)
         return GF_BAD_PARAM;
     gf_mx_p(mpdin->dl_mutex);
-    
+
 	assert( group->period && group->period->representations );
     rep = gf_list_get(group->period->representations, group->active_rep_index);
     if (!rep) {
@@ -985,7 +985,7 @@ static u32 download_segments(void *par)
 				}
 	            gf_mx_v(mpdin->dl_mutex);
 				if (!cache_full) break;
-				
+
 				gf_sleep(16);
             }
         }
@@ -1000,7 +1000,7 @@ static u32 download_segments(void *par)
         period = gf_list_get(mpdin->mpd->periods, mpdin->active_period_index);
 
 		/*for each selected groups*/
-		for (i=0; i<group_count; i++) {		
+		for (i=0; i<group_count; i++) {
 			GF_MPD_Group *group = gf_list_get(mpdin->groups, i);
 			if (! group->selected) continue;
 			if (group->done) continue;
@@ -1068,7 +1068,7 @@ static u32 download_segments(void *par)
 					group->done = 1;
 					break;
 				}
-				resource_name = local_file_name = (char *) new_base_seg_url; 
+				resource_name = local_file_name = (char *) new_base_seg_url;
 				e = GF_OK;
 				/*do not erase local files*/
 				group->local_files = 1;
@@ -1290,7 +1290,7 @@ void MPD_ResetGroups(GF_MPD_In *mpdin)
 		if (group->urlToDeleteNext) {
 			if (!mpdin->keep_files && !group->local_files)
 				gf_dm_delete_cached_file_entry_session(mpdin->mpd_dnload, group->urlToDeleteNext);
-	    
+
 			gf_free(group->urlToDeleteNext);
 			group->urlToDeleteNext = NULL;
 		}
@@ -1404,7 +1404,7 @@ static GF_Err MPD_SegmentsProcessStart(GF_MPD_In *mpdin, u32 time)
 		if (group->group_id==0) {
 			mpdin->group_zero_selected = group;
 		} else if (mpdin->group_zero_selected) {
-			/* if this group is not the group 0 and we have found the group 0, 
+			/* if this group is not the group 0 and we have found the group 0,
 			we can safely ignore this group. */
 			break;
 		}
@@ -1494,7 +1494,7 @@ GF_Err MPD_ConnectService(GF_InputService *plug, GF_ClientService *serv, const c
     opt = gf_modules_get_option((GF_BaseInterface *)plug, "DASH", "KeepFiles");
     if (!opt) gf_modules_set_option((GF_BaseInterface *)plug, "DASH", "KeepFiles", "no");
     if (opt && !strcmp(opt, "yes")) mpdin->keep_files = 1;
-	
+
 	if (mpdin->mpd_dnload) gf_term_download_del(mpdin->mpd_dnload);
     mpdin->mpd_dnload = NULL;
 
@@ -1545,7 +1545,7 @@ GF_Err MPD_ConnectService(GF_InputService *plug, GF_ClientService *serv, const c
         if (strstr(url, ".m3u8"))
             is_m3u8 = 1;
     }
-	
+
 	if (is_local) {
 		FILE *f = fopen(local_url, "rt");
 		if (!f) {
@@ -1657,10 +1657,10 @@ GF_Err MPD_CloseService(GF_InputService *plug)
 	u32 i;
     GF_MPD_In *mpdin = (GF_MPD_In*) plug->priv;
     GF_LOG(GF_LOG_DEBUG, GF_LOG_MODULE, ("[MPD_IN] Received Close Service (%p) request from terminal\n", mpdin->service));
-   
+
 	for (i=0; i<gf_list_count(mpdin->groups); i++) {
 		GF_MPD_Group *group = gf_list_get(mpdin->groups, i);
-	
+
 		if (group->service && group->service_connected) {
 			group->service->CloseService(group->service);
 			group->service_connected = 0;
@@ -1715,7 +1715,7 @@ GF_Err MPD_ServiceCommand(GF_InputService *plug, GF_NetworkCommand *com)
 	}
 	/*not supported*/
 	if (!com->base.on_channel) return GF_NOT_SUPPORTED;
-	
+
 	segment_ifce = MPD_GetInputServiceForChannel(mpdin, com->base.on_channel);
 	if (!segment_ifce) return GF_NOT_SUPPORTED;
 	group = MPD_GetGroupForInputService(mpdin, segment_ifce);

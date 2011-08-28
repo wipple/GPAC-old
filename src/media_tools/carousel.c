@@ -1,8 +1,8 @@
-/* 
+/*
  * Copyright (c) TELECOM ParisTech 2011
  */
 
-#include <gpac/carousel.h>
+#include "../../include/gpac/carousel.h"
 
 #ifndef GPAC_DISABLE_MPEG2TS
 
@@ -62,7 +62,7 @@ GF_M2TS_ES *gf_ait_section_new(u32 service_id)
 }
 
 
-void on_ait_section(GF_M2TS_Demuxer *ts, u32 evt_type, void *par) 
+void on_ait_section(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 {
 	GF_M2TS_SL_PCK *pck = (GF_M2TS_SL_PCK *)par;
 	char *data;
@@ -75,7 +75,7 @@ void on_ait_section(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 		GF_SAFEALLOC(ait, GF_M2TS_AIT);
 		data = pck->data;
 		u32_data_size = pck->data_len;
-		u32_table_id = data[0];		
+		u32_table_id = data[0];
 		ait->pid = ait_carry->pid;
 		ait->service_id = ait_carry->service_id;
 		gf_m2ts_process_ait(ait, data, u32_data_size, u32_table_id);
@@ -107,10 +107,10 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 		return GF_CORRUPTED_DATA;
 	}
 
-	ait->table_id = gf_bs_read_int(bs,8);	
+	ait->table_id = gf_bs_read_int(bs,8);
 	ait->section_syntax_indicator = gf_bs_read_int(bs,1);
 	gf_bs_read_int(bs,3);
-	ait->section_length = gf_bs_read_int(bs,12);	
+	ait->section_length = gf_bs_read_int(bs,12);
 	if( (data[1] & 0x0C) != 0){
 		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process AIT] section length is not correct abroding \n"));
 	}else if( ait->section_length > AIT_SECTION_LENGTH_MAX){
@@ -121,7 +121,7 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process AIT] test application flag is at 1. API transmitted for testing, abording processing \n"));
 		return GF_CORRUPTED_DATA;
 	}
-	ait->application_type = gf_bs_read_int(bs,15);	
+	ait->application_type = gf_bs_read_int(bs,15);
 	if(ait->application_type != APPLICATION_TYPE_HTTP_APPLICATION){
 		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process AIT] application type should 0x10. Wrong section, abording processing \n"));
 		return GF_CORRUPTED_DATA;
@@ -129,17 +129,17 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 	gf_bs_read_int(bs,2);
 	ait->version_number = gf_bs_read_int(bs,5);
 
-	ait->current_next_indicator = gf_bs_read_int(bs,1);	
+	ait->current_next_indicator = gf_bs_read_int(bs,1);
 	if(!ait->current_next_indicator){
 		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process AIT] current next indicator should be at 1 \n"));
 		return GF_CORRUPTED_DATA;
 	}
 	ait->section_number = gf_bs_read_int(bs,8);
-	ait->last_section_number = gf_bs_read_int(bs,8);	
+	ait->last_section_number = gf_bs_read_int(bs,8);
 	gf_bs_read_int(bs,4);/* bit shifting */
-	ait->common_descriptors_length = gf_bs_read_int(bs,12);	
+	ait->common_descriptors_length = gf_bs_read_int(bs,12);
 	gf_bs_read_int(bs,(unsigned int)ait->common_descriptors_length/8);
-	gf_bs_read_int(bs,4);/* bit shifting */	
+	gf_bs_read_int(bs,4);/* bit shifting */
 	ait->application_loop_length = gf_bs_read_int(bs,12);
 
 	data_shift = (u32)(gf_bs_get_position(bs)) + ait->common_descriptors_length/8;
@@ -152,11 +152,11 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 		application->index_app_desc_id = 0;
 
 		/* application loop */
-		application->organisation_id = gf_bs_read_int(bs,32);	
+		application->organisation_id = gf_bs_read_int(bs,32);
 		application->application_id= gf_bs_read_int(bs,16);
 		application->application_control_code= gf_bs_read_int(bs,8);
 		gf_bs_read_int(bs,4);/* bit shifting */
-		application->application_descriptors_loop_length= gf_bs_read_int(bs,12);		
+		application->application_descriptors_loop_length= gf_bs_read_int(bs,12);
 
 		ait_app_data_shift += 9;
 		app_desc_data_shift = 0;
@@ -186,7 +186,7 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 						gf_bs_read_int(bs,5); /*bit shift*/
 						application_descriptor->application_priority = gf_bs_read_int(bs,8);
 						if (nb_of_protocol > 0) {
-							for (i=0; i<nb_of_protocol; i++) {						
+							for (i=0; i<nb_of_protocol; i++) {
 								application_descriptor->transport_protocol_label[i] = gf_bs_read_int(bs,8);
 							}
 						} else {
@@ -256,10 +256,10 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 						break;
 					}
 				case TRANSPORT_HTTP:
-					{					
-						u32 i;								
+					{
+						u32 i;
 						GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE* Transport_http_selector_byte;
-						GF_SAFEALLOC(Transport_http_selector_byte, GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE);					
+						GF_SAFEALLOC(Transport_http_selector_byte, GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE);
 						Transport_http_selector_byte->URL_base_length = gf_bs_read_int(bs,8);
 						//printf("Transport_http_selector_byte->URL_base_length %d \n",Transport_http_selector_byte->URL_base_length);
 						Transport_http_selector_byte->URL_base_byte = (char*)gf_calloc(Transport_http_selector_byte->URL_base_length+1,sizeof(char));
@@ -285,28 +285,28 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 						}
 						if (pre_processing_pos+protocol_descriptor->descriptor_length != gf_bs_get_position(bs)) {
 							GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process AIT] Descriptor data processed length error. Difference between byte shifting %d and descriptor length %d \n",(gf_bs_get_position(bs) -  pre_processing_pos),protocol_descriptor->descriptor_length));
-							if (protocol_descriptor->protocol_id == CAROUSEL) {						
-								GF_M2TS_OBJECT_CAROUSEL_SELECTOR_BYTE* Carousel_selector_byte = (GF_M2TS_OBJECT_CAROUSEL_SELECTOR_BYTE*) protocol_descriptor->selector_byte;								
-								gf_free(Carousel_selector_byte);								
+							if (protocol_descriptor->protocol_id == CAROUSEL) {
+								GF_M2TS_OBJECT_CAROUSEL_SELECTOR_BYTE* Carousel_selector_byte = (GF_M2TS_OBJECT_CAROUSEL_SELECTOR_BYTE*) protocol_descriptor->selector_byte;
+								gf_free(Carousel_selector_byte);
 							} else if(protocol_descriptor->protocol_id ==TRANSPORT_HTTP) {
 								u32 i;
-								GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE* Transport_http_selector_byte = (GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE*) protocol_descriptor->selector_byte;								
+								GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE* Transport_http_selector_byte = (GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE*) protocol_descriptor->selector_byte;
 								gf_free(Transport_http_selector_byte->URL_base_byte);
-								for(i = 0; i < Transport_http_selector_byte->URL_extension_count;i++){										
+								for(i = 0; i < Transport_http_selector_byte->URL_extension_count;i++){
 									gf_free(Transport_http_selector_byte->URL_extentions[i].URL_extension_byte);
 								}
-								gf_free(Transport_http_selector_byte);						
+								gf_free(Transport_http_selector_byte);
 							}
 							gf_free(protocol_descriptor);
 							return GF_CORRUPTED_DATA;
 						}
-						gf_list_add(application->application_descriptors,protocol_descriptor);					
+						gf_list_add(application->application_descriptors,protocol_descriptor);
 						app_desc_data_shift += (2+ protocol_descriptor->descriptor_length);
 						break;
 					}
 				case SIMPLE_APPLICATION_LOCATION_DESCRIPTOR:
 					{
-						u64 pre_processing_pos;					
+						u64 pre_processing_pos;
 						GF_M2TS_SIMPLE_APPLICATION_LOCATION* Simple_application_location;
 						GF_SAFEALLOC(Simple_application_location, GF_M2TS_SIMPLE_APPLICATION_LOCATION);
 						application->application_descriptors_id[application->index_app_desc_id] = temp_descriptor_tag;
@@ -386,7 +386,7 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 						}
 						gf_list_add(application->application_descriptors,boundary_descriptor);
 						app_desc_data_shift += (2+ boundary_descriptor->descriptor_length);
-						break;					
+						break;
 					}
 				default:
 					{
@@ -395,14 +395,14 @@ GF_Err gf_m2ts_process_ait(GF_M2TS_AIT *ait, char  *data, u32 data_size, u32 tab
 						/* get descriptor's length */
 						length = gf_bs_read_int(bs,8);
 						/* bit shifting (eq descriptor's length)*/
-						gf_bs_read_int(bs,8*length);					
+						gf_bs_read_int(bs,8*length);
 					}
 
 			}
 
 		}
-		ait_app_data_shift += application->application_descriptors_loop_length; 
-		gf_list_add(ait->application,application);		
+		ait_app_data_shift += application->application_descriptors_loop_length;
+		gf_list_add(ait->application,application);
 	}
 
 	data_shift +=ait->application_loop_length;
@@ -422,11 +422,11 @@ void gf_ait_destroy(GF_M2TS_AIT* ait)
 {
 	u32 common_descr_numb, app_numb;
 
-	/* delete de Elementary Stream part of the AIT structure */ 	
+	/* delete de Elementary Stream part of the AIT structure */
 	common_descr_numb = 0;
 	app_numb = 0;
 
-	/* delete the common descriptors */ 
+	/* delete the common descriptors */
 	common_descr_numb = gf_list_count(ait->common_descriptors);
 	while(common_descr_numb != 0){
 		//TODO
@@ -450,7 +450,7 @@ void gf_ait_application_destroy(GF_M2TS_AIT_APPLICATION* application)
 
 	u32 app_desc_num,i,app_descr_index;
 
-	app_desc_num = app_descr_index = i = 0; 
+	app_desc_num = app_descr_index = i = 0;
 	app_desc_num = gf_list_count(application->application_descriptors);
 
 	while (app_desc_num != 0) {
@@ -461,7 +461,7 @@ void gf_ait_application_destroy(GF_M2TS_AIT_APPLICATION* application)
 			case APPLICATION_DESCRIPTOR:
 				{
 					GF_M2TS_APPLICATION_DESCRIPTOR* application_descriptor = (GF_M2TS_APPLICATION_DESCRIPTOR*)gf_list_get(application->application_descriptors,0);
-					gf_free(application_descriptor);  
+					gf_free(application_descriptor);
 					break;
 				}
 			case APPLICATION_NAME_DESCRIPTOR:
@@ -473,7 +473,7 @@ void gf_ait_application_destroy(GF_M2TS_AIT_APPLICATION* application)
 				}
 			case TRANSPORT_PROTOCOL_DESCRIPTOR:
 				{
-					GF_M2TS_TRANSPORT_PROTOCOL_DESCRIPTOR* protocol_descriptor = (GF_M2TS_TRANSPORT_PROTOCOL_DESCRIPTOR*)gf_list_get(application->application_descriptors,0);  					
+					GF_M2TS_TRANSPORT_PROTOCOL_DESCRIPTOR* protocol_descriptor = (GF_M2TS_TRANSPORT_PROTOCOL_DESCRIPTOR*)gf_list_get(application->application_descriptors,0);
 					switch (protocol_descriptor->protocol_id) {
 			case CAROUSEL:
 				{
@@ -482,12 +482,12 @@ void gf_ait_application_destroy(GF_M2TS_AIT_APPLICATION* application)
 					break;
 				}
 			case TRANSPORT_HTTP:
-				{					
-					u32 i;								
+				{
+					u32 i;
 					GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE* Transport_http_selector_byte = (GF_M2TS_TRANSPORT_HTTP_SELECTOR_BYTE*)protocol_descriptor->selector_byte;
 					gf_free(Transport_http_selector_byte->URL_base_byte);
 					if (Transport_http_selector_byte->URL_extension_count) {
-						for (i=0; i < Transport_http_selector_byte->URL_extension_count;i++) { 										
+						for (i=0; i < Transport_http_selector_byte->URL_extension_count;i++) {
 							gf_free(Transport_http_selector_byte->URL_extentions[i].URL_extension_byte);
 						}
 						gf_free(Transport_http_selector_byte->URL_extentions);
@@ -499,12 +499,12 @@ void gf_ait_application_destroy(GF_M2TS_AIT_APPLICATION* application)
 				{
 					GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process AIT] Protocol ID %d unsupported, ignoring the selector byte \n",protocol_descriptor->protocol_id));
 				}
-					}					
-					gf_free(protocol_descriptor);					
+					}
+					gf_free(protocol_descriptor);
 					break;
 				}
 			case SIMPLE_APPLICATION_LOCATION_DESCRIPTOR:
-				{			
+				{
 					GF_M2TS_SIMPLE_APPLICATION_LOCATION* Simple_application_location = (GF_M2TS_SIMPLE_APPLICATION_LOCATION*)gf_list_get(application->application_descriptors,0);
 					gf_free(Simple_application_location->initial_path_bytes);
 					gf_free(Simple_application_location);
@@ -524,12 +524,12 @@ void gf_ait_application_destroy(GF_M2TS_AIT_APPLICATION* application)
 						for (i=0; i<boundary_descriptor->boundary_extension_count; i++) {
 							if (boundary_descriptor->boundary_extension_info[i].boundary_extension_length > 0) {
 								gf_free(boundary_descriptor->boundary_extension_info[i].boundary_extension_byte);
-							}							
+							}
 						}
 						gf_free(boundary_descriptor->boundary_extension_info);
 					}
 					gf_free(boundary_descriptor);
-					break;					
+					break;
 				}
 			default:
 				{
@@ -545,7 +545,7 @@ void gf_ait_application_destroy(GF_M2TS_AIT_APPLICATION* application)
 
 /* DSMCC */
 
-GF_M2TS_DSMCC_OVERLORD* gf_m2ts_get_dmscc_overlord(GF_List* Dsmcc_controller,u32 service_id) 
+GF_M2TS_DSMCC_OVERLORD* gf_m2ts_get_dmscc_overlord(GF_List* Dsmcc_controller,u32 service_id)
 {
 	u16 nb_dsmcc,i;
 
@@ -564,7 +564,7 @@ GF_M2TS_DSMCC_OVERLORD* gf_m2ts_get_dmscc_overlord(GF_List* Dsmcc_controller,u32
 	return NULL;
 }
 
-void on_dsmcc_section(GF_M2TS_Demuxer *ts, u32 evt_type, void *par) 
+void on_dsmcc_section(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 {
 	GF_M2TS_SL_PCK *pck = (GF_M2TS_SL_PCK *)par;
 	char *data;
@@ -579,17 +579,17 @@ void on_dsmcc_section(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 		GF_M2TS_DSMCC_SECTION* dsmcc;
 		data = pck->data;
 		u32_data_size = pck->data_len;
-		u32_table_id = data[0];	
+		u32_table_id = data[0];
 		GF_SAFEALLOC(dsmcc,GF_M2TS_DSMCC_SECTION);
 
-		e = gf_m2ts_process_dsmcc(dsmcc_overlord,dsmcc,data,u32_data_size,u32_table_id);	
+		e = gf_m2ts_process_dsmcc(dsmcc_overlord,dsmcc,data,u32_data_size,u32_table_id);
 		assert(e == GF_OK);
 	}
 }
 
 GF_M2TS_DSMCC_OVERLORD* gf_m2ts_init_dsmcc_overlord(u32 service_id) {
 	GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord;
-	GF_SAFEALLOC(dsmcc_overlord,GF_M2TS_DSMCC_OVERLORD);	
+	GF_SAFEALLOC(dsmcc_overlord,GF_M2TS_DSMCC_OVERLORD);
 	dsmcc_overlord->dsmcc_modules = gf_list_new();
 	dsmcc_overlord->service_id = service_id;
 	return dsmcc_overlord;
@@ -597,14 +597,14 @@ GF_M2TS_DSMCC_OVERLORD* gf_m2ts_init_dsmcc_overlord(u32 service_id) {
 
 GF_Err gf_m2ts_process_dsmcc(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2TS_DSMCC_SECTION *dsmcc, char  *data, u32 data_size, u32 table_id)
 {
-	GF_BitStream *bs;	
+	GF_BitStream *bs;
 	u32 data_shift,reserved_test;
 
 	data_shift = 0;
 	//first_section = *first_section_received;
 	bs = gf_bs_new(data,data_size,GF_BITSTREAM_READ);
 
-	dsmcc->table_id = gf_bs_read_int(bs,8);	
+	dsmcc->table_id = gf_bs_read_int(bs,8);
 	dsmcc->section_syntax_indicator = gf_bs_read_int(bs,1);
 	dsmcc->private_indicator = gf_bs_read_int(bs,1);
 	reserved_test = gf_bs_read_int(bs,2);
@@ -628,7 +628,7 @@ GF_Err gf_m2ts_process_dsmcc(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2TS_DSMC
 		return GF_CORRUPTED_DATA;
 	}
 
-	dsmcc->current_next_indicator = gf_bs_read_int(bs,1);	
+	dsmcc->current_next_indicator = gf_bs_read_int(bs,1);
 	if (!dsmcc->current_next_indicator) {
 		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] current next indicator should be at 1 \n"));
 		return GF_CORRUPTED_DATA;
@@ -639,7 +639,7 @@ GF_Err gf_m2ts_process_dsmcc(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2TS_DSMC
 	return GF_CORRUPTED_DATA;
 	}
 	*first_section_received = 1;*/
-	dsmcc->last_section_number = gf_bs_read_int(bs,8);	
+	dsmcc->last_section_number = gf_bs_read_int(bs,8);
 	//printf("\nsection_number %d last_section_number %d\n",dsmcc->section_number,dsmcc->last_section_number);
 	//printf("dsmcc->table_id %d \n",dsmcc->table_id);
 	switch (dsmcc->table_id) {
@@ -648,11 +648,11 @@ GF_Err gf_m2ts_process_dsmcc(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2TS_DSMC
 				data_shift = (u32)(gf_bs_get_position(bs));
 				break;
 			}
-		case GF_M2TS_TABLE_ID_DSM_CC_UN_MESSAGE:			
+		case GF_M2TS_TABLE_ID_DSM_CC_UN_MESSAGE:
 		case GF_M2TS_TABLE_ID_DSM_CC_DOWNLOAD_DATA_MESSAGE:
 			{
-				data_shift = (u32)(gf_bs_get_position(bs));				
-				gf_m2ts_dsmcc_download_data(dsmcc_overlord,dsmcc,data,bs,&data_shift);				
+				data_shift = (u32)(gf_bs_get_position(bs));
+				gf_m2ts_dsmcc_download_data(dsmcc_overlord,dsmcc,data,bs,&data_shift);
 				break;
 			}
 		case GF_M2TS_TABLE_ID_DSM_CC_STREAM_DESCRIPTION:
@@ -662,13 +662,13 @@ GF_Err gf_m2ts_process_dsmcc(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2TS_DSMC
 			}
 		default:
 			{
-				GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unknown DSMCC Section Type \n"));		
+				GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unknown DSMCC Section Type \n"));
 				break;
 			}
 	}
 
 	if (dsmcc->section_syntax_indicator == 0) {
-		dsmcc->checksum = gf_bs_read_int(bs,32);	
+		dsmcc->checksum = gf_bs_read_int(bs,32);
 	} else {
 		dsmcc->CRC_32= gf_bs_read_int(bs,32);
 	}
@@ -714,7 +714,7 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 			gf_bs_read_data(bs,DownloadInfoRequest->privateDataByte,(u32)(DownloadInfoRequest->privateDataLength));
 			break;
 		}
-	case DOWNLOAD_INFO_REPONSE_INDICATION:		
+	case DOWNLOAD_INFO_REPONSE_INDICATION:
 		{
 			u32 i,nb_modules;
 			GF_M2TS_DSMCC_DOWNLOAD_INFO_RESP_INDIC* DownloadInfoIndication;
@@ -737,7 +737,7 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 				DownloadInfoIndication->Modules.moduleId = gf_bs_read_int(bs,16);
 				DownloadInfoIndication->Modules.moduleSize = gf_bs_read_int(bs,32);
 				DownloadInfoIndication->Modules.moduleVersion = gf_bs_read_int(bs,8);
-				DownloadInfoIndication->Modules.moduleInfoLength = gf_bs_read_int(bs,8);				
+				DownloadInfoIndication->Modules.moduleInfoLength = gf_bs_read_int(bs,8);
 				DownloadInfoIndication->Modules.moduleInfoByte = (char*)gf_calloc(DownloadInfoIndication->Modules.moduleInfoLength,sizeof(char));
 				gf_bs_read_data(bs,DownloadInfoIndication->Modules.moduleInfoByte,(u32)(DownloadInfoIndication->Modules.moduleInfoLength));
 				if(!dsmcc_create_module_validation(&DownloadInfoIndication->Modules,DownloadInfoIndication->downloadId,dsmcc_overlord,nb_modules)){
@@ -751,19 +751,19 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 							gf_free(DownloadInfoIndication->Modules.moduleInfoByte);
 							DownloadInfoIndication->Modules.moduleInfoByte = NULL;
 							return GF_CORRUPTED_DATA;
-						}						
+						}
 					}
 				}
 				gf_free(DownloadInfoIndication->Modules.moduleInfoByte);
 				DownloadInfoIndication->Modules.moduleInfoByte = NULL;
 			}
-			DownloadInfoIndication->privateDataLength = gf_bs_read_int(bs,16);    
+			DownloadInfoIndication->privateDataLength = gf_bs_read_int(bs,16);
 			DownloadInfoIndication->privateDataByte = (char*)gf_calloc(DownloadInfoIndication->privateDataLength,sizeof(char));
 			gf_bs_read_data(bs,DownloadInfoIndication->privateDataByte,(u32)(DownloadInfoIndication->privateDataLength));
 			break;
 		}
 	case DOWNLOAD_DATA_BLOCK:
-		{				
+		{
 			u32 data_shift,modules_count,i;
 			GF_M2TS_DSMCC_DOWNLOAD_DATA_BLOCK* DownloadDataBlock;
 			GF_SAFEALLOC(DownloadDataBlock,GF_M2TS_DSMCC_DOWNLOAD_DATA_BLOCK);
@@ -779,20 +779,20 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 
 			DownloadDataBlock->moduleId = gf_bs_read_int(bs,16);
 			//printf("DownloadDataBlock->moduleId %d \n",DownloadDataBlock->moduleId);
-			DownloadDataBlock->moduleVersion = gf_bs_read_int(bs,8); 
+			DownloadDataBlock->moduleVersion = gf_bs_read_int(bs,8);
 			DownloadDataBlock->reserved = gf_bs_read_int(bs,8);
 			if(DownloadDataBlock->reserved != 0xFF){
 				GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] DataHeader reserved slot does not have the correct value, abording the processing \n"));
 				return GF_CORRUPTED_DATA;
 			}
 			DownloadDataBlock->blockNumber = gf_bs_read_int(bs,16);
-				
+
 			for(i=0;i<modules_count;i++){
 				GF_M2TS_DSMCC_MODULE* dsmcc_module = gf_list_get(dsmcc_overlord->dsmcc_modules,i);
 				/* Test if the data are compatible with the module configuration */
 				if(!dsmcc_download_data_validation(dsmcc_overlord,DownloadDataBlock,dsmcc_module,DataMessage->DownloadDataHeader.downloadId)){
 					//printf("DownloadDataBlock->blockNumber %d \n\n",DownloadDataBlock->blockNumber);
-					DownloadDataBlock->dataBlocksize = (DataMessage->DownloadDataHeader.messageLength - 6);					
+					DownloadDataBlock->dataBlocksize = (DataMessage->DownloadDataHeader.messageLength - 6);
 					if(dsmcc_module->block_size < DownloadDataBlock->dataBlocksize){
 						GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Error block_size should be >= to DownloadDataBlock->dataBlocksize , abording the processing \n"));
 						return GF_CORRUPTED_DATA;
@@ -801,23 +801,23 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 					data_shift = (u32)(gf_bs_get_position(bs));
 					gf_bs_read_data(bs,DownloadDataBlock->blockDataByte,DownloadDataBlock->dataBlocksize);
 					memcpy(dsmcc_module->buffer+dsmcc_module->byte_sift,DownloadDataBlock->blockDataByte,DownloadDataBlock->dataBlocksize*sizeof(char));
-					dsmcc_module->byte_sift += DownloadDataBlock->dataBlocksize;									
+					dsmcc_module->byte_sift += DownloadDataBlock->dataBlocksize;
 					dsmcc_module->last_section_number = dsmcc->last_section_number;
 					dsmcc_module->section_number++;
-					if(dsmcc_module->section_number == (dsmcc_module->last_section_number+1)){						
-						dsmcc_module_complete(dsmcc_overlord,dsmcc_module,i);						
+					if(dsmcc_module->section_number == (dsmcc_module->last_section_number+1)){
+						dsmcc_module_complete(dsmcc_overlord,dsmcc_module,i);
 					}
 					break;
 				}
-			}				
-			
-			break;			
-		}		
+			}
+
+			break;
+		}
 	case DOWNLOAD_DATA_REQUEST:
 		{
 			GF_M2TS_DSMCC_DOWNLOAD_DATA_REQUEST_MESSAGE* DownloadDataRequest;
 			GF_SAFEALLOC(DownloadDataRequest,GF_M2TS_DSMCC_DOWNLOAD_DATA_REQUEST_MESSAGE);
-			DataMessage->dataMessagePayload = DownloadDataRequest;	
+			DataMessage->dataMessagePayload = DownloadDataRequest;
 			DownloadDataRequest->moduleId = gf_bs_read_int(bs,16);
 			DownloadDataRequest->blockNumber = gf_bs_read_int(bs,16);
 			DownloadDataRequest->downloadReason  = gf_bs_read_int(bs,8);
@@ -828,7 +828,7 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 		{
 			GF_M2TS_DSMCC_DOWNLOAD_CANCEL* DownloadCancel;
 			GF_SAFEALLOC(DownloadCancel,GF_M2TS_DSMCC_DOWNLOAD_CANCEL);
-			DataMessage->dataMessagePayload = DownloadCancel;	
+			DataMessage->dataMessagePayload = DownloadCancel;
 			DownloadCancel->downloadId = gf_bs_read_int(bs,32);
 			DownloadCancel->moduleId = gf_bs_read_int(bs,16);
 			DownloadCancel->blockNumber = gf_bs_read_int(bs,16);
@@ -851,7 +851,7 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 			GF_SAFEALLOC(DownloadServerInit,GF_M2TS_DSMCC_DOWNLOAD_SERVER_INIT);
 			DataMessage->dataMessagePayload = DownloadServerInit;
 			localbyteshift = (u32)(gf_bs_get_position(bs));
-			gf_bs_read_data(bs,DownloadServerInit->serverId,20);			
+			gf_bs_read_data(bs,DownloadServerInit->serverId,20);
 			gf_m2ts_dsmcc_process_compatibility_descriptor(&DownloadServerInit->CompatibilityDescr,data,bs,data_shift);
 			DownloadServerInit->privateDataLength = gf_bs_read_int(bs,16);
 			if(DownloadServerInit->privateDataLength){
@@ -866,16 +866,16 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 				if(e){
 					GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Corrupted IOR, abording the processing \n"));
 					gf_free(ServiceGateWayInfo);
-					return GF_CORRUPTED_DATA;	
+					return GF_CORRUPTED_DATA;
 				}
 				ServiceGateWayInfo->downloadTaps_count = gf_bs_read_int(bs,8);
 				ServiceGateWayInfo->Taps = (GF_M2TS_DSMCC_BIOP_TAPS*)gf_calloc(ServiceGateWayInfo->downloadTaps_count,sizeof(GF_M2TS_DSMCC_BIOP_TAPS));
 				for(i=0;i<ServiceGateWayInfo->downloadTaps_count;i++){
-					ServiceGateWayInfo->Taps[i].id = gf_bs_read_int(bs,16);					
-					ServiceGateWayInfo->Taps[i].use = gf_bs_read_int(bs,16);					
+					ServiceGateWayInfo->Taps[i].id = gf_bs_read_int(bs,16);
+					ServiceGateWayInfo->Taps[i].use = gf_bs_read_int(bs,16);
 					ServiceGateWayInfo->Taps[i].assocTag = gf_bs_read_int(bs,16);
-					ServiceGateWayInfo->Taps[i].selector_length = gf_bs_read_int(bs,8);					
-					ServiceGateWayInfo->Taps[i].selector_type = gf_bs_read_int(bs,16);					
+					ServiceGateWayInfo->Taps[i].selector_length = gf_bs_read_int(bs,8);
+					ServiceGateWayInfo->Taps[i].selector_type = gf_bs_read_int(bs,16);
 					ServiceGateWayInfo->Taps[i].transactionId = gf_bs_read_int(bs,32);
 					ServiceGateWayInfo->Taps[i].timeout = gf_bs_read_int(bs,32);
 				}
@@ -906,7 +906,7 @@ static GF_Err gf_m2ts_dsmcc_download_data(GF_M2TS_DSMCC_OVERLORD *dsmcc_overlord
 
 				/*u16 i;
 				u32 GoupInfoByteLength;
-				GF_M2TS_DSMCC_GROUP_INFO_INDICATION* GroupInfoIndic = DownloadServerInit->GroupInfoIndic;				
+				GF_M2TS_DSMCC_GROUP_INFO_INDICATION* GroupInfoIndic = DownloadServerInit->GroupInfoIndic;
 				GF_SAFEALLOC(GroupInfoIndic,GF_M2TS_DSMCC_GROUP_INFO_INDICATION);
 
 				GoupInfoByteLength =  (u32)(gf_bs_get_position(bs));
@@ -1078,7 +1078,7 @@ static GF_Err dsmcc_create_module_validation(GF_M2TS_DSMCC_INFO_MODULES* InfoMod
 //					GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Module already processed \n"));
 //					return GF_CORRUPTED_DATA;
 //				} else {
-//					return GF_OK;	
+//					return GF_OK;
 //				}
 //			}
 //		}
@@ -1088,16 +1088,16 @@ static GF_Err dsmcc_create_module_validation(GF_M2TS_DSMCC_INFO_MODULES* InfoMod
 
 static GF_Err dsmcc_download_data_validation(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2TS_DSMCC_DOWNLOAD_DATA_BLOCK* DownloadDataBlock,GF_M2TS_DSMCC_MODULE* dsmcc_module,u32 downloadId)
 {
-	/* It checks if the module Id is eq to the SGW's module Id if Got_ServiceGateway is null (means that the SWG has not been processed yet 
+	/* It checks if the module Id is eq to the SGW's module Id if Got_ServiceGateway is null (means that the SWG has not been processed yet
 		If then Got_ServiceGateway = 1 and all the module are processed */
 	if(dsmcc_overlord->ServiceGateway){
 		if ((dsmcc_overlord->Got_ServiceGateway || dsmcc_module->moduleId == dsmcc_overlord->ServiceGateway->moduleId)&&
 			((dsmcc_module->moduleId == DownloadDataBlock->moduleId) && (dsmcc_module->section_number == DownloadDataBlock->blockNumber) &&
-			(dsmcc_module->downloadId == downloadId) && (dsmcc_module->version_number == DownloadDataBlock->moduleVersion))){			
+			(dsmcc_module->downloadId == downloadId) && (dsmcc_module->version_number == DownloadDataBlock->moduleVersion))){
 				return GF_OK;
 		}
 	}
-	
+
 	return GF_CORRUPTED_DATA;
 }
 
@@ -1117,7 +1117,7 @@ static GF_Err dsmcc_module_complete(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2
 
 				gf_gz_decompress_payload(dsmcc_module->buffer,dsmcc_module->byte_sift,&uncompressed_data, &uncomp_size);
 				//dsmcc_process_biop_data(dsmcc_overlord,dsmcc_module,uncompressed_data,dsmcc_module->original_size);
-				
+
 				if(dsmcc_module->original_size == uncomp_size){
 					e = dsmcc_process_biop_data(dsmcc_overlord,dsmcc_module,uncompressed_data,dsmcc_module->original_size);
 				}else{
@@ -1129,7 +1129,7 @@ static GF_Err dsmcc_module_complete(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2
 					return GF_CORRUPTED_DATA;
 				}
 			}else{
-				e = dsmcc_process_biop_data(dsmcc_overlord,dsmcc_module,dsmcc_module->buffer,dsmcc_module->size);				
+				e = dsmcc_process_biop_data(dsmcc_overlord,dsmcc_module,dsmcc_module->buffer,dsmcc_module->size);
 			}
 			if(e){
 					GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Error during the processing of the module data. Flushing the data \n"));
@@ -1139,7 +1139,7 @@ static GF_Err dsmcc_module_complete(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2
 					dsmcc_module->section_number = 0;
 					return GF_CORRUPTED_DATA;
 			}else{
-				dsmcc_process.done = 1;			
+				dsmcc_process.done = 1;
 				dsmcc_module_delete(dsmcc_module);
 				gf_list_rem(dsmcc_overlord->dsmcc_modules,moduleIndex);
 			}
@@ -1153,7 +1153,7 @@ static GF_Err dsmcc_module_complete(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_M2
 
 static GF_Err gf_m2ts_dsmcc_delete_compatibility_descriptor(GF_M2TS_DSMCC_COMPATIBILITY_DESCRIPTOR *CompatibilityDesc)
 {
-	u32 i,j;	
+	u32 i,j;
 	if (CompatibilityDesc->compatibilityDescriptorLength) {
 		if (CompatibilityDesc->descriptorCount) {
 			for (i=0; i<CompatibilityDesc->descriptorCount; i++) {
@@ -1173,8 +1173,8 @@ static GF_Err gf_m2ts_dsmcc_delete_compatibility_descriptor(GF_M2TS_DSMCC_COMPAT
 }
 
 static GF_Err gf_m2ts_dsmcc_delete_message_header(GF_M2TS_DSMCC_MESSAGE_DATA_HEADER *MessageHeader)
-{	
-	if (MessageHeader->adaptationLength > 0) {		
+{
+	if (MessageHeader->adaptationLength > 0) {
 		gf_free(MessageHeader->DsmccAdaptationHeader->adaptationDataByte);
 		gf_free(MessageHeader->DsmccAdaptationHeader);
 	}
@@ -1183,7 +1183,7 @@ static GF_Err gf_m2ts_dsmcc_delete_message_header(GF_M2TS_DSMCC_MESSAGE_DATA_HEA
 
 static GF_Err gf_m2ts_dsmcc_section_delete(GF_M2TS_DSMCC_SECTION *dsmcc)
 {
-	GF_M2TS_DSMCC_DOWNLOAD_DATA_MESSAGE* DataMessage = (GF_M2TS_DSMCC_DOWNLOAD_DATA_MESSAGE*)dsmcc->DSMCC_Extension;	
+	GF_M2TS_DSMCC_DOWNLOAD_DATA_MESSAGE* DataMessage = (GF_M2TS_DSMCC_DOWNLOAD_DATA_MESSAGE*)dsmcc->DSMCC_Extension;
 
 	if(!DataMessage){
 		return GF_OK;
@@ -1201,12 +1201,12 @@ static GF_Err gf_m2ts_dsmcc_section_delete(GF_M2TS_DSMCC_SECTION *dsmcc)
 			break;
 		}
 	case DOWNLOAD_INFO_REPONSE_INDICATION:
-		{			
+		{
 			GF_M2TS_DSMCC_DOWNLOAD_INFO_RESP_INDIC* DownloadInfoIndication = (GF_M2TS_DSMCC_DOWNLOAD_INFO_RESP_INDIC*)DataMessage->dataMessagePayload;
 
 			/* Compatibility Descr */
 			gf_m2ts_dsmcc_delete_compatibility_descriptor(&DownloadInfoIndication->CompatibilityDescr);
-			
+
 			if (DownloadInfoIndication->privateDataLength) {
 				gf_free(DownloadInfoIndication->privateDataByte);
 			}
@@ -1230,7 +1230,7 @@ static GF_Err gf_m2ts_dsmcc_section_delete(GF_M2TS_DSMCC_SECTION *dsmcc)
 		}
 	case DOWNLOAD_DATA_CANCEL:
 		{
-			GF_M2TS_DSMCC_DOWNLOAD_CANCEL* DownloadCancel = (GF_M2TS_DSMCC_DOWNLOAD_CANCEL*)DataMessage->dataMessagePayload;			
+			GF_M2TS_DSMCC_DOWNLOAD_CANCEL* DownloadCancel = (GF_M2TS_DSMCC_DOWNLOAD_CANCEL*)DataMessage->dataMessagePayload;
 			if (DownloadCancel->privateDataLength) {
 				gf_free(DownloadCancel->privateDataByte);
 			}
@@ -1252,7 +1252,7 @@ static GF_Err gf_m2ts_dsmcc_section_delete(GF_M2TS_DSMCC_SECTION *dsmcc)
 			GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unknown dataMessagePayload Type \n"));
 			break;
 		}
-	} 
+	}
 
 	/* Header */
 	gf_m2ts_dsmcc_delete_message_header(&DataMessage->DownloadDataHeader);
@@ -1290,9 +1290,9 @@ static GF_Err dsmcc_get_biop_module_info(GF_M2TS_DSMCC_MODULE* dsmcc_module,char
 	BIOP_ModuleInfo->taps_count = gf_bs_read_int(bs,8);
 	if(!BIOP_ModuleInfo->taps_count){
 		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Corrupted payload for BIOP Module Info \n"));
-		gf_list_del(BIOP_ModuleInfo->descriptor);	
+		gf_list_del(BIOP_ModuleInfo->descriptor);
 		gf_free(BIOP_ModuleInfo);
-		return GF_CORRUPTED_DATA;	
+		return GF_CORRUPTED_DATA;
 	}
 
 	BIOP_ModuleInfo->Taps = (GF_M2TS_DSMCC_BIOP_TAPS*)gf_calloc(BIOP_ModuleInfo->taps_count,sizeof(GF_M2TS_DSMCC_BIOP_TAPS));
@@ -1310,7 +1310,7 @@ static GF_Err dsmcc_get_biop_module_info(GF_M2TS_DSMCC_MODULE* dsmcc_module,char
 			gf_free(BIOP_ModuleInfo->Taps);
 			gf_list_del(BIOP_ModuleInfo->descriptor);
 			gf_free(BIOP_ModuleInfo);
-			return GF_CORRUPTED_DATA;	
+			return GF_CORRUPTED_DATA;
 		}
 	}
 	BIOP_ModuleInfo->userInfoLength = gf_bs_read_int(bs,8);
@@ -1319,7 +1319,7 @@ static GF_Err dsmcc_get_biop_module_info(GF_M2TS_DSMCC_MODULE* dsmcc_module,char
 		u32 nb_desc,j;
 		u8* descr_tag;
 
-		dsmcc_biop_descriptor(bs,BIOP_ModuleInfo->descriptor,(u32)(BIOP_ModuleInfo->userInfoLength));		
+		dsmcc_biop_descriptor(bs,BIOP_ModuleInfo->descriptor,(u32)(BIOP_ModuleInfo->userInfoLength));
 
 		nb_desc = gf_list_count(BIOP_ModuleInfo->descriptor);
 		j = 0;
@@ -1327,25 +1327,25 @@ static GF_Err dsmcc_get_biop_module_info(GF_M2TS_DSMCC_MODULE* dsmcc_module,char
 
 			/* get the descriptor tag */
 			descr_tag = (u8*)gf_list_get(BIOP_ModuleInfo->descriptor,j);
-			
+
 			switch(*descr_tag){
 
 				case CACHING_PRIORITY_DESCRIPTOR:
 					{
-						//GF_M2TS_DSMCC_BIOP_CACHING_PRIORITY_DESCRIPTOR* CachingPriorityDescr = (GF_M2TS_DSMCC_BIOP_CACHING_PRIORITY_DESCRIPTOR*)gf_list_get(BIOP_ModuleInfo->descriptor,j);						
-						break;					
+						//GF_M2TS_DSMCC_BIOP_CACHING_PRIORITY_DESCRIPTOR* CachingPriorityDescr = (GF_M2TS_DSMCC_BIOP_CACHING_PRIORITY_DESCRIPTOR*)gf_list_get(BIOP_ModuleInfo->descriptor,j);
+						break;
 					}
 				case COMPRESSED_MODULE_DESCRIPTOR:
 					{
 						u8 comp_meth;
-						GF_M2TS_DSMCC_BIOP_COMPRESSED_MODULE_DESCRIPTOR* CompModuleDescr = (GF_M2TS_DSMCC_BIOP_COMPRESSED_MODULE_DESCRIPTOR*)gf_list_get(BIOP_ModuleInfo->descriptor,j);					
+						GF_M2TS_DSMCC_BIOP_COMPRESSED_MODULE_DESCRIPTOR* CompModuleDescr = (GF_M2TS_DSMCC_BIOP_COMPRESSED_MODULE_DESCRIPTOR*)gf_list_get(BIOP_ModuleInfo->descriptor,j);
 						/*if CompModuleDescr->compression_method least significant nibble is eq to 0x08, the terminal shall support the Deflate compression algorithm (GZIP)*/
 						comp_meth = (CompModuleDescr->compression_method &0x0F);
 						if(comp_meth == 0x08){
 							dsmcc_module->Gzip = 1;
-						}						
-						dsmcc_module->original_size = CompModuleDescr->original_size;						
-						break;	
+						}
+						dsmcc_module->original_size = CompModuleDescr->original_size;
+						break;
 
 					}
 				default:
@@ -1353,20 +1353,20 @@ static GF_Err dsmcc_get_biop_module_info(GF_M2TS_DSMCC_MODULE* dsmcc_module,char
 						GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unsupported descriptor Type \n"));
 						break;
 					}
-			}			
+			}
 			j++;
 		}
 	}
-		
+
 	dsmcc_free_biop_descriptor(BIOP_ModuleInfo->descriptor);
 
 	for(i = 0; i < BIOP_ModuleInfo->taps_count; i++){
 		if(BIOP_ModuleInfo->Taps[i].selector_length){
 			gf_free(BIOP_ModuleInfo->Taps[i].selector_data);
-		}		
+		}
 	}
 	gf_free(BIOP_ModuleInfo->Taps);
-	gf_free(BIOP_ModuleInfo);	
+	gf_free(BIOP_ModuleInfo);
 
 	return GF_OK;
 }
@@ -1406,7 +1406,7 @@ static GF_Err dsmcc_process_biop_data(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_
 			}else if(!strcmp(BIOP_Header->objectKind_data,"ste")){
 				dsmcc_process_biop_stream_event(bs,BIOP_Header,ServiceGateway);
 			}else{
-				GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unsupported BIOP Message, abording process \n"));				
+				GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unsupported BIOP Message, abording process \n"));
 			}
 		}
 		byte_shift = (u32)(gf_bs_get_position(bs));
@@ -1418,7 +1418,7 @@ static GF_Err dsmcc_process_biop_data(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_
 		if(BIOP_Header){
 			dsmcc_free_biop_header(BIOP_Header);
 		}
-		
+
 	}
 
 	if(Error){
@@ -1429,7 +1429,7 @@ static GF_Err dsmcc_process_biop_data(GF_M2TS_DSMCC_OVERLORD* dsmcc_overlord,GF_
 }
 
 static GF_M2TS_DSMCC_BIOP_HEADER* dsmcc_process_biop_header(GF_BitStream* bs,char* data){
-	
+
 	GF_M2TS_DSMCC_BIOP_HEADER* BIOP_Header;
 	GF_SAFEALLOC(BIOP_Header,GF_M2TS_DSMCC_BIOP_HEADER);
 
@@ -1459,7 +1459,7 @@ static GF_M2TS_DSMCC_BIOP_HEADER* dsmcc_process_biop_header(GF_BitStream* bs,cha
 
 static GF_Err dsmcc_process_biop_file(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_HEADER* BIOP_Header,GF_M2TS_DSMCC_OVERLORD*dsmcc_overlord,u16 moduleId,u32 downloadId){
 
-	u32 nb_desc,descr_size;		
+	u32 nb_desc,descr_size;
 	GF_M2TS_DSMCC_BIOP_FILE* BIOP_File;
 	GF_M2TS_DSMCC_SERVICE_GATEWAY* ServiceGateway;
 	GF_M2TS_DSMCC_FILE* File;
@@ -1471,8 +1471,8 @@ static GF_Err dsmcc_process_biop_file(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_HEADER
 
 	ServiceGateway = dsmcc_overlord->ServiceGateway;
 
-	BIOP_File->Header = BIOP_Header;	
-	BIOP_File->ContentSize = gf_bs_read_int(bs,64);	
+	BIOP_File->Header = BIOP_Header;
+	BIOP_File->ContentSize = gf_bs_read_int(bs,64);
 
 	descr_size = BIOP_File->Header->objectInfo_length-8;
 
@@ -1487,20 +1487,20 @@ static GF_Err dsmcc_process_biop_file(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_HEADER
 	while(nb_desc){
 
 		/* get the descriptor tag */
-		descr_tag = (u8*)gf_list_get(BIOP_File->descriptor,0);				
+		descr_tag = (u8*)gf_list_get(BIOP_File->descriptor,0);
 
 		switch(*descr_tag){
 				case CONTENT_TYPE_DESCRIPTOR:
 					{
-						GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR* ContentTypeDescr = (GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR*)gf_list_get(BIOP_File->descriptor,0);						
-						FileType = strdup(ContentTypeDescr->content_type_data_byte);						
+						GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR* ContentTypeDescr = (GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR*)gf_list_get(BIOP_File->descriptor,0);
+						FileType = strdup(ContentTypeDescr->content_type_data_byte);
 					}
 				default:
 					{
 						GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unsupported descriptor Type \n"));
 						break;
 					}
-		}		
+		}
 		nb_desc--;
 	}
 
@@ -1517,12 +1517,12 @@ static GF_Err dsmcc_process_biop_file(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_HEADER
 
 	}
 	printf("module_Id %d \n",moduleId);
-	File = dsmcc_get_file(ServiceGateway->File,moduleId,downloadId,BIOP_File->Header->objectKey_data);	
+	File = dsmcc_get_file(ServiceGateway->File,moduleId,downloadId,BIOP_File->Header->objectKey_data);
 	if(File){
 		printf("Fichier: %s module_Id %d place :%d \n",File->Path,moduleId,File->objectKey_data);
 		pFile = fopen(File->Path,"wb");
 		if (pFile!=NULL){
-			fwrite(BIOP_File->content_byte,1,BIOP_File->content_length ,pFile);			
+			fwrite(BIOP_File->content_byte,1,BIOP_File->content_length ,pFile);
 			fclose(pFile);
 			printf("Fichier créé \n\n");
 			if(!strcmp(File->name,"index.html")){
@@ -1533,7 +1533,7 @@ static GF_Err dsmcc_process_biop_file(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_HEADER
 		printf("Fichier non créé \n\n");
 	}
 
-	dsmcc_free_biop_file(BIOP_File);	
+	dsmcc_free_biop_file(BIOP_File);
 
 	return GF_OK;
 }
@@ -1553,12 +1553,12 @@ static GF_Err dsmcc_process_biop_directory(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_H
 
 	/* Get the Header */
 	BIOP_Directory->Header = BIOP_Header;
-	
+
 	if(BIOP_Directory->Header->objectInfo_length != 0x0){
 		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] ObjectInfo_length value is not correct \n"));
 		return GF_CORRUPTED_DATA;
 	}
-	
+
 	if(IsServiceGateway){
 		/* create a "dir" struct with no parent */
 		char Root[50];
@@ -1573,10 +1573,10 @@ static GF_Err dsmcc_process_biop_directory(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_H
 		e = gf_mkdir(ServiceGateway->name);
 		if(e){
 			GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Error during the creation of the directory %s \n",ServiceGateway->name));
-		}		
+		}
 	}else{
 		/* get the dir related to the payload */
-		Dir = dsmcc_get_directory(ServiceGateway->Dir,BIOP_Directory->Header->objectKey_data);		
+		Dir = dsmcc_get_directory(ServiceGateway->Dir,BIOP_Directory->Header->objectKey_data);
 	}
 
 	BIOP_Directory->serviceContextList_count = gf_bs_read_int(bs,8);
@@ -1609,7 +1609,7 @@ static GF_Err dsmcc_process_biop_directory(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_H
 			BIOP_Directory->Name[i].kind_data = (char*)gf_calloc(BIOP_Directory->Name[i].kind_length,sizeof(char));
 			gf_bs_read_data(bs,BIOP_Directory->Name[i].kind_data,(u32)(BIOP_Directory->Name[i].kind_length));
 		}
-	
+
 		BIOP_Directory->Name[i].BindingType = gf_bs_read_int(bs,8);
 		/* IOR */
 		e = dsmcc_biop_get_ior(bs,&BIOP_Directory->Name[i].IOR);
@@ -1637,34 +1637,34 @@ static GF_Err dsmcc_process_biop_directory(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_H
 		j = 0;
 		while(j<nb_desc){
 			/* get the descriptor tag */
-			descr_tag = (u8*)gf_list_get(BIOP_Directory->Name[i].descriptor ,0);		
+			descr_tag = (u8*)gf_list_get(BIOP_Directory->Name[i].descriptor ,0);
 
 			switch(*descr_tag){
 					case CONTENT_TYPE_DESCRIPTOR:
 						{
-							GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR* ContentTypeDescr = (GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR*)gf_list_get(BIOP_Directory->Name[i].descriptor ,j);						
-							FileType = strdup(ContentTypeDescr->content_type_data_byte);						
+							GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR* ContentTypeDescr = (GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR*)gf_list_get(BIOP_Directory->Name[i].descriptor ,j);
+							FileType = strdup(ContentTypeDescr->content_type_data_byte);
 						}
 					default:
 						{
 							GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Unsupported descriptor Type \n"));
 							break;
 						}
-			}				
+			}
 			j++;
 		}
-			
+
 		if(!strcmp(BIOP_Directory->Name[i].kind_data,"dir")){
 			if(!dsmcc_check_element_validation(ServiceGateway->Dir,ServiceGateway->name,BIOP_Directory->Name[i])){
 				GF_Err e;
 				GF_M2TS_DSMCC_DIR* Directory;
-				GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE* taggedProfile = (GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE*)gf_list_get(BIOP_Directory->Name[i].IOR.taggedProfile,0);					
+				GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE* taggedProfile = (GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE*)gf_list_get(BIOP_Directory->Name[i].IOR.taggedProfile,0);
 				GF_SAFEALLOC(Directory,GF_M2TS_DSMCC_DIR);
 				Directory->name = (char*)gf_strdup(BIOP_Directory->Name[i].id_data);
 				Directory->File = gf_list_new();
 				Directory->objectKey_data = taggedProfile->BIOPProfileBody->ObjectLocation.objectKey_data;
 				Directory->downloadId = taggedProfile->BIOPProfileBody->ObjectLocation.carouselId;
-				Directory->moduleId = taggedProfile->BIOPProfileBody->ObjectLocation.moduleId;			
+				Directory->moduleId = taggedProfile->BIOPProfileBody->ObjectLocation.moduleId;
 				Directory->parent = Dir;
 				Directory->Path = dsmcc_get_file_namepath(Dir,Directory->name);
 				e = gf_mkdir(Directory->Path);
@@ -1676,28 +1676,28 @@ static GF_Err dsmcc_process_biop_directory(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_H
 		}else if(!strcmp(BIOP_Directory->Name[i].kind_data,"fil")){
 			if(!dsmcc_check_element_validation(ServiceGateway->File,ServiceGateway->name,BIOP_Directory->Name[i])){
 				GF_M2TS_DSMCC_FILE* File;
-				GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE* taggedProfile = (GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE*)gf_list_get(BIOP_Directory->Name[i].IOR.taggedProfile,0);					
+				GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE* taggedProfile = (GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE*)gf_list_get(BIOP_Directory->Name[i].IOR.taggedProfile,0);
 				GF_SAFEALLOC(File,GF_M2TS_DSMCC_FILE);
-				File->name = (char*)gf_strdup(BIOP_Directory->Name[i].id_data);					
+				File->name = (char*)gf_strdup(BIOP_Directory->Name[i].id_data);
 				File->objectKey_data = taggedProfile->BIOPProfileBody->ObjectLocation.objectKey_data;
 				File->downloadId = taggedProfile->BIOPProfileBody->ObjectLocation.carouselId;
-				File->moduleId = taggedProfile->BIOPProfileBody->ObjectLocation.moduleId;						
+				File->moduleId = taggedProfile->BIOPProfileBody->ObjectLocation.moduleId;
 				File->parent = Dir;
 				File->Path = dsmcc_get_file_namepath(Dir,File->name);
 				gf_list_add(ServiceGateway->File,File);
 			}
-		}		
+		}
 	}
 	dsmcc_free_biop_directory(BIOP_Directory);
-	
+
 	return GF_OK;
 }
 
 static GF_Err dsmcc_process_biop_stream_event(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_HEADER* BIOP_Header,GF_M2TS_DSMCC_SERVICE_GATEWAY* ServiceGateway){
 
-	u32 i;		
+	u32 i;
 	GF_M2TS_DSMCC_BIOP_STREAM_EVENT* BIOP_StreamEvent;
-	//GF_M2TS_DSMCC_FILE* File;	
+	//GF_M2TS_DSMCC_FILE* File;
 	u32 eventdata,Info_length;
 
 	GF_SAFEALLOC(BIOP_StreamEvent,GF_M2TS_DSMCC_BIOP_STREAM_EVENT);
@@ -1737,20 +1737,20 @@ static GF_Err dsmcc_process_biop_stream_event(GF_BitStream* bs,GF_M2TS_DSMCC_BIO
 	if(BIOP_StreamEvent->serviceContextList_count){
 		BIOP_StreamEvent->ServiceContext = (GF_M2TS_DSMCC_SERVICE_CONTEXT*)gf_calloc(BIOP_StreamEvent->serviceContextList_count,sizeof(GF_M2TS_DSMCC_SERVICE_CONTEXT));
 		dsmcc_biop_get_context(bs,BIOP_StreamEvent->ServiceContext,BIOP_StreamEvent->serviceContextList_count);
-	}	
-			
+	}
+
 	BIOP_StreamEvent->messageBody_length = gf_bs_read_int(bs,32);
 	BIOP_StreamEvent->taps_count = gf_bs_read_int(bs,8);
 	BIOP_StreamEvent->Taps = (GF_M2TS_DSMCC_BIOP_TAPS*)gf_calloc(BIOP_StreamEvent->taps_count,sizeof(GF_M2TS_DSMCC_BIOP_TAPS));
 	for(i=0;i<BIOP_StreamEvent->taps_count;i++){
-		BIOP_StreamEvent->Taps[i].id = gf_bs_read_int(bs,16);		
-		BIOP_StreamEvent->Taps[i].use = gf_bs_read_int(bs,16);		
+		BIOP_StreamEvent->Taps[i].id = gf_bs_read_int(bs,16);
+		BIOP_StreamEvent->Taps[i].use = gf_bs_read_int(bs,16);
 		BIOP_StreamEvent->Taps[i].assocTag = gf_bs_read_int(bs,16);
 		BIOP_StreamEvent->Taps[i].selector_length = gf_bs_read_int(bs,8);
 		if(BIOP_StreamEvent->Taps[i].selector_length != 0x00){
 			GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Error in Stream Event : selector_length has a wrong value, abording the processing \n"));
 			return GF_CORRUPTED_DATA;
-		}		
+		}
 	}
 	BIOP_StreamEvent->eventIds_count = gf_bs_read_int(bs,8);
 	if(BIOP_StreamEvent->eventIds_count != BIOP_StreamEvent->eventNames_count){
@@ -1761,15 +1761,15 @@ static GF_Err dsmcc_process_biop_stream_event(GF_BitStream* bs,GF_M2TS_DSMCC_BIO
 		for(i =0;i<BIOP_StreamEvent->eventIds_count;i++){
 			BIOP_StreamEvent->eventId[i] = gf_bs_read_int(bs,16);
 		}
-	}		
+	}
 
 	return GF_OK;
 }
 
 static GF_Err dsmcc_process_biop_stream_message(GF_BitStream* bs,GF_M2TS_DSMCC_BIOP_HEADER* BIOP_Header,GF_M2TS_DSMCC_SERVICE_GATEWAY* ServiceGateway){
 
-	u32 i;		
-	GF_M2TS_DSMCC_BIOP_STREAM_MESSAGE* BIOP_StreamMessage;	
+	u32 i;
+	GF_M2TS_DSMCC_BIOP_STREAM_MESSAGE* BIOP_StreamMessage;
 	u32 eventdata,Info_length;
 
 	GF_SAFEALLOC(BIOP_StreamMessage,GF_M2TS_DSMCC_BIOP_STREAM_MESSAGE);
@@ -1788,7 +1788,7 @@ static GF_Err dsmcc_process_biop_stream_message(GF_BitStream* bs,GF_M2TS_DSMCC_B
 	BIOP_StreamMessage->Info.audio = gf_bs_read_int(bs,8);
 	BIOP_StreamMessage->Info.video = gf_bs_read_int(bs,8);
 	BIOP_StreamMessage->Info.data = gf_bs_read_int(bs,8);
-	
+
 
 	Info_length = BIOP_StreamMessage->Header->objectInfo_length - (BIOP_StreamMessage->Info.aDescription_length + 10);
 
@@ -1797,20 +1797,20 @@ static GF_Err dsmcc_process_biop_stream_message(GF_BitStream* bs,GF_M2TS_DSMCC_B
 		BIOP_StreamMessage->ServiceContext = (GF_M2TS_DSMCC_SERVICE_CONTEXT*)gf_calloc(BIOP_StreamMessage->serviceContextList_count,sizeof(GF_M2TS_DSMCC_SERVICE_CONTEXT));
 		dsmcc_biop_get_context(bs,BIOP_StreamMessage->ServiceContext,BIOP_StreamMessage->serviceContextList_count);
 	}
-				
+
 	BIOP_StreamMessage->messageBody_length = gf_bs_read_int(bs,32);
 	BIOP_StreamMessage->taps_count = gf_bs_read_int(bs,8);
 	BIOP_StreamMessage->Taps = (GF_M2TS_DSMCC_BIOP_TAPS*)gf_calloc(BIOP_StreamMessage->taps_count,sizeof(GF_M2TS_DSMCC_BIOP_TAPS));
 	for(i=0;i<BIOP_StreamMessage->taps_count;i++){
-		BIOP_StreamMessage->Taps[i].id = gf_bs_read_int(bs,16);		
-		BIOP_StreamMessage->Taps[i].use = gf_bs_read_int(bs,16);		
+		BIOP_StreamMessage->Taps[i].id = gf_bs_read_int(bs,16);
+		BIOP_StreamMessage->Taps[i].use = gf_bs_read_int(bs,16);
 		BIOP_StreamMessage->Taps[i].assocTag = gf_bs_read_int(bs,16);
 		BIOP_StreamMessage->Taps[i].selector_length = gf_bs_read_int(bs,8);
 		if(BIOP_StreamMessage->Taps[i].selector_length != 0x00){
 			GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[Process DSMCC] Error in Stream Event : selector_length has a wrong value, abording the processing \n"));
 			return GF_CORRUPTED_DATA;
-		}		
-	}		
+		}
+	}
 
 	return GF_OK;
 }
@@ -1846,7 +1846,7 @@ static void dsmcc_biop_descriptor(GF_BitStream* bs,GF_List* list,u32 size){
 		data_shift = 0;
 
 	while(size > data_shift){
-	descr_tag = gf_bs_read_int(bs,8);			
+	descr_tag = gf_bs_read_int(bs,8);
 
 			switch(descr_tag){
 
@@ -1859,7 +1859,7 @@ static void dsmcc_biop_descriptor(GF_BitStream* bs,GF_List* list,u32 size){
 						CachingPriorityDescr->priority_value = gf_bs_read_int(bs,8);
 						CachingPriorityDescr->transparency_level = gf_bs_read_int(bs,8);
 						gf_list_add(list,CachingPriorityDescr);
-						break;					
+						break;
 					}
 				case COMPRESSED_MODULE_DESCRIPTOR:
 					{
@@ -1869,9 +1869,9 @@ static void dsmcc_biop_descriptor(GF_BitStream* bs,GF_List* list,u32 size){
 						CompModuleDescr->descriptor_length = gf_bs_read_int(bs,8);
 						CompModuleDescr->compression_method = gf_bs_read_int(bs,8);
 						/* if CompModuleDescr->compression_method least significant nibble is eq to 0x08, the terminal shall support the Deflate compression algorithm (GZIP) */
-						CompModuleDescr->original_size = gf_bs_read_int(bs,32);				
+						CompModuleDescr->original_size = gf_bs_read_int(bs,32);
 						gf_list_add(list,CompModuleDescr);
-						break;	
+						break;
 
 					}
 				case CONTENT_TYPE_DESCRIPTOR:
@@ -1893,7 +1893,7 @@ static void dsmcc_biop_descriptor(GF_BitStream* bs,GF_List* list,u32 size){
 						gf_bs_read_int(bs,8*size);
 						break;
 					}
-			}			
+			}
 			data_shift = (u32)(gf_bs_get_position(bs)) - start_pos;
 	}
 }
@@ -1903,8 +1903,8 @@ static void dsmcc_biop_get_context(GF_BitStream* bs,GF_M2TS_DSMCC_SERVICE_CONTEX
 	u32 i;
 
 	for(i=0;i<serviceContextList_count;i++){
-		Context[i].context_id = gf_bs_read_int(bs,32);					
-		Context[i].context_data_length = gf_bs_read_int(bs,16);	
+		Context[i].context_id = gf_bs_read_int(bs,32);
+		Context[i].context_data_length = gf_bs_read_int(bs,16);
 		if(Context[i].context_data_length != 0){
 			Context[i].context_data_byte = (char*)gf_calloc(Context[i].context_data_length ,sizeof(char));
 			gf_bs_read_data(bs,Context[i].context_data_byte,(u32)(Context[i].context_data_length ));
@@ -1918,7 +1918,7 @@ static GF_Err dsmcc_biop_get_ior(GF_BitStream* bs,GF_M2TS_DSMCC_IOR* IOR)
 	/* IOR */
 	left_lite_component = 0;
 	IOR->type_id_length = gf_bs_read_int(bs,32);
-	if(IOR->type_id_length > 0xA){		
+	if(IOR->type_id_length > 0xA){
 		//return GF_CORRUPTED_DATA;
 	}
 	IOR->type_id_byte = (char*)gf_calloc(IOR->type_id_length,sizeof(char));
@@ -2005,7 +2005,7 @@ static GF_Err dsmcc_biop_get_ior(GF_BitStream* bs,GF_M2TS_DSMCC_IOR* IOR)
 								taggedProfile->BIOPProfileBody->ConnBinder.additional_tap_byte = (char*)gf_calloc(taggedProfile->BIOPProfileBody->ConnBinder.component_data_length-18,sizeof(char));
 								gf_bs_read_data(bs,taggedProfile->BIOPProfileBody->ConnBinder.additional_tap_byte,(u32)(taggedProfile->BIOPProfileBody->ConnBinder.component_data_length-18));
 							}
-							left_lite_component = left_lite_component - 2; 
+							left_lite_component = left_lite_component - 2;
 							break;
 						}
 					case TAG_LITE_OPTIONS:
@@ -2043,7 +2043,7 @@ static GF_Err dsmcc_biop_get_ior(GF_BitStream* bs,GF_M2TS_DSMCC_IOR* IOR)
 								taggedProfile->ServiceLocation->NameComponent[j].id_length = gf_bs_read_int(bs,32);
 								if(taggedProfile->ServiceLocation->NameComponent[j].id_length != 0){
 									taggedProfile->ServiceLocation->NameComponent[j].id_data = (char*)gf_calloc(taggedProfile->ServiceLocation->NameComponent[j].id_length,sizeof(char));
-									gf_bs_read_data(bs,taggedProfile->ServiceLocation->NameComponent[i].id_data,(u32)(taggedProfile->ServiceLocation->NameComponent[j].id_length));							
+									gf_bs_read_data(bs,taggedProfile->ServiceLocation->NameComponent[i].id_data,(u32)(taggedProfile->ServiceLocation->NameComponent[j].id_length));
 								}
 								taggedProfile->ServiceLocation->NameComponent[j].kind_length = gf_bs_read_int(bs,32);
 								if(taggedProfile->ServiceLocation->NameComponent[j].kind_length != 0){
@@ -2056,7 +2056,7 @@ static GF_Err dsmcc_biop_get_ior(GF_BitStream* bs,GF_M2TS_DSMCC_IOR* IOR)
 								taggedProfile->ServiceLocation->InitialContext_data_byte = (char*)gf_calloc(taggedProfile->ServiceLocation->initialContext_length,sizeof(char));
 								gf_bs_read_data(bs,taggedProfile->ServiceLocation->InitialContext_data_byte,(u32)(taggedProfile->ServiceLocation->initialContext_length));
 							}
-							left_lite_component = left_lite_component - 1; 
+							left_lite_component = left_lite_component - 1;
 							break;
 						}
 					default:
@@ -2067,7 +2067,7 @@ static GF_Err dsmcc_biop_get_ior(GF_BitStream* bs,GF_M2TS_DSMCC_IOR* IOR)
 		}
 		taggedProfile->LiteComponent = (GF_M2TS_DSMCC_BIOP_LITE_COMPONENT*)gf_calloc(left_lite_component,sizeof(GF_M2TS_DSMCC_BIOP_LITE_COMPONENT));
 		for(i = 0; i<left_lite_component ; i++){
-			taggedProfile->LiteComponent[i].componentId_tag = gf_bs_read_int(bs,32);						
+			taggedProfile->LiteComponent[i].componentId_tag = gf_bs_read_int(bs,32);
 			taggedProfile->LiteComponent[i].component_data_length = gf_bs_read_int(bs,8);
 			if(taggedProfile->LiteComponent[i].component_data_length != 0){
 				taggedProfile->LiteComponent[i].component_data_byte = (char*)gf_calloc(taggedProfile->ServiceLocation->initialContext_length,sizeof(char));
@@ -2084,9 +2084,9 @@ static GF_Err dsmcc_check_element_validation(GF_List* List,char* Parent_name,GF_
 {
 	u32 nb_elt,i;
 
-	GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE* taggedProfile = (GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE*)gf_list_get(Name.IOR.taggedProfile,0);	
+	GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE* taggedProfile = (GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE*)gf_list_get(Name.IOR.taggedProfile,0);
 	nb_elt = gf_list_count(List);
-			
+
 	for(i = 0; i < nb_elt;i++){
 		GF_M2TS_DSMCC_FILE* File = (GF_M2TS_DSMCC_FILE*)gf_list_get(List,i);
 		if(!strcmp(File->name,Name.id_data) && !strcmp(File->parent,Parent_name) &&
@@ -2123,11 +2123,11 @@ static GF_M2TS_DSMCC_DIR* dsmcc_get_directory(GF_List* List, u32 objectKey_data)
 static GF_M2TS_DSMCC_FILE* dsmcc_get_file(GF_List* ServiceGateway_List, u16 moduleId,u32 downloadId,u32 objectKey_data){
 	u32 nb_elt,i;
 	nb_elt = gf_list_count(ServiceGateway_List);
-	for(i = 0;i<nb_elt;i++){		
+	for(i = 0;i<nb_elt;i++){
 		GF_M2TS_DSMCC_FILE* File = (GF_M2TS_DSMCC_FILE*)gf_list_get(ServiceGateway_List,i);
 		if((File->objectKey_data == objectKey_data) && File->moduleId == moduleId && File->downloadId == downloadId){
 			return File;
-		}		
+		}
 	}
 	return NULL;
 }
@@ -2152,9 +2152,9 @@ static char* dsmcc_get_file_namepath(GF_M2TS_DSMCC_DIR* Dir,char* name){
 
 /* Free struct */
 
-static void dsmcc_free_biop_header(GF_M2TS_DSMCC_BIOP_HEADER* BIOP_Header){	
+static void dsmcc_free_biop_header(GF_M2TS_DSMCC_BIOP_HEADER* BIOP_Header){
 
-	gf_free(BIOP_Header->objectKind_data);	
+	gf_free(BIOP_Header->objectKind_data);
 	gf_free(BIOP_Header);
 }
 
@@ -2169,7 +2169,7 @@ static void dsmcc_free_biop_directory(GF_M2TS_DSMCC_BIOP_DIRECTORY* BIOP_Directo
 static void dsmcc_free_biop_file(GF_M2TS_DSMCC_BIOP_FILE* BIOP_File){
 
 	dsmcc_free_biop_descriptor(BIOP_File->descriptor);
-	dsmcc_free_biop_context(BIOP_File->ServiceContext,BIOP_File->serviceContextList_count);	
+	dsmcc_free_biop_context(BIOP_File->ServiceContext,BIOP_File->serviceContextList_count);
 	if(BIOP_File->content_length){
 		gf_free(BIOP_File->content_byte);
 	}
@@ -2180,54 +2180,54 @@ static void dsmcc_free_biop_file(GF_M2TS_DSMCC_BIOP_FILE* BIOP_File){
 static void dsmcc_free_biop_ior(GF_M2TS_DSMCC_IOR* IOR)
 {
 	u32 i,left_lite_component;
-	
-	if(IOR->type_id_length){		
+
+	if(IOR->type_id_length){
 		gf_free(IOR->type_id_byte);
-	}	
+	}
 	for(i = 0; i < IOR->taggedProfiles_count;i++){
 		GF_M2TS_DSMCC_BIOP_TAGGED_PROFILE* taggedProfile = gf_list_get(IOR->taggedProfile,0);
 		left_lite_component = taggedProfile->lite_component_count;
 
-		switch(taggedProfile->profileId_tag){				
-	
+		switch(taggedProfile->profileId_tag){
+
 					case TAG_BIOP:
 						{
-							/* Object Location */						
+							/* Object Location */
 							GF_SAFEALLOC(taggedProfile->BIOPProfileBody,GF_M2TS_DSMCC_BIOP_PROFILE_BODY);
-							
-							gf_free(taggedProfile->BIOPProfileBody->ConnBinder.Taps); 
+
+							gf_free(taggedProfile->BIOPProfileBody->ConnBinder.Taps);
 							if(taggedProfile->BIOPProfileBody->ConnBinder.component_data_length-18 != 0){
 								gf_free(taggedProfile->BIOPProfileBody->ConnBinder.additional_tap_byte);
 							}
 							gf_free(taggedProfile->BIOPProfileBody);
-							left_lite_component = left_lite_component - 2; 
+							left_lite_component = left_lite_component - 2;
 							break;
 						}
 					case TAG_LITE_OPTIONS:
 						{
 							/* Service Location */
-							u32 j;		
-							
+							u32 j;
+
 							for(j = 0; j < taggedProfile->ServiceLocation->nameComponents_count; j++){
 
 								if(taggedProfile->ServiceLocation->NameComponent[j].id_length != 0){
-									gf_free(taggedProfile->ServiceLocation->NameComponent[j].id_data); 
-								}								
+									gf_free(taggedProfile->ServiceLocation->NameComponent[j].id_data);
+								}
 								if(taggedProfile->ServiceLocation->NameComponent[j].kind_length != 0){
 									gf_free(taggedProfile->ServiceLocation->NameComponent[j].kind_data);
 								}
 							}
 							gf_free(taggedProfile->ServiceLocation->NameComponent);
-				
+
 							if(taggedProfile->ServiceLocation->initialContext_length != 0){
 								gf_free(taggedProfile->ServiceLocation->InitialContext_data_byte);
 							}
-							left_lite_component = left_lite_component - 1; 
+							left_lite_component = left_lite_component - 1;
 							break;
-						}					
+						}
 		}
 
-		for(i = 0; i<left_lite_component ; i++){			
+		for(i = 0; i<left_lite_component ; i++){
 			if(taggedProfile->LiteComponent[i].component_data_length != 0){
 				gf_free(taggedProfile->LiteComponent[i].component_data_byte);
 			}
@@ -2249,7 +2249,7 @@ static void dsmcc_free_biop_descriptor(GF_List* list){
 
 	while(gf_list_count(list)){
 
-		descr_tag = (u8*)gf_list_get(list,0);		
+		descr_tag = (u8*)gf_list_get(list,0);
 
 		switch(*descr_tag){
 
@@ -2258,18 +2258,18 @@ static void dsmcc_free_biop_descriptor(GF_List* list){
 						GF_M2TS_DSMCC_BIOP_CACHING_PRIORITY_DESCRIPTOR* CachingPriorityDescr = (GF_M2TS_DSMCC_BIOP_CACHING_PRIORITY_DESCRIPTOR*)gf_list_get(list,0);
 						gf_list_rem(list,0);
 						gf_free(CachingPriorityDescr);
-						break;					
+						break;
 					}
 				case COMPRESSED_MODULE_DESCRIPTOR:
-					{						
+					{
 						GF_M2TS_DSMCC_BIOP_COMPRESSED_MODULE_DESCRIPTOR* CompModuleDescr = (GF_M2TS_DSMCC_BIOP_COMPRESSED_MODULE_DESCRIPTOR*)gf_list_get(list,0);
 						gf_list_rem(list,0);
 						gf_free(CompModuleDescr);
-						break;	
+						break;
 
 					}
 				case CONTENT_TYPE_DESCRIPTOR:
-					{			
+					{
 						GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR* ContentTypeDescr = (GF_M2TS_DSMCC_BIOP_CONTENT_TYPE_DESRIPTOR*)gf_list_get(list,0);
 						gf_list_rem(list,0);
 						if(ContentTypeDescr->descriptor_length){
@@ -2282,8 +2282,8 @@ static void dsmcc_free_biop_descriptor(GF_List* list){
 					{
 
 						break;
-					}				
-		}			
+					}
+		}
 
 	}
 	gf_list_del(list);
@@ -2296,23 +2296,23 @@ static void dsmcc_free_biop_name(GF_M2TS_DSMCC_BIOP_NAME* Name, u32 nb_name){
 	for(i =0;i<nb_name;i++){
 
 		if(Name[i].id_length){
-			gf_free(Name[i].id_data);			
-		}		
+			gf_free(Name[i].id_data);
+		}
 		if(Name[i].kind_length){
 			gf_free(Name[i].kind_data);
-		}			
+		}
 		/* IOR */
-		dsmcc_free_biop_ior(&Name[i].IOR);		
-		dsmcc_free_biop_descriptor(Name[i].descriptor);		
+		dsmcc_free_biop_ior(&Name[i].IOR);
+		dsmcc_free_biop_descriptor(Name[i].descriptor);
 	}
 }
 
 static void dsmcc_free_biop_context(GF_M2TS_DSMCC_SERVICE_CONTEXT* Context,u32 serviceContextList_count){
 	u32 i;
 
-	for(i=0;i<serviceContextList_count;i++){		
+	for(i=0;i<serviceContextList_count;i++){
 		if(Context[i].context_data_length != 0){
-			gf_free(Context[i].context_data_byte);			
+			gf_free(Context[i].context_data_byte);
 		}
 	}
 	gf_free(Context);

@@ -29,12 +29,12 @@
 #include "nodes_stacks.h"
 #include "offscreen_cache.h"
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/mediaobject.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/mediaobject.h"
 
-#include <gpac/nodes_svg.h>
-#include <gpac/compositor.h>
+#include "../../include/gpac/nodes_svg.h"
+#include "../../include/gpac/compositor.h"
 
 /*for svg <g> caching*/
 #include "mpeg4_grouping.h"

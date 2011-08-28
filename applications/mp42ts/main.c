@@ -22,12 +22,12 @@
  *
  */
 
-#include <gpac/media_tools.h>
-#include <gpac/constants.h>
-#include <gpac/base_coding.h>
-#include <gpac/ietf.h>
-#include <gpac/scene_engine.h>
-#include <gpac/mpegts.h>
+#include "../../include/gpac/media_tools.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/base_coding.h"
+#include "../../include/gpac/ietf.h"
+#include "../../include/gpac/scene_engine.h"
+#include "../../include/gpac/mpegts.h"
 
 
 #define DEFAULT_PCR_OFFSET	18000

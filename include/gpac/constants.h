@@ -105,7 +105,7 @@ enum
 	/*!GPAC Private Media streams\n
 	*\n\note
 	*this stream type (MPEG-4 user-private) is reserved for media streams bypassing GPAC for decoding
-	and composition. The media decoder is only in charge of repositioning the video output, and the compositor will 
+	and composition. The media decoder is only in charge of repositioning the video output, and the compositor will
 	draw an empty rectangle if using alpha composition
 
 	*The decoderSpecificInfo carried only contains an opaque pointer in the data field, which depends on the underlying InputServce provider
@@ -410,7 +410,7 @@ enum
  *	DSI Syntax for audio streams
  \code
  *	u32 sample_rate: sampling rate
- *	u16 nb_channels: num channels 
+ *	u16 nb_channels: num channels
  *	u16 nb_bits_per_sample: num of bits per audio sample
  *	u32 frame_size: max size of audio frame in byte
  *	u32 channel_config: GPAC mask of GF_AUDIO_CH_ constants, or 0 if unknown

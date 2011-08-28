@@ -24,9 +24,9 @@
  */
 
 
-#include <gpac/modules/codec.h>
-#include <gpac/scenegraph_vrml.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/scenegraph_vrml.h"
+#include "../../include/gpac/thread.h"
 
 #include <wiiuse.h>
 

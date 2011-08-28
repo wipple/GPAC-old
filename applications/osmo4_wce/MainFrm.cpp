@@ -10,8 +10,8 @@
 
 #include "Osmo4.h"
 
-#include <gpac/options.h>
-#include <gpac/network.h>
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/network.h"
 
 #include "MainFrm.h"
 #include <gx.h>

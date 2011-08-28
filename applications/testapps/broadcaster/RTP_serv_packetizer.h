@@ -1,7 +1,7 @@
 #ifndef __RTP_SERV_PACKETISER
 #define __RTP_SERV_PACKETISER
 
-#include <gpac/ietf.h>
+#include "../../../include/gpac/ietf.h"
 #include "gpac/scene_engine.h" // For M4Sample
 #include "RTP_serv_generator.h"
 

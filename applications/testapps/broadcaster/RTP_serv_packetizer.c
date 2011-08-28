@@ -2,9 +2,9 @@
 #include "RTP_serv_sender.h"
 #include <assert.h>
 
-#include <gpac/ietf.h>
-#include <gpac/mpeg4_odf.h>
-#include <gpac/internal/media_dev.h>
+#include "../../../include/gpac/ietf.h"
+#include "../../../include/gpac/mpeg4_odf.h"
+#include "../../../include/gpac/internal/media_dev.h"
 
 #define MAX_PACKET_SIZE 2000
 

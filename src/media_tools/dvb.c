@@ -22,7 +22,7 @@
  */
 
 
-#include <gpac/tools.h>
+#include "../../include/gpac/tools.h"
 #include <time.h>
 
 

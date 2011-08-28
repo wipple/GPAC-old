@@ -30,9 +30,9 @@
 extern "C" {
 #endif
 
-#include <gpac/path2d.h>
-#include <gpac/module.h>
-#include <gpac/user.h>
+#include "../path2d.h"
+#include "../module.h"
+#include "../user.h"
 
 
 typedef struct _gf_glyph

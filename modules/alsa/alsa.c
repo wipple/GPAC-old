@@ -28,7 +28,7 @@
 #include <errno.h>
 #include <poll.h>
 #include <alsa/asoundlib.h>	      
-#include <gpac/modules/audio_out.h>
+#include "../../include/gpac/modules/audio_out.h"
 
 
 typedef struct 

@@ -39,17 +39,17 @@
 #include "GPACMediaController.h"
 #include "GenericDevice.h"
 
-#include <gpac/modules/term_ext.h>
-#include <gpac/term_info.h>
-#include <gpac/thread.h>
-#include <gpac/network.h>
-#include <gpac/options.h>
-#include <gpac/internal/terminal_dev.h>
+#include "../../include/gpac/modules/term_ext.h"
+#include "../../include/gpac/term_info.h"
+#include "../../include/gpac/thread.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/internal/terminal_dev.h"
 
 #ifdef GPAC_HAS_SPIDERMONKEY
 
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/internal/smjs_api.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/internal/smjs_api.h"
 
 #endif
 

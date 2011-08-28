@@ -23,11 +23,11 @@
  *
  */
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 #ifndef GPAC_DISABLE_SVG
-#include <gpac/events.h>
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/events.h"
+#include "../../include/gpac/nodes_svg.h"
 
 
 #ifdef GPAC_HAS_SPIDERMONKEY
@@ -38,7 +38,7 @@
 #endif
 #endif
 
-#include <gpac/internal/smjs_api.h>
+#include "../../include/gpac/internal/smjs_api.h"
 
 #define JSVAL_CHECK_STRING(_v) (JSVAL_IS_STRING(_v) || JSVAL_IS_NULL(_v))
 
@@ -2484,8 +2484,8 @@ static Bool svg_js_load_script(GF_Node *script, char *file)
 	return success;
 }
 
-#include <gpac/download.h>
-#include <gpac/network.h>
+#include "../../include/gpac/download.h"
+#include "../../include/gpac/network.h"
 
 
 void JSScript_LoadSVG(GF_Node *node)

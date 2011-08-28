@@ -44,7 +44,7 @@ extern "C" {
  *	@{
  */
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 /*!
  *\brief Thread states

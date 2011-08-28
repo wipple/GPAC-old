@@ -1,5 +1,5 @@
 
-#include <gpac/setup.h>
+#include "../../include/gpac/setup.h"
 #include <e32std.h> 
 
 #ifndef EKA2 

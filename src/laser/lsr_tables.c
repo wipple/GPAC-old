@@ -30,7 +30,7 @@
 */
 
 
-#include <gpac/internal/laser_dev.h>
+#include "../../include/gpac/internal/laser_dev.h"
 
 #ifndef GPAC_DISABLE_LASER
 

@@ -20,7 +20,7 @@
 //
 
 /*MPEG4 term*/
-#include <gpac/terminal.h>
+#include "../../include/gpac/terminal.h"
 
 enum {
 	WM_SCENE_DONE = WM_USER + 1, 

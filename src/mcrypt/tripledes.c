@@ -18,7 +18,7 @@
 
 /* $Id: tripledes.c,v 1.3 2010-02-23 16:24:20 jeanlf Exp $ */
 
-#include <gpac/internal/crypt_dev.h>
+#include "../../include/gpac/internal/crypt_dev.h"
 
 #if !defined(GPAC_CRYPT_ISMA_ONLY) && !defined(GPAC_DISABLE_MCRYPT)
 

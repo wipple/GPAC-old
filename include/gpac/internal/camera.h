@@ -25,8 +25,8 @@
 #ifndef _CAMERA_H_
 #define _CAMERA_H_
 
-//#include <gpac/internal/compositor_dev.h>
-#include <gpac/scenegraph_vrml.h>
+//#include "compositor_dev.h"
+#include "../scenegraph_vrml.h"
 
 /*camera flags*/
 enum

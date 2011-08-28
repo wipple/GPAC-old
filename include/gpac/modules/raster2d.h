@@ -30,9 +30,9 @@
 extern "C" {
 #endif
 
-#include <gpac/path2d.h>
-#include <gpac/module.h>
-#include <gpac/color.h>
+#include "../path2d.h"
+#include "../module.h"
+#include "../color.h"
 
 
 /*stencil types*/

@@ -29,7 +29,7 @@
 extern "C" {
 #endif
 
-#include <gpac/scenegraph_svg.h>
+#include "scenegraph_svg.h"
 
 enum {
 	TAG_SVG_a = GF_NODE_RANGE_FIRST_SVG,

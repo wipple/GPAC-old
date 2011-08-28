@@ -27,7 +27,7 @@
 #ifndef _GF_LASER_DEV_H_
 #define _GF_LASER_DEV_H_
 
-#include <gpac/laser.h>
+#include "../laser.h"
 
 #ifndef GPAC_DISABLE_LASER
 

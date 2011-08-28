@@ -27,8 +27,8 @@
 
 #ifndef GPAC_DISABLE_3D
 
-#include <gpac/options.h>
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/nodes_mpeg4.h"
 #include "gl_inc.h"
 
 #if (defined(WIN32) || defined(_WIN32_WCE)) && !defined(__GNUC__)

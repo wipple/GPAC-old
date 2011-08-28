@@ -43,7 +43,7 @@ extern "C" {
  *	@{
  */
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 
 typedef struct __isom_rtp_streamer GF_ISOMRTPStreamer;

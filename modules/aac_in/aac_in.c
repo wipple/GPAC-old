@@ -22,13 +22,13 @@
  *
  */
 #ifndef DONT_USE_TERMINAL_MODULE_API
-#include <gpac/modules/service.h>
+#include "../../include/gpac/modules/service.h"
 #endif
 
-#include <gpac/modules/codec.h>
-#include <gpac/avparse.h>
-#include <gpac/constants.h>
-#include <gpac/download.h>
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/avparse.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/download.h"
 
 #include <time.h>
 

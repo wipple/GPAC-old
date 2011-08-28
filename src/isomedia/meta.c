@@ -24,7 +24,7 @@
  */
 
 
-#include <gpac/internal/isomedia_dev.h>
+#include "../../include/gpac/internal/isomedia_dev.h"
 
 #ifndef GPAC_DISABLE_ISOM
 

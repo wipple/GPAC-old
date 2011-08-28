@@ -2,7 +2,7 @@
 #define _V4STUDIO_TREE_H
 
 #include "safe_include.h" 
-#include <gpac/scenegraph.h>
+#include "../../include/gpac/scenegraph.h"
 #include "V4FieldList.h"
 
 #include <wx/treectrl.h>

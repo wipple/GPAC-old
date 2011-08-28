@@ -23,11 +23,11 @@
  *
  */
 
-#include <gpac/internal/laser_dev.h>
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/bitstream.h>
-#include <gpac/math.h>
-#include <gpac/events.h>
+#include "../../include/gpac/internal/laser_dev.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/bitstream.h"
+#include "../../include/gpac/math.h"
+#include "../../include/gpac/events.h"
 
 #ifndef GPAC_DISABLE_LASER
 

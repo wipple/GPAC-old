@@ -24,7 +24,7 @@
 
 
 #include "media_control.h"
-#include <gpac/constants.h>
+#include "../../include/gpac/constants.h"
 
 
 void mediacontrol_restart(GF_ObjectManager *odm)

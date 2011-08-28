@@ -26,7 +26,7 @@
 #ifndef GPAC_JSAPI
 #define GPAC_JSAPI
 
-#include <gpac/setup.h>
+#include "../setup.h"
 
 #ifdef GPAC_ANDROID
 #ifndef XP_UNIX

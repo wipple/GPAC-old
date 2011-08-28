@@ -8,7 +8,7 @@ Copyright: (c) 2006, Andrew Voznytsa
 License: see License.txt in the top level directory.
 */
 
-#include <gpac/internal/isomedia_dev.h>
+#include "../../include/gpac/internal/isomedia_dev.h"
 
 #ifndef GPAC_DISABLE_ISOM
 

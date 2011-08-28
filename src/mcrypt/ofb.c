@@ -17,7 +17,7 @@
  * Boston, MA 02111-1307, USA.
  */
 
-#include <gpac/internal/crypt_dev.h>
+#include "../../include/gpac/internal/crypt_dev.h"
 
 #if !defined(GPAC_CRYPT_ISMA_ONLY) && !defined(GPAC_DISABLE_MCRYPT)
 

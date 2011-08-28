@@ -22,13 +22,13 @@
  *
  */
 
-#include <gpac/modules/service.h>
-#include <gpac/modules/codec.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/constants.h"
 
 #if !defined(GPAC_DISABLE_ISOM_WRITE) && !defined(GPAC_DISABLE_MEDIA_IMPORT)
 
-#include <gpac/media_tools.h>
+#include "../../include/gpac/media_tools.h"
 
 typedef struct
 {

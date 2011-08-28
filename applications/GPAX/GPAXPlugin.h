@@ -34,11 +34,11 @@
 
 
 
-#include <gpac/terminal.h>
-#include <gpac/user.h>
-#include <gpac/config_file.h>
-#include <gpac/module.h>
-#include <gpac/options.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/user.h"
+#include "../../include/gpac/config_file.h"
+#include "../../include/gpac/module.h"
+#include "../../include/gpac/options.h"
 
 #if (_MSC_VER >= 1300)
 using namespace ATL;

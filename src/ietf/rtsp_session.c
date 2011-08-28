@@ -22,8 +22,8 @@
  *
  */
 
-#include <gpac/internal/ietf_dev.h>
-#include <gpac/base_coding.h>
+#include "../../include/gpac/internal/ietf_dev.h"
+#include "../../include/gpac/base_coding.h"
 
 
 #ifndef GPAC_DISABLE_STREAMING

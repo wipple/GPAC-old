@@ -3,12 +3,12 @@
 
 #include "stdafx.h"
 #include "Osmo4.h"
-#include <gpac/options.h>
-#include <gpac/modules/audio_out.h>
-#include <gpac/modules/codec.h>
-#include <gpac/modules/font.h>
-#include <gpac/constants.h>
-#include <gpac/iso639.h>
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/modules/audio_out.h"
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/modules/font.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/iso639.h"
 
 #include "Options.h"
 #include <gx.h>

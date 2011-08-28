@@ -25,8 +25,8 @@
 
 /*hybrid media interface implementation generating fake audio consisting in beeps every second in push mode*/
 
-#include <gpac/thread.h>
-#include <gpac/modules/service.h>
+#include "../../include/gpac/thread.h"
+#include "../../include/gpac/modules/service.h"
 #include <time.h>
 #include "hyb_in.h"
 

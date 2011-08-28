@@ -25,11 +25,11 @@
  */
 
 
-#include <gpac/filestreamer.h>
-#include <gpac/constants.h>
-#include <gpac/isomedia.h>
-#include <gpac/scene_engine.h>
-#include <gpac/rtp_streamer.h>
+#include "../../include/gpac/filestreamer.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/isomedia.h"
+#include "../../include/gpac/scene_engine.h"
+#include "../../include/gpac/rtp_streamer.h"
 
 void PrintStreamerUsage()
 {

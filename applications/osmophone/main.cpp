@@ -23,13 +23,13 @@
  */
 
 /*includes both terminal and od browser*/
-#include <gpac/terminal.h>
-#include <gpac/options.h>
+#include "../../include/gpac/terminal.h"
+#include "../../include/gpac/options.h"
 /*for initial setup*/
-#include <gpac/modules/service.h>
+#include "../../include/gpac/modules/service.h"
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
 
 #include <windows.h>
 #include <commdlg.h>

@@ -24,11 +24,11 @@
 
 
 
-#include <gpac/ietf.h>
+#include "../../include/gpac/ietf.h"
 
 #ifndef GPAC_DISABLE_STREAMING
 
-#include <gpac/token.h>
+#include "../../include/gpac/token.h"
 
 
 #define SDP_WRITE_STEPALLOC		2048

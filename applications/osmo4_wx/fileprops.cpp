@@ -27,11 +27,11 @@
 #include "wxOsmo4.h"
 #include "Playlist.h"
 #include <wx/filename.h>
-#include <gpac/modules/codec.h>
-#include <gpac/modules/service.h>
-#include <gpac/constants.h>
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/constants.h"
 /*ISO 639 languages*/
-#include <gpac/iso639.h>
+#include "../../include/gpac/iso639.h"
 
 
 wxFileProps::wxFileProps(wxWindow *parent)

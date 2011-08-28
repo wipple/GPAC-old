@@ -26,7 +26,7 @@
 #ifndef _GF_OD_DEV_H_
 #define _GF_OD_DEV_H_
 
-#include <gpac/mpeg4_odf.h>
+#include "../mpeg4_odf.h"
 
 /*read-write OD formatted strings*/
 GF_Err gf_odf_read_url_string(GF_BitStream *bs, char **string, u32 *readBytes);

@@ -32,9 +32,9 @@ extern "C" {
 #endif
 
 
-#include <gpac/math.h>
-#include <gpac/tools.h>
-#include <gpac/events_constants.h>
+#include "math.h"
+#include "tools.h"
+#include "gpac/events_constants.h"
 
 
 /*mouse button modifiers*/

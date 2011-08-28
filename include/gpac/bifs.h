@@ -30,9 +30,9 @@ extern "C" {
 #endif
 
 
-#include <gpac/nodes_mpeg4.h>
+#include "nodes_mpeg4.h"
 /*for BIFSConfig*/
-#include <gpac/mpeg4_odf.h>
+#include "mpeg4_odf.h"
 
 #ifndef GPAC_DISABLE_BIFS
 

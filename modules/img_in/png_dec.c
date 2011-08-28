@@ -24,7 +24,7 @@
 
 
 #include "img_in.h"
-#include <gpac/avparse.h>
+#include "../../include/gpac/avparse.h"
 
 typedef struct
 {

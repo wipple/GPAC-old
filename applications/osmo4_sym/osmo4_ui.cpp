@@ -42,8 +42,8 @@
 #include "osmo4_view.h"
 #include "playlist.h"
 
-#include <gpac/utf.h>
-#include <gpac/options.h>
+#include "../../include/gpac/utf.h"
+#include "../../include/gpac/options.h"
 
 
 

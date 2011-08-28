@@ -22,16 +22,16 @@
  *
  */
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 
 #ifdef GPAC_HAS_SPIDERMONKEY
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/modules/term_ext.h>
-#include <gpac/modules/js_usr.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/modules/term_ext.h"
+#include "../../include/gpac/modules/js_usr.h"
 
-#include <gpac/internal/smjs_api.h>
+#include "../../include/gpac/internal/smjs_api.h"
 
 
 
@@ -357,7 +357,7 @@ JSBool gf_sg_js_has_instance(JSContext *c, JSObject *obj, jsval val, JSBool *vp)
 
 #ifndef GPAC_DISABLE_SVG
 /*SVG tags for script handling*/
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/nodes_svg.h"
 
 GF_Node *dom_get_element(JSContext *c, JSObject *obj);
 #endif
@@ -365,8 +365,8 @@ GF_Node *dom_get_element(JSContext *c, JSObject *obj);
 #ifndef GPAC_DISABLE_VRML
 
 /*MPEG4 & X3D tags (for node tables & script handling)*/
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
 
 
 void gf_sg_script_to_node_field(struct JSContext *c, jsval v, GF_FieldInfo *field, GF_Node *owner, GF_JSField *parent);

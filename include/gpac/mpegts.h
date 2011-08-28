@@ -26,14 +26,14 @@
 #ifndef _GF_MPEG_TS_H_
 #define _GF_MPEG_TS_H_
 
-#include <gpac/list.h>
+#include "list.h"
 
 #ifndef GPAC_DISABLE_MPEG2TS
 
-#include <gpac/internal/odf_dev.h>
-#include <gpac/network.h>
-#include <gpac/esi.h>
-#include <gpac/thread.h>
+#include "internal/odf_dev.h"
+#include "network.h"
+#include "esi.h"
+#include "thread.h"
 #include <time.h>
 
 typedef struct tag_m2ts_demux GF_M2TS_Demuxer;
@@ -1095,7 +1095,7 @@ GF_Err gf_m2ts_program_stream_update_ts_scale(GF_ESInterface *_self, u32 time_sc
 #endif /*GPAC_DISABLE_MPEG2TS_MUX*/
 
 /******************* Demux DVB ****************************/
-#include <gpac/carousel.h>
+#include "carousel.h"
 
 
 #define UDP_BUFFER_SIZE	0x40000

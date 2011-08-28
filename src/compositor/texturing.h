@@ -25,7 +25,7 @@
 #ifndef _TEXTURING_H_
 #define _TEXTURING_H_
 
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/compositor_dev.h"
 #ifdef __cplusplus
 extern "C" {
 #endif

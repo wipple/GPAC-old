@@ -6,8 +6,8 @@
 */
 
 #include "safe_include.h"
-#include <gpac/scenegraph.h>
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/scenegraph.h"
+#include "../../include/gpac/nodes_mpeg4.h"
 
 #include <vector>
 

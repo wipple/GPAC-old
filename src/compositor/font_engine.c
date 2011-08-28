@@ -24,9 +24,9 @@
  *
  */
 
-#include <gpac/internal/compositor_dev.h>
-#include <gpac/modules/font.h>
-#include <gpac/options.h>
+#include "../../include/gpac/internal/compositor_dev.h"
+#include "../../include/gpac/modules/font.h"
+#include "../../include/gpac/options.h"
 #include "visual_manager.h"
 #include "nodes_stacks.h"
 #include "texturing.h"

@@ -24,8 +24,8 @@
  */
 #ifndef M3U8_PLAYLIST_H
 #define M3U8_PLAYLIST_H
-#include <gpac/tools.h>
-#include <gpac/list.h>
+#include "../tools.h"
+#include "../list.h"
 
 /**
  * Global Structure

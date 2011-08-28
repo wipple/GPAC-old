@@ -22,7 +22,7 @@
  *
  */
 
-#include <gpac/internal/terminal_dev.h>
+#include "../../include/gpac/internal/terminal_dev.h"
 
 GF_Clock *NewClock(GF_Terminal *term)
 {

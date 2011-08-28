@@ -23,7 +23,7 @@
  */
 
 
-#include <gpac/internal/bifs_dev.h>
+#include "../../include/gpac/internal/bifs_dev.h"
 #include "quant.h"
 
 

@@ -22,15 +22,15 @@
  *
  */
 
-#include <gpac/scene_manager.h>
-#include <gpac/constants.h>
-#include <gpac/media_tools.h>
-#include <gpac/bifs.h>
+#include "../../include/gpac/scene_manager.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/media_tools.h"
+#include "../../include/gpac/bifs.h"
 #ifndef GPAC_DISABLE_LASER
-#include <gpac/laser.h>
-#include <gpac/nodes_svg.h>
+#include "../../include/gpac/laser.h"
+#include "../../include/gpac/nodes_svg.h"
 #endif
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 
 #ifndef GPAC_DISABLE_SCENE_ENCODER

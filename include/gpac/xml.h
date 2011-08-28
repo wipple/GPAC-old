@@ -29,8 +29,8 @@
 extern "C" {
 #endif
 
-#include <gpac/tools.h>
-#include <gpac/list.h>
+#include "tools.h"
+#include "list.h"
 
 /*!
  *	\file <gpac/xml.h>

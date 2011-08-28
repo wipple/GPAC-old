@@ -26,7 +26,7 @@
 #ifndef DRAWABLE_H
 #define DRAWABLE_H
 
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/compositor_dev.h"
 
 
 typedef struct _drawable Drawable;

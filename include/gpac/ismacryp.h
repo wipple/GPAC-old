@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include <gpac/isomedia.h>
+#include "isomedia.h"
 
 /*loads key and salt from a LOCAL gpac-DRM file (cf MP4Box doc)*/
 GF_Err gf_ismacryp_gpac_get_info(u32 stream_id, char *drm_file, char *key, char *salt);

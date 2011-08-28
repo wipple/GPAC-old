@@ -22,11 +22,11 @@
  *
  */
 
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/compositor_dev.h"
 /*for user and terminal API (options and InputSensor)*/
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/options.h>
-#include <gpac/utf.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/utf.h"
 
 #include "nodes_stacks.h"
 

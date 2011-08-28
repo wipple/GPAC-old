@@ -38,7 +38,7 @@
 #include "PltMetadataHandler.h"
 #include "PltVersion.h"
 
-#include <gpac/network.h>
+#include "../../include/gpac/network.h"
 
 NPT_SET_LOCAL_LOGGER("gpac.media.server.file")
 

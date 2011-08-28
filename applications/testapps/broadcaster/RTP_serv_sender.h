@@ -1,7 +1,7 @@
 #ifndef __RTP_SERV_SENDER
 #define __RTP_SERV_SENDER
 
-#include <gpac/ietf.h> /// For GF_Err ...
+#include "../../../include/gpac/ietf.h" /// For GF_Err ...
 #include "RTP_serv_generator.h"
 
 extern void test_RTP_serv_send();

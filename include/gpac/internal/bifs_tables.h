@@ -32,7 +32,7 @@
 #ifndef _NDT_H
 #define _NDT_H
 
-#include <gpac/nodes_mpeg4.h>
+#include "../nodes_mpeg4.h"
 
 
 

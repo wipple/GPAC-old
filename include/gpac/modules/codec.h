@@ -28,9 +28,9 @@
 #define _GF_MODULE_CODEC_H_
 
 
-#include <gpac/module.h>
-#include <gpac/mpeg4_odf.h>
-#include <gpac/color.h>
+#include "../module.h"
+#include "../mpeg4_odf.h"
+#include "../color.h"
 
 #ifdef __cplusplus
 extern "C" {

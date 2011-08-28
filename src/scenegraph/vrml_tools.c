@@ -22,15 +22,15 @@
  *
  */
 
-#include <gpac/internal/scenegraph_dev.h>
+#include "../../include/gpac/internal/scenegraph_dev.h"
 
 /*MPEG4 & X3D tags (for node tables & script handling)*/
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
 
 
 #ifndef GPAC_DISABLE_VRML
-#include <gpac/internal/bifs_dev.h>
+#include "../../include/gpac/internal/bifs_dev.h"
 
 
 Bool gf_node_in_table_by_tag(u32 tag, u32 NDTType)

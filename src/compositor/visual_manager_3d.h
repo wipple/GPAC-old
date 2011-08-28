@@ -25,7 +25,7 @@
 #ifndef _VISUAL_MANAGER_3D_
 #define _VISUAL_MANAGER_3D_
 
-#include <gpac/internal/compositor_dev.h>
+#include "../../include/gpac/internal/compositor_dev.h"
 
 #ifndef GPAC_DISABLE_3D
 

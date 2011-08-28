@@ -23,17 +23,17 @@
  */
 
 
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
-#include <gpac/internal/scenegraph_dev.h>
-#include <gpac/constants.h>
-#include <gpac/options.h>
-#include <gpac/network.h>
-#include <gpac/xml.h>
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
+#include "../../include/gpac/internal/scenegraph_dev.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/options.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/xml.h"
 #include "../utils/module_wrap.h"
 
 /*textual command processing*/
-#include <gpac/scene_manager.h>
+#include "../../include/gpac/scene_manager.h"
 
 #include "media_memory.h"
 

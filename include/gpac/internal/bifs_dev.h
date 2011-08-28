@@ -27,11 +27,11 @@
 #define _GF_BIFS_DEV_H_
 
 
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/bitstream.h>
-#include <gpac/bifs.h>
-#include <gpac/thread.h>
-#include <gpac/internal/scenegraph_dev.h>
+#include "../nodes_mpeg4.h"
+#include "../bitstream.h"
+#include "../bifs.h"
+#include "../thread.h"
+#include "scenegraph_dev.h"
 
 #ifndef GPAC_DISABLE_BIFS
 

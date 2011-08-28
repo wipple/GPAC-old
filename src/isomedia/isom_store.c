@@ -23,7 +23,7 @@
  *
  */
 
-#include <gpac/internal/isomedia_dev.h>
+#include "../../include/gpac/internal/isomedia_dev.h"
 
 #if !defined(GPAC_DISABLE_ISOM) && !defined(GPAC_DISABLE_ISOM_WRITE)
 

@@ -12,7 +12,7 @@
 #include <wx/notebook.h>
 
 // list of all commands
-#include <gpac/scenegraph_vrml.h>
+#include "../../include/gpac/scenegraph_vrml.h"
 
 
 #define cmbCommandID        wxID_HIGHEST+1

@@ -24,9 +24,9 @@
 
 #include "texturing.h"
 
-#include <gpac/network.h>
-#include <gpac/nodes_mpeg4.h>
-#include <gpac/nodes_x3d.h>
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/nodes_mpeg4.h"
+#include "../../include/gpac/nodes_x3d.h"
 
 #ifndef GPAC_DISABLE_VRML
 
@@ -35,8 +35,8 @@ extern "C" {
 #endif
 
 /*for cache texture decode and hash*/
-#include <gpac/avparse.h>
-#include <gpac/crypt.h>
+#include "../../include/gpac/avparse.h"
+#include "../../include/gpac/crypt.h"
 	
 	
 typedef struct

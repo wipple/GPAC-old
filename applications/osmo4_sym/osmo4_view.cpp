@@ -31,9 +31,9 @@
 #include "osmo4_view.h"
 #include "osmo4_ui.h"
 
-#include <gpac/options.h>
+#include "../../include/gpac/options.h"
 /*for initial setup*/
-#include <gpac/modules/service.h>
+#include "../../include/gpac/modules/service.h"
 
 
 #if defined(__SERIES60_3X__)

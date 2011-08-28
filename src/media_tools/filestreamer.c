@@ -22,15 +22,15 @@
  *
  */
 
-#include <gpac/isomedia.h>
-#include <gpac/ietf.h>
-#include <gpac/config_file.h>
-#include <gpac/base_coding.h>
-#include <gpac/internal/media_dev.h>
-#include <gpac/filestreamer.h>
-#include <gpac/rtp_streamer.h>
-#include <gpac/constants.h>
-#include <gpac/math.h>
+#include "../../include/gpac/isomedia.h"
+#include "../../include/gpac/ietf.h"
+#include "../../include/gpac/config_file.h"
+#include "../../include/gpac/base_coding.h"
+#include "../../include/gpac/internal/media_dev.h"
+#include "../../include/gpac/filestreamer.h"
+#include "../../include/gpac/rtp_streamer.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/math.h"
 
 #if !defined(GPAC_DISABLE_ISOM) && !defined(GPAC_DISABLE_STREAMING)
 

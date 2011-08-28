@@ -1,5 +1,5 @@
 #include "safe_include.h"
-#include <gpac/modules/service.h>
+#include "../../include/gpac/modules/service.h"
 
 typedef struct
 {

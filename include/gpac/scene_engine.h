@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 
-#include <gpac/scene_manager.h>
+#include "scene_manager.h"
 
 #ifndef GPAC_DISABLE_SENG
 

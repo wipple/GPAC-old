@@ -23,9 +23,9 @@
  */
 
 
-#include <gpac/user.h>
-#include <gpac/constants.h>
-#include <gpac/color.h>
+#include "../../include/gpac/user.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/color.h"
 
 
 /* original YUV table code from XviD colorspace module */

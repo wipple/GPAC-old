@@ -24,7 +24,7 @@
 #include "treeIcon4.xpm"
 #include "treeIcon5.xpm"
 
-#include <gpac/nodes_mpeg4.h>
+#include "../../include/gpac/nodes_mpeg4.h"
 
 
 BEGIN_EVENT_TABLE(V4StudioTree, wxTreeCtrl)

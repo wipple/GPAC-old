@@ -30,7 +30,7 @@
 extern "C" {
 #endif
 
-#include <gpac/terminal.h>
+#include "../terminal.h"
 
 /*interface name and version for Terminal Extensions services*/
 #define GF_TERM_EXT_INTERFACE		GF_4CC('G','T','E', '1')

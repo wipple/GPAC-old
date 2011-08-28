@@ -31,11 +31,11 @@
 #endif
 
 /*driver interfaces*/
-#include <gpac/modules/audio_out.h>
-#include <gpac/modules/video_out.h>
-#include <gpac/list.h>
-#include <gpac/constants.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/modules/audio_out.h"
+#include "../../include/gpac/modules/video_out.h"
+#include "../../include/gpac/list.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/thread.h"
 
 #define INITGUID
 

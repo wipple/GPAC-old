@@ -21,12 +21,12 @@
  *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
  *
  */
-#include <gpac/isomedia.h>
-#include <gpac/bifs.h>
-#include <gpac/esi.h>
-#include <gpac/mpegts.h>
-#include <gpac/avparse.h>
-#include <gpac/thread.h>
+#include "../../include/gpac/isomedia.h"
+#include "../../include/gpac/bifs.h"
+#include "../../include/gpac/esi.h"
+#include "../../include/gpac/mpegts.h"
+#include "../../include/gpac/avparse.h"
+#include "../../include/gpac/thread.h"
 
 
 typedef struct __m2ts_mux_program M2TS_Mux_Program;

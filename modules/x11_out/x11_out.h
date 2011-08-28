@@ -31,9 +31,9 @@ extern "C"
 #endif
 
 
-#include <gpac/modules/video_out.h>
-#include <gpac/thread.h>
-#include <gpac/list.h>
+#include "../../include/gpac/modules/video_out.h"
+#include "../../include/gpac/thread.h"
+#include "../../include/gpac/list.h"
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>

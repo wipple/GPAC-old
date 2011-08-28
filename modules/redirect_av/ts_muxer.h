@@ -25,11 +25,11 @@
 #ifndef _AVR_TS_MUXER_H_
 #define _AVR_TS_MUXER_H_
 
-#include <gpac/modules/term_ext.h>
-#include <gpac/internal/terminal_dev.h>
-#include <gpac/internal/compositor_dev.h>
-#include <gpac/network.h>
-#include <gpac/tools.h>
+#include "../../include/gpac/modules/term_ext.h"
+#include "../../include/gpac/internal/terminal_dev.h"
+#include "../../include/gpac/internal/compositor_dev.h"
+#include "../../include/gpac/network.h"
+#include "../../include/gpac/tools.h"
 #include <libavcodec/avcodec.h>
 
 #if (LIBAVCODEC_VERSION_MAJOR <= 52) && (LIBAVCODEC_VERSION_MINOR <= 20)
@@ -44,7 +44,7 @@
 
 #ifdef AVR_DUMP_RAW_AVI
 /*sample raw AVI writing*/
-#include <gpac/internal/avilib.h>
+#include "../../include/gpac/internal/avilib.h"
 #endif /* AVR_DUMP_RAW_AVI */
 
 typedef struct avr_ts_muxer GF_AbstractTSMuxer;
@@ -56,7 +56,7 @@ typedef struct avr_ts_muxer GF_AbstractTSMuxer;
 #endif
 
 
-#include <gpac/ringbuffer.h>
+#include "../../include/gpac/ringbuffer.h"
 
 typedef struct
 {

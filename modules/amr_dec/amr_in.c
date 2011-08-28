@@ -22,10 +22,10 @@
  *		
  */
 
-#include <gpac/modules/service.h>
-#include <gpac/modules/codec.h>
-#include <gpac/constants.h>
-#include <gpac/isomedia.h>
+#include "../../include/gpac/modules/service.h"
+#include "../../include/gpac/modules/codec.h"
+#include "../../include/gpac/constants.h"
+#include "../../include/gpac/isomedia.h"
 
 
 enum

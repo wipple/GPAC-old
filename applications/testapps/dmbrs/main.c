@@ -21,7 +21,7 @@
  *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA. 
  *
  */
-#include <gpac/mpegts.h>
+#include "../../../include/gpac/mpegts.h"
 
 void save_ts(char *filename, unsigned char *data)
 {

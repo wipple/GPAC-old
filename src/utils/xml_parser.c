@@ -24,8 +24,8 @@
  */
 
 
-#include <gpac/xml.h>
-#include <gpac/utf.h>
+#include "../../include/gpac/xml.h"
+#include "../../include/gpac/utf.h"
 /*since 0.2.2, we use zlib for xmt/x3d reading to handle gz files*/
 #include <zlib.h>
 

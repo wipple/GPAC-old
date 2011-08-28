@@ -8,7 +8,7 @@
 #define _V4TimeLineCell_
 
 
-#include <gpac/scenegraph_vrml.h>
+#include "../../../include/gpac/scenegraph_vrml.h"
 
 #include <wx/window.h>
 

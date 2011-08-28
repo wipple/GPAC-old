@@ -45,7 +45,7 @@ extern "C" {
  *	@{
  */
 
-#include <gpac/tools.h>
+#include "tools.h"
 
 /*!
  *\brief wide-char to multibyte conversion

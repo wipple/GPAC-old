@@ -23,7 +23,7 @@
  *
  */
 
-#include <gpac/config_file.h>
+#include "../../include/gpac/config_file.h"
 
 
 #if defined(WIN32) || defined(_WIN32_WCE)

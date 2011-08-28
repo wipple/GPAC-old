@@ -33,11 +33,11 @@
 //#define GF_SELF_REPLACE_ENABLE
 
 /*for vrml base types, ROUTEs and PROTOs*/
-#include <gpac/scenegraph_vrml.h>
+#include "../scenegraph_vrml.h"
 
-#include <gpac/scenegraph_svg.h>
+#include "../scenegraph_svg.h"
 
-#include <gpac/thread.h>
+#include "../thread.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -911,8 +911,8 @@ struct _scriptfield
 #ifdef GPAC_HAS_SPIDERMONKEY
 
 
-#include <gpac/download.h>
-#include <gpac/network.h>
+#include "../download.h"
+#include "../network.h"
 
 
 struct JSContext *gf_sg_ecmascript_new(GF_SceneGraph *sg);

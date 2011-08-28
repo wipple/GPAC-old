@@ -26,7 +26,7 @@
 #include <jni.h>
 #endif
 
-#include <gpac/thread.h>
+#include "../../include/gpac/thread.h"
 
 #if defined(WIN32) || defined(_WIN32_WCE)
 
@@ -71,7 +71,7 @@ struct __tag_thread
 
 
 #ifndef GPAC_DISABLE_LOG
-#include <gpac/list.h>
+#include "../../include/gpac/list.h"
 static GF_List *thread_bank = NULL;
 
 static void log_add_thread(GF_Thread *t)
