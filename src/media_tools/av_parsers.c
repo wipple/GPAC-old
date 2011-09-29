@@ -1772,6 +1772,9 @@ s32 AVC_ReadSeqInfo(char *sps_data, u32 sps_size, AVCState *avc, u32 subseq_sps,
 			}
 		}
 		break;
+	default :
+		ChromaArrayType = chroma_format_idc = 1;
+		break;
 	}	
 	
 	sps->profile_idc = profile_idc;
@@ -1808,13 +1811,24 @@ s32 AVC_ReadSeqInfo(char *sps_data, u32 sps_size, AVCState *avc, u32 subseq_sps,
 	gf_bs_read_int(bs, 1); /*direct_8x8_inference_flag*/
 	cl = cr = ct = cb = 0;
 	if (gf_bs_read_int(bs, 1)) /*crop*/ {
+		int CropUnitX;
+		int CropUnitY;
+		if (ChromaArrayType == 0) {
+			CropUnitX = 1;
+			CropUnitY = 2 - sps->frame_mbs_only_flag;
+		} else {
+			static const int SubWidthC [4] = { 0, 2, 2, 1 };
+			static const int SubHeightC[4] = { 0, 2, 1, 1 };
+			CropUnitX = SubWidthC [chroma_format_idc];
+			CropUnitY = SubHeightC[chroma_format_idc] * (2 - sps->frame_mbs_only_flag);
+		}
 		cl = avc_get_ue(bs); /*crop_left*/
 		cr = avc_get_ue(bs); /*crop_right*/
 		ct = avc_get_ue(bs); /*crop_top*/
 		cb = avc_get_ue(bs); /*crop_bottom*/
 
-		sps->width = 16*mb_width - 2*(cl + cr);
-		sps->height -= (2-sps->frame_mbs_only_flag)*2*(ct + cb);
+		sps->width = 16*mb_width - CropUnitX*(cl + cr);
+		sps->height -= CropUnitY*(ct + cb);
 	}
 
 	if (vui_flag_pos) {
