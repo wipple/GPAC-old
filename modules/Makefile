@@ -76,6 +76,14 @@ ifeq ($(CONFIG_PLATINUM),yes)
 PLUGDIRS+=platinum
 endif
 
+ifeq ($(CONFIG_AVCAP),yes)
+PLUGDIRS+=avcap
+endif
+
+ifeq ($(CONFIG_OPENSVC),yes)
+PLUGDIRS+=opensvc_dec
+endif
+
 ifeq ($(RENOIR_ENABLE),yes)
 PLUGDIRS+=viren_out
 endif

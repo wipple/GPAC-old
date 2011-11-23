@@ -53,7 +53,11 @@ static void Bitmap_BuildGraph(GF_Node *node, BitmapStack *st, GF_TraverseState *
 	if (! ((M_Appearance *)tr_state->appear)->texture) return;
 	txh = gf_sc_texture_get_handler( ((M_Appearance *)tr_state->appear)->texture );
 	/*bitmap not ready*/
-	if (!txh || !txh->tx_io || !txh->width || !txh->height) {
+	if (!txh || !txh->width || !txh->height
+#ifndef GPAC_DISABLE_3D
+		|| (tr_state->visual->type_3d && !txh->tx_io) 
+#endif
+		) {
 		if (notify_changes) gf_node_dirty_set(node, 0, 1);
 		return;
 	}
@@ -123,12 +127,10 @@ static void draw_bitmap_3d(GF_Node *node, GF_TraverseState *tr_state)
 static void draw_bitmap_2d(GF_Node *node, GF_TraverseState *tr_state)
 {
 	GF_ColorKey *key, keyColor;
-	GF_Compositor *compositor;
 	DrawableContext *ctx = tr_state->ctx;
 	BitmapStack *st = (BitmapStack *) gf_node_get_private(node);
 
 
-	compositor = tr_state->visual->compositor;
 	/*bitmaps are NEVER rotated (forbidden in spec). In case a rotation was done we still display (reset the skew components)*/
 	ctx->transform.m[1] = ctx->transform.m[3] = 0;
 
@@ -215,6 +217,7 @@ static void TraverseBitmap(GF_Node *node, void *rs, Bool is_destroy)
 
 	memset(&rc, 0, sizeof(rc));
 	Bitmap_BuildGraph(node, st, tr_state, &rc, 1);
+	if (!rc.width || !rc.height) return;
 
 	ctx = drawable_init_context_mpeg4(st->graph, tr_state);
 	if (!ctx || !ctx->aspect.fill_texture ) {

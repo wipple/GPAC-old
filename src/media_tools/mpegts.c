@@ -36,6 +36,10 @@
 #include "../../include/gpac/carousel.h"
 #include "../../include/gpac/download.h"
 
+#ifdef GPAC_CONFIG_LINUX
+#include <unistd.h>
+#endif
+
 #define DUMP_MPE_IP_DATAGRAMS
 //#define FORCE_DISABLE_MPEG4SL_OVER_MPEG2TS
 
@@ -100,6 +104,7 @@ static u32 gf_m2ts_reframe_reset(GF_M2TS_Demuxer *ts, GF_M2TS_PES *pes, Bool sam
 	pes->prev_data_len = 0;
 	pes->pes_len = 0;
 	pes->reframe = NULL;
+	pes->cc = -1;
 	return 0;
 }
 
@@ -359,7 +364,6 @@ static u32 gf_m2ts_reframe_aac_adts(GF_M2TS_Demuxer *ts, GF_M2TS_PES *pes, Bool 
 	u32 hdr_size = 0;
 	u64 PTS;
 	Bool first = 1;
-	u32 remain;
 	GF_M2TS_PES_PCK pck;
 
 	/*dispatch frame*/
@@ -368,7 +372,6 @@ static u32 gf_m2ts_reframe_aac_adts(GF_M2TS_Demuxer *ts, GF_M2TS_PES *pes, Bool 
 	pck.DTS = pes->DTS;
 	pck.PTS = PTS;
 	pck.flags = 0;
-	remain = pes->frame_state;
 	pes->frame_state = 0;
 
 	/*fixme - we need to test this with more ADTS sources were PES framing is on any boundaries*/
@@ -391,7 +394,6 @@ static u32 gf_m2ts_reframe_aac_adts(GF_M2TS_Demuxer *ts, GF_M2TS_PES *pes, Bool 
 			pck.data = data+start;
 			pck.data_len = sc_pos-start;
 			ts->on_event(ts, GF_M2TS_EVT_PES_PCK, &pck);
-			remain = 0;
 		}
 
 		bs = gf_bs_new(data + sc_pos + 1, 9, GF_BITSTREAM_READ);
@@ -512,18 +514,18 @@ static u32 gf_m2ts_reframe_aac_latm(GF_M2TS_Demuxer *ts, GF_M2TS_PES *pes, Bool 
 			amux_versionA = 0;
 			if (amux_version) amux_versionA = gf_bs_read_int(bs, 1);
 			if (!amux_versionA) {
-				u32 i, allStreamsSameTimeFraming, numSubFrames, numProgram;
+				u32 i, allStreamsSameTimeFraming, numProgram;
 				if (amux_version) latm_get_value(bs);
 
 				allStreamsSameTimeFraming = gf_bs_read_int(bs, 1);
-				numSubFrames = gf_bs_read_int(bs, 6);
+				/*numSubFrames = */gf_bs_read_int(bs, 6);
 				numProgram = gf_bs_read_int(bs, 4);
 				for (i=0; i<=numProgram; i++) {
 					u32 j, num_lay;
 					num_lay = gf_bs_read_int(bs, 3);
 					for (j=0;j<=num_lay; j++) {
 						GF_M4ADecSpecInfo cfg;
-						u32 frameLengthType, latmBufferFullness;
+						u32 frameLengthType;
 						Bool same_cfg = 0;
 						if (i || j) same_cfg = gf_bs_read_int(bs, 1);
 
@@ -542,7 +544,7 @@ static u32 gf_m2ts_reframe_aac_latm(GF_M2TS_Demuxer *ts, GF_M2TS_PES *pes, Bool 
 						}
 						frameLengthType = gf_bs_read_int(bs, 3);
 						if (!frameLengthType) {
-							latmBufferFullness = gf_bs_read_int(bs, 8);
+							/*latmBufferFullness = */gf_bs_read_int(bs, 8);
 							if (!allStreamsSameTimeFraming) {
 							}
 						} else {
@@ -798,13 +800,24 @@ static void gf_m2ts_section_complete(GF_M2TS_Demuxer *ts, GF_M2TS_SectionFilter 
 			pck.data = sec->section;
 			pck.stream = (GF_M2TS_ES *)ses;
 			ts->on_event(ts, GF_M2TS_EVT_AIT_FOUND, &pck);
-		} else if (ts->on_mpe_event && ((ses && (ses->flags & GF_M2TS_EVT_DVB_MPE)) || (sec->section[0]==GF_M2TS_TABLE_ID_INT)) ) {
+		} else if ((ts->on_event && (sec->section[0]==GF_M2TS_TABLE_ID_DSM_CC_ENCAPSULATED_DATA	|| sec->section[0]==GF_M2TS_TABLE_ID_DSM_CC_UN_MESSAGE ||
+			sec->section[0]==GF_M2TS_TABLE_ID_DSM_CC_DOWNLOAD_DATA_MESSAGE || sec->section[0]==GF_M2TS_TABLE_ID_DSM_CC_STREAM_DESCRIPTION || sec->section[0]==GF_M2TS_TABLE_ID_DSM_CC_PRIVATE)) ) {				
+			GF_M2TS_SL_PCK pck;
+			pck.data_len = sec->length;
+			pck.data = sec->section;
+			pck.stream = (GF_M2TS_ES *)ses;
+			ts->on_event(ts, GF_M2TS_EVT_DSMCC_FOUND, &pck);
+		}
+#ifdef DUMP_MPE_IP_DATAGRAMS
+		else if (ts->on_mpe_event && ((ses && (ses->flags & GF_M2TS_EVT_DVB_MPE)) || (sec->section[0]==GF_M2TS_TABLE_ID_INT)) ) {
 			GF_M2TS_SL_PCK pck;
 			pck.data_len = sec->length;
 			pck.data = sec->section;
 			pck.stream = (GF_M2TS_ES *)ses;
 			ts->on_mpe_event(ts, GF_M2TS_EVT_DVB_MPE, &pck);
-		} else if (ts->on_event) {
+		} 
+#endif
+		else if (ts->on_event) {
 			GF_M2TS_SL_PCK pck;
 			pck.data_len = sec->length;
 			pck.data = sec->section;
@@ -981,6 +994,8 @@ static Bool gf_m2ts_is_long_section(u8 table_id)
 	case GF_M2TS_TABLE_ID_SIT:
 	case GF_M2TS_TABLE_ID_DSM_CC_PRIVATE:
 	case GF_M2TS_TABLE_ID_MPE_FEC:
+	case GF_M2TS_TABLE_ID_DSM_CC_DOWNLOAD_DATA_MESSAGE:
+	case GF_M2TS_TABLE_ID_DSM_CC_UN_MESSAGE:
 		return 1;
 	default:
 		if (table_id >= GF_M2TS_TABLE_ID_EIT_SCHEDULE_MIN && table_id <= GF_M2TS_TABLE_ID_EIT_SCHEDULE_MAX)
@@ -1096,7 +1111,7 @@ aggregated_section:
 
 static void gf_m2ts_process_sdt(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_ES *ses, GF_List *sections, u8 table_id, u16 ex_table_id, u8 version_number, u8 last_section_number, u32 status)
 {
-	 u32 orig_net_id, pos, evt_type;
+	 u32 pos, evt_type;
 	 u32 nb_sections;
 	 u32 data_size;
 	 unsigned char *data;
@@ -1127,7 +1142,7 @@ static void gf_m2ts_process_sdt(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_ES *ses, GF
 	 data = section->data;
 	 data_size = section->data_size;
 
-	 orig_net_id = (data[0] << 8) | data[1];
+	 //orig_net_id = (data[0] << 8) | data[1];
 	 pos = 3;
 	 while (pos < data_size) {
 	         GF_M2TS_SDT *sdt;
@@ -1370,17 +1385,19 @@ static void gf_m2ts_process_pmt(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_ES *pmt, GF
 		while (info_length > first_loop_len) {
 #ifndef FORCE_DISABLE_MPEG4SL_OVER_MPEG2TS
 			if (tag == GF_M2TS_MPEG4_IOD_DESCRIPTOR) {
-				u8 scope, label;
 				u32 size;
 				GF_BitStream *iod_bs;
-				scope = data[6];
-				label = data[7];
 				iod_bs = gf_bs_new(data+8, len-2, GF_BITSTREAM_READ);
 				if (pmt->program->pmt_iod) gf_odf_desc_del((GF_Descriptor *)pmt->program->pmt_iod);
 				gf_odf_parse_descriptor(iod_bs , (GF_Descriptor **) &pmt->program->pmt_iod, &size);
 				/*remember program number for service/program selection*/
 				if (pmt->program->pmt_iod) pmt->program->pmt_iod->ServiceID = pmt->program->number;
 				gf_bs_del(iod_bs );
+				/*if empty IOD (freebox case), discard it and use dynamic declaration of object*/
+				if (!gf_list_count(pmt->program->pmt_iod->ESDescriptors)) {
+					gf_odf_desc_del((GF_Descriptor *)pmt->program->pmt_iod);
+					pmt->program->pmt_iod = NULL;
+				}
 			} else {
 #else
 			{
@@ -1459,20 +1476,30 @@ static void gf_m2ts_process_pmt(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_ES *pmt, GF
 			break;
 
 		
-		case GF_M2TS_PRIVATE_SECTION:
-			GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("AIT section found on pid %d\n", pid));
+		
 			/*to refine with generic private section redispatching to AIT or other afterwards*/
 			es = gf_ait_section_new(pmt->program->number);
 			ses = (GF_M2TS_SECTION_ES *)es;
 			ses->sec = gf_m2ts_section_filter_new(NULL, 0);
 			break;
+		case GF_M2TS_13818_6_ANNEX_A:
+		case GF_M2TS_13818_6_ANNEX_B:
+		case GF_M2TS_13818_6_ANNEX_C:
 		case GF_M2TS_13818_6_ANNEX_D:
+		case GF_M2TS_PRIVATE_SECTION:			
 			GF_SAFEALLOC(ses, GF_M2TS_SECTION_ES);
 			es = (GF_M2TS_ES *)ses;
-			es->flags |= GF_M2TS_ES_IS_SECTION;		
-			printf("stream type DSM CC user private section: pid = %d \n", pid);		
+			es->flags |= GF_M2TS_ES_IS_SECTION;
+			es->pid = pid;
+			es->service_id = pmt->program->number;
+			if(stream_type == GF_M2TS_PRIVATE_SECTION){
+				GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("AIT section found on pid %d\n", pid));
+			}else{
+				printf("stream type DSM CC user private section: pid = %d \n", pid);		
+			}
 			/* NULL means: trigger the call to on_event with DVB_GENERAL type and the raw section as payload */
 			ses->sec = gf_m2ts_section_filter_new(NULL, 1);
+			//ses->sec->service_id = pmt->program->number;
 			break;
 
 		case GF_M2TS_MPE_SECTIONS:
@@ -1613,6 +1640,7 @@ static void gf_m2ts_process_pmt(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_ES *pmt, GF
 			nb_es++;
 		}
 	}
+
 	
 	if (nb_es) {		
 		evt_type = (status&GF_M2TS_TABLE_FOUND) ? GF_M2TS_EVT_PMT_FOUND : GF_M2TS_EVT_PMT_UPDATE;
@@ -1760,7 +1788,7 @@ static GFINLINE u64 gf_m2ts_get_pts(unsigned char *data)
 
 static void gf_m2ts_pes_header(GF_M2TS_PES *pes, unsigned char *data, u32 data_size, GF_M2TS_PESHeader *pesh)
 {
-	u32 has_pts, has_dts, te;
+	u32 has_pts, has_dts;
 	u32 len_check;
 	memset(pesh, 0, sizeof(GF_M2TS_PESHeader));
 
@@ -1778,7 +1806,6 @@ static void gf_m2ts_pes_header(GF_M2TS_PES *pes, unsigned char *data, u32 data_s
 	copyright				= gf_bs_read_int(bs,1);
 	original				= gf_bs_read_int(bs,1);
 */
-	te = data[4];
 	has_pts = (data[4]&0x80);
 	has_dts = has_pts ? (data[4]&0x40) : 0;
 /*
@@ -2294,8 +2321,6 @@ void gf_m2ts_reset_parsers(GF_M2TS_Demuxer *ts)
 
 static void gf_m2ts_process_section_discard(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_ES *es, GF_List *sections, u8 table_id, u16 ex_table_id, u8 version_number, u8 last_section_number, u32 status)
 {
-	u32 res;
-	res = 0;
 }
 
 GF_Err gf_m2ts_set_pes_framing(GF_M2TS_PES *pes, u32 mode)
@@ -2382,6 +2407,8 @@ GF_M2TS_Demuxer *gf_m2ts_demux_new()
 	ts->demux_and_play = 0;
 	ts->nb_prog_pmt_received = 0;
 
+	ts->dsmcc_controler = gf_list_new();
+
 	return ts;
 }
 
@@ -2421,6 +2448,10 @@ void gf_m2ts_demux_del(GF_M2TS_Demuxer *ts)
 #ifdef DUMP_MPE_IP_DATAGRAMS
 	gf_dvb_mpe_shutdown(ts);
 #endif
+
+	if(gf_list_count(ts->dsmcc_controler)){
+		//gf_dsmcc_controller_free(ts->dsmcc_controler);
+	}
 
 	gf_free(ts);
 }
@@ -2525,7 +2556,7 @@ restart_file:
 
 			//gf_sleep(0);
 			/*if asked to regulate, wait until we get a play request*/
-			while (ts->run_state && !ts->nb_playing && ts->file_regulate) {
+			while (ts->run_state && !ts->nb_playing && (ts->file_regulate==1)) {
 				gf_sleep(50);
 				continue;
 			}

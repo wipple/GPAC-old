@@ -1,181 +1,185 @@
-/*
- *			GPAC - Multimedia Framework C SDK
- *
- *			Authors: Cyril Concolato, Jean Le Feuvre
- *			Copyright (c) Telecom ParisTech 2010-
- *					All rights reserved
- *
- *  This file is part of GPAC / 3GPP/MPEG Media Presentation Description input module
- *
- *  GPAC is free software; you can redistribute it and/or modify
- *  it under the terms of the GNU Lesser General Public License as published by
- *  the Free Software Foundation; either version 2, or (at your option)
- *  any later version.
- *
- *  GPAC is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU Lesser General Public License for more details.
- *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; see the file COPYING.  If not, write to
- *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
- *
- */
+	/*
+	 *			GPAC - Multimedia Framework C SDK
+	 *
+	 *			Authors: Cyril Concolato, Jean Le Feuvre
+	 *			Copyright (c) Telecom ParisTech 2010-
+	 *					All rights reserved
+	 *
+	 *  This file is part of GPAC / 3GPP/MPEG Media Presentation Description input module
+	 *
+	 *  GPAC is free software; you can redistribute it and/or modify
+	 *  it under the terms of the GNU Lesser General Public License as published by
+	 *  the Free Software Foundation; either version 2, or (at your option)
+	 *  any later version.
+	 *
+	 *  GPAC is distributed in the hope that it will be useful,
+	 *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+	 *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+	 *  GNU Lesser General Public License for more details.
+	 *
+	 *  You should have received a copy of the GNU Lesser General Public
+	 *  License along with this library; see the file COPYING.  If not, write to
+	 *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+	 *
+	 */
 
-#include "../../include/gpac/modules/service.h"
-#include "../../include/gpac/internal/terminal_dev.h"
-#include "../../include/gpac/thread.h"
-#include "../../include/gpac/network.h"
-#include "../../include/gpac/crypt.h"
-#include "../../include/gpac/internal/mpd.h"
-#include "../../include/gpac/internal/m3u8.h"
-#include <string.h>
-
-
-/*!
- * All the possible Mime-types for MPD files
- */
-static const char * MPD_MIME_TYPES[] = { "video/vnd.3gpp.mpd", "audio/vnd.3gpp.mpd", NULL };
-
-/*!
- * All the possible Mime-types for M3U8 files
- */
-static const char * M3U8_MIME_TYPES[] = { "video/x-mpegurl", "audio/x-mpegurl", "application/x-mpegurl", "application/vnd.apple.mpegurl", NULL};
-
-typedef enum {
-	MPD_STATE_STOPPED = 0,
-	MPD_STATE_RUNNING,
-	MPD_STATE_CONNECTING,
-} MPD_STATE;
-
-GF_Err MPD_downloadWithRetry( GF_ClientService * service, GF_DownloadSession ** sess, const char *url, gf_dm_user_io user_io,  void *usr_cbk, u64 start_range, u64 end_range, Bool persistent);
-
-typedef struct
-{
-    char *cache;
-    char *url;
-} segment_cache_entry;
-
-typedef struct __mpd_group 
-{
-	GF_List *representations;
-	u32 group_id;
-	Bool selected;
-	Bool done;
-	Bool force_switch_bandwidth;
-	u32 nb_bw_check;
-	/*pointer toactive period*/
-	GF_MPD_Period *period;
-	/*active representation index in period->representations*/
-	u32 active_rep_index;
-	u32 active_bitrate, max_bitrate, min_bitrate;
-	/*local file playback, do not delete them*/
-	Bool local_files;
-	/*next segment to download for this group*/
-	u32 download_segment_index;
-
-	/*next file (cached) to delete at next GF_NET_SERVICE_QUERY_NEXT for this group*/
-    char * urlToDeleteNext;
-    volatile u32 max_cached, nb_cached;
-    segment_cache_entry *cached;
-
-    GF_DownloadSession *segment_dnload;
-    const char *segment_local_url;
-
-    u32 nb_segments_done;
-
-    Bool segment_must_be_streamed;
-
-	/* Service really managing the segments */
-    GF_InputService *service;
-    char *service_mime;
-    Bool service_connected;
-} GF_MPD_Group;
-
-typedef struct __mpd_module {
-    /* GPAC Service object (i.e. how this module is seen by the terminal)*/
-    GF_ClientService *service;
-    /* URL to which this service is connected
-       Used to detect when audio service connection request is made on the same URL as video */
-    char *url;
-
-    u32 option_max_cached;
-    u32 auto_switch_count;
-    Bool keep_files;
-
-	/* MPD downloader*/
-    GF_DownloadSession *mpd_dnload;
-	/* MPD */
-    GF_MPD *mpd;
-	/* number of time the MPD has been reloaded and last update time*/
-    u32 reload_count, last_update_time;
-	/*signature of last MPD*/
-    u8 lastMPDSignature[20];
-	/*mime used by M3U8 server*/
-    char *mimeTypeForM3U8Segments;
-
-	/* active period in MPD (only one currently supported) */
-    u32 active_period_index;
-
-	/*list of groups in the active period*/
-	GF_List *groups;
-	/*group 0 if present, NULL otherwise*/
-	GF_MPD_Group *group_zero_selected;
-
-    /*Main MPD Thread handling segment downloads and MPD/M3U8 update*/
-    GF_Thread *mpd_thread;
-	/*mutex for group->cache file name access and MPD update*/
-    GF_Mutex *dl_mutex;
-
-    /* 0 not started, 1 download in progress */
-    MPD_STATE mpd_is_running;
-    Bool mpd_stop_request;
+	#include "../../include/gpac/modules/service.h"
+	#include "../../include/gpac/internal/terminal_dev.h"
+	#include "../../include/gpac/thread.h"
+	#include "../../include/gpac/network.h"
+	#include "../../include/gpac/crypt.h"
+	#include "../../include/gpac/internal/mpd.h"
+	#include "../../include/gpac/internal/m3u8.h"
+	#include <string.h>
 
 
-    /* TODO - handle playback status for SPEED/SEEK through SIDX */
-    Double playback_speed, playback_start_range, playback_end_range;
-} GF_MPD_In;
+	/*!
+	 * All the possible Mime-types for MPD files
+	 */
+	static const char * MPD_MIME_TYPES[] = { "video/vnd.3gpp.mpd", "audio/vnd.3gpp.mpd", NULL };
+
+	/*!
+	 * All the possible Mime-types for M3U8 files
+	 */
+	static const char * M3U8_MIME_TYPES[] = { "video/x-mpegurl", "audio/x-mpegurl", "application/x-mpegurl", "application/vnd.apple.mpegurl", NULL};
+
+	typedef enum {
+		MPD_STATE_STOPPED = 0,
+		MPD_STATE_RUNNING,
+		MPD_STATE_CONNECTING,
+	} MPD_STATE;
+
+	GF_Err MPD_downloadWithRetry( GF_ClientService * service, GF_DownloadSession ** sess, const char *url, gf_dm_user_io user_io,  void *usr_cbk, u64 start_range, u64 end_range, Bool persistent);
+
+	typedef struct
+	{
+	    char *cache;
+	    char *url;
+	} segment_cache_entry;
+
+	typedef struct __mpd_group
+	{
+		GF_List *representations;
+		u32 group_id;
+		Bool selected;
+		Bool done;
+		Bool force_switch_bandwidth;
+		u32 nb_bw_check;
+		/*pointer toactive period*/
+		GF_MPD_Period *period;
+		/*active representation index in period->representations*/
+		u32 active_rep_index;
+		u32 active_bitrate, max_bitrate, min_bitrate;
+		/*local file playback, do not delete them*/
+		Bool local_files;
+		/*next segment to download for this group*/
+		u32 download_segment_index;
+
+		/*next file (cached) to delete at next GF_NET_SERVICE_QUERY_NEXT for this group*/
+	    char * urlToDeleteNext;
+	    volatile u32 max_cached, nb_cached;
+	    segment_cache_entry *cached;
+
+	    GF_DownloadSession *segment_dnload;
+	    const char *segment_local_url;
+
+	    u32 nb_segments_done;
+
+	    Bool segment_must_be_streamed;
+
+		/* Service really managing the segments */
+	    GF_InputService *service;
+	    char *service_mime;
+	    Bool service_connected;
+	} GF_MPD_Group;
+
+	typedef struct __mpd_module {
+	    /* GPAC Service object (i.e. how this module is seen by the terminal)*/
+	    GF_ClientService *service;
+	    /* URL to which this service is connected
+	       Used to detect when audio service connection request is made on the same URL as video */
+	    char *url;
+
+	    u32 option_max_cached;
+	    u32 auto_switch_count;
+	    Bool keep_files;
+
+		/* MPD downloader*/
+	    GF_DownloadSession *mpd_dnload;
+		/* MPD */
+	    GF_MPD *mpd;
+		/* number of time the MPD has been reloaded and last update time*/
+	    u32 reload_count, last_update_time;
+		/*signature of last MPD*/
+	    u8 lastMPDSignature[20];
+		/*mime used by M3U8 server*/
+	    char *mimeTypeForM3U8Segments;
+
+		/* active period in MPD (only one currently supported) */
+	    u32 active_period_index;
+
+		/*list of groups in the active period*/
+		GF_List *groups;
+		/*group 0 if present, NULL otherwise*/
+		GF_MPD_Group *group_zero_selected;
+
+	    /*Main MPD Thread handling segment downloads and MPD/M3U8 update*/
+	    GF_Thread *mpd_thread;
+		/*mutex for group->cache file name access and MPD update*/
+	    GF_Mutex *dl_mutex;
+
+	    /* 0 not started, 1 download in progress */
+	    MPD_STATE mpd_is_running;
+	    Bool mpd_stop_request;
 
 
-static Bool MPD_CheckRootType(const char *local_url)
-{
-    if (local_url) {
-        char *rtype = gf_xml_get_root_type(local_url, NULL);
-        if (rtype) {
-            Bool handled = 0;
-            if (!strcmp(rtype, "MPD")) {
-                handled = 1;
-            }
-            gf_free(rtype);
-            return handled;
-        }
-    }
-    return 0;
-}
+	    /* TODO - handle playback status for SPEED/SEEK through SIDX */
+	    Double playback_speed, playback_start_range, playback_end_range;
+	} GF_MPD_In;
 
-/**
- * NET IO for MPD, we don't need this anymore since mime-type can be given by session
- */
-void MPD_NetIO_Segment(void *cbk, GF_NETIO_Parameter *param)
-{
-    GF_Err e;
-	u32 download_rate;
-    GF_MPD_Group *group= (GF_MPD_Group*) cbk;
 
-    /*handle service message*/
-    gf_term_download_update_stats(group->segment_dnload);
-	if (group->done) {
-		gf_dm_sess_abort(group->segment_dnload);
-		return;
-	}	
-	
-    if ((param->msg_type == GF_NETIO_PARSE_HEADER) && !strcmp(param->name, "Content-Type")) {
-		if (!group->service_mime) {
-			group->service_mime = gf_strdup(param->value);
-		} else if (strcmp(group->service_mime, param->value)) {
-			GF_MPD_Representation *rep = gf_list_get(group->period->representations, group->active_rep_index);
-			if (!rep->mime) rep->mime = gf_strdup(param->value);
+	static Bool MPD_CheckRootType(const char *local_url)
+	{
+	    if (local_url) {
+		char *rtype = gf_xml_get_root_type(local_url, NULL);
+		if (rtype) {
+		    Bool handled = 0;
+		    if (!strcmp(rtype, "MPD")) {
+			handled = 1;
+		    }
+		    gf_free(rtype);
+		    return handled;
+		}
+	    }
+	    return 0;
+	}
+
+	/**
+	 * NET IO for MPD, we don't need this anymore since mime-type can be given by session
+	 */
+	void MPD_NetIO_Segment(void *cbk, GF_NETIO_Parameter *param)
+	{
+	    GF_Err e;
+		u32 download_rate;
+	    GF_MPD_Group *group= (GF_MPD_Group*) cbk;
+
+	    /*handle service message*/
+	    gf_term_download_update_stats(group->segment_dnload);
+		if (group->done) {
+			gf_dm_sess_abort(group->segment_dnload);
+			return;
+		}
+
+	    if ((param->msg_type == GF_NETIO_PARSE_HEADER) && !strcmp(param->name, "Content-Type")) {
+			if (!group->service_mime) {
+				group->service_mime = gf_strdup(param->value);
+			} else if (strcmp(group->service_mime, param->value)) {
+				GF_MPD_Representation *rep = gf_list_get(group->period->representations, group->active_rep_index);
+				if (!rep->mime){
+					rep->mime = gf_strdup(param->value);
+					/* Be sure to be lower case */
+					strlwr(rep->mime);
+				}
 			rep->disabled = 1;
 			group->force_switch_bandwidth = 1;
             gf_dm_sess_abort(group->segment_dnload);
@@ -498,7 +502,7 @@ static GF_Err MPD_ClientQuery(GF_InputService *ifce, GF_NetworkCommand *param)
 			if (group->selected && (group->service == ifce)) break;
 			group = NULL;
 		}
-		
+
 		if (!group) {
 	        gf_mx_v(mpdin->dl_mutex);
 			return GF_SERVICE_ERROR;
@@ -576,7 +580,7 @@ static GF_Err MPD_LoadMediaService(GF_MPD_In *mpdin, GF_MPD_Group *group, const 
 		for (i=0; i< gf_modules_get_count(mpdin->service->term->user->modules); i++) {
 			GF_InputService *ifce = (GF_InputService *) gf_modules_load_interface(mpdin->service->term->user->modules, i, GF_NET_CLIENT_INTERFACE);
 			if (!ifce) continue;
-			
+
 			if (ifce->CanHandleURL && ifce->CanHandleURL(ifce, init_segment_name)) {
 				group->service = ifce;
 				group->service->proxy_udta = mpdin;
@@ -605,7 +609,7 @@ GF_Err MPD_downloadWithRetry( GF_ClientService * service, GF_DownloadSession **s
 	GF_LOG(GF_LOG_DEBUG, GF_LOG_MODULE, ("[MPD_IN] Downloading %s...\n", url));
 	if (! *sess) {
 		u32 flags = GF_NETIO_SESSION_NOT_THREADED;
-		if (persistent) flags |= GF_NETIO_SESSION_PERSISTENT; 
+		if (persistent) flags |= GF_NETIO_SESSION_PERSISTENT;
 		*sess = gf_term_download_new(service, url, flags, user_io, usr_cbk);
 		if (!(*sess)){
 			assert(0);
@@ -715,7 +719,7 @@ static GF_Err MPD_DownloadInitSegment(GF_MPD_In *mpdin, GF_MPD_Group *group)
     if (!mpdin || !group)
         return GF_BAD_PARAM;
     gf_mx_p(mpdin->dl_mutex);
-    
+
 	assert( group->period && group->period->representations );
     rep = gf_list_get(group->period->representations, group->active_rep_index);
     if (!rep) {
@@ -821,12 +825,14 @@ static GF_Err MPD_DownloadInitSegment(GF_MPD_In *mpdin, GF_MPD_Group *group)
         }
         e = gf_dm_sess_process(group->segment_dnload);
         /* Mime-Type check */
-		strncpy(mime, gf_dm_sess_mime_type(group->segment_dnload), sizeof(mime));
+	strncpy(mime, gf_dm_sess_mime_type(group->segment_dnload), sizeof(mime));
+	/* Be sure to be lower case */
         strlwr(mime);
         if (mime && group->service == NULL) {
             GF_Err e;
             GF_LOG(GF_LOG_DEBUG, GF_LOG_MODULE, ("[MPD_IN] Searching an input plugin for mime type : %s...\n", mime));
             gf_free( mpdin->mimeTypeForM3U8Segments);
+	    /* Mime is already lower case */
             mpdin->mimeTypeForM3U8Segments = gf_strdup( mime );
             gf_free( rep->mime);
             rep->mime = gf_strdup( mime );
@@ -979,7 +985,7 @@ static u32 download_segments(void *par)
 				}
 	            gf_mx_v(mpdin->dl_mutex);
 				if (!cache_full) break;
-				
+
 				gf_sleep(16);
             }
         }
@@ -994,7 +1000,7 @@ static u32 download_segments(void *par)
         period = gf_list_get(mpdin->mpd->periods, mpdin->active_period_index);
 
 		/*for each selected groups*/
-		for (i=0; i<group_count; i++) {		
+		for (i=0; i<group_count; i++) {
 			GF_MPD_Group *group = gf_list_get(mpdin->groups, i);
 			if (! group->selected) continue;
 			if (group->done) continue;
@@ -1062,7 +1068,7 @@ static u32 download_segments(void *par)
 					group->done = 1;
 					break;
 				}
-				resource_name = local_file_name = (char *) new_base_seg_url; 
+				resource_name = local_file_name = (char *) new_base_seg_url;
 				e = GF_OK;
 				/*do not erase local files*/
 				group->local_files = 1;
@@ -1284,7 +1290,7 @@ void MPD_ResetGroups(GF_MPD_In *mpdin)
 		if (group->urlToDeleteNext) {
 			if (!mpdin->keep_files && !group->local_files)
 				gf_dm_delete_cached_file_entry_session(mpdin->mpd_dnload, group->urlToDeleteNext);
-	    
+
 			gf_free(group->urlToDeleteNext);
 			group->urlToDeleteNext = NULL;
 		}
@@ -1398,7 +1404,7 @@ static GF_Err MPD_SegmentsProcessStart(GF_MPD_In *mpdin, u32 time)
 		if (group->group_id==0) {
 			mpdin->group_zero_selected = group;
 		} else if (mpdin->group_zero_selected) {
-			/* if this group is not the group 0 and we have found the group 0, 
+			/* if this group is not the group 0 and we have found the group 0,
 			we can safely ignore this group. */
 			break;
 		}
@@ -1488,7 +1494,7 @@ GF_Err MPD_ConnectService(GF_InputService *plug, GF_ClientService *serv, const c
     opt = gf_modules_get_option((GF_BaseInterface *)plug, "DASH", "KeepFiles");
     if (!opt) gf_modules_set_option((GF_BaseInterface *)plug, "DASH", "KeepFiles", "no");
     if (opt && !strcmp(opt, "yes")) mpdin->keep_files = 1;
-	
+
 	if (mpdin->mpd_dnload) gf_term_download_del(mpdin->mpd_dnload);
     mpdin->mpd_dnload = NULL;
 
@@ -1539,7 +1545,7 @@ GF_Err MPD_ConnectService(GF_InputService *plug, GF_ClientService *serv, const c
         if (strstr(url, ".m3u8"))
             is_m3u8 = 1;
     }
-	
+
 	if (is_local) {
 		FILE *f = fopen(local_url, "rt");
 		if (!f) {
@@ -1651,10 +1657,10 @@ GF_Err MPD_CloseService(GF_InputService *plug)
 	u32 i;
     GF_MPD_In *mpdin = (GF_MPD_In*) plug->priv;
     GF_LOG(GF_LOG_DEBUG, GF_LOG_MODULE, ("[MPD_IN] Received Close Service (%p) request from terminal\n", mpdin->service));
-   
+
 	for (i=0; i<gf_list_count(mpdin->groups); i++) {
 		GF_MPD_Group *group = gf_list_get(mpdin->groups, i);
-	
+
 		if (group->service && group->service_connected) {
 			group->service->CloseService(group->service);
 			group->service_connected = 0;
@@ -1709,7 +1715,7 @@ GF_Err MPD_ServiceCommand(GF_InputService *plug, GF_NetworkCommand *com)
 	}
 	/*not supported*/
 	if (!com->base.on_channel) return GF_NOT_SUPPORTED;
-	
+
 	segment_ifce = MPD_GetInputServiceForChannel(mpdin, com->base.on_channel);
 	if (!segment_ifce) return GF_NOT_SUPPORTED;
 	group = MPD_GetGroupForInputService(mpdin, segment_ifce);

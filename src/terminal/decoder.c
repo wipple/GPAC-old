@@ -83,8 +83,7 @@ GF_Err gf_codec_add_channel(GF_Codec *codec, GF_Channel *ch)
 	GF_Err e;
 	GF_NetworkCommand com;
 	GF_Channel *a_ch;
-	char *dsi;
-	u32 dsiSize, CUsize, i;
+	u32 CUsize, i;
 	GF_CodecCapability cap;
 	u32 min, max;
 
@@ -92,22 +91,13 @@ GF_Err gf_codec_add_channel(GF_Codec *codec, GF_Channel *ch)
 	/*only for valid codecs (eg not OCR)*/
 	if (codec->decio) {
 		com.get_dsi.dsi = NULL;
-		dsi = NULL;
-		dsiSize = 0;
 		if (ch->esd->decoderConfig->upstream) codec->flags |= GF_ESM_CODEC_HAS_UPSTREAM;
-		if (ch->esd->decoderConfig->decoderSpecificInfo) {
-			dsi = ch->esd->decoderConfig->decoderSpecificInfo->data;
-			dsiSize = ch->esd->decoderConfig->decoderSpecificInfo->dataLength;
-		}
 		/*For objects declared in OD stream, override with network DSI if any*/
 		if (ch->service && !(ch->odm->flags & GF_ODM_NOT_IN_OD_STREAM) ) {
 			com.command_type = GF_NET_CHAN_GET_DSI;
 			com.base.on_channel = ch;
 			e = gf_term_service_command(ch->service, &com);
 			if (!e && com.get_dsi.dsi) {
-				dsi = com.get_dsi.dsi;
-				dsiSize = com.get_dsi.dsi_len;
-
 				if (ch->esd->decoderConfig->decoderSpecificInfo->data) gf_free(ch->esd->decoderConfig->decoderSpecificInfo->data);
 				ch->esd->decoderConfig->decoderSpecificInfo->data = com.get_dsi.dsi;
 				ch->esd->decoderConfig->decoderSpecificInfo->dataLength = com.get_dsi.dsi_len;
@@ -144,9 +134,11 @@ GF_Err gf_codec_add_channel(GF_Codec *codec, GF_Channel *ch)
 		case GF_STREAM_VISUAL:
 		case GF_STREAM_AUDIO:
 			cap.CapCode = GF_CODEC_BUFFER_MIN;
+			cap.cap.valueInt = 1;
 			gf_codec_get_capability(codec, &cap);
 			min = cap.cap.valueInt;
 			cap.CapCode = GF_CODEC_BUFFER_MAX;
+			cap.cap.valueInt = 1;
 			gf_codec_get_capability(codec, &cap);
 			max = cap.cap.valueInt;
 			break;
@@ -193,6 +185,7 @@ GF_Err gf_codec_add_channel(GF_Codec *codec, GF_Channel *ch)
 			com.base.on_channel = ch;
 
 			com.cfg.priority = ch->esd->streamPriority;
+			assert( ch->clock );
 			com.cfg.sync_id = ch->clock->clockID;
 			memcpy(&com.cfg.sl_config, ch->esd->slConfig, sizeof(GF_SLConfig));
 			/*get the frame duration if audio (used by some network stack)*/
@@ -234,6 +227,9 @@ GF_Err gf_codec_add_channel(GF_Codec *codec, GF_Channel *ch)
 		codec->CB->Min = 0;
 		codec->CB->odm = codec->odm;
 		ch->is_raw_channel = 1;
+		if (gf_es_owns_clock(ch))
+			ch->is_raw_channel = 2;
+
 		if (ch->is_pulling) {
 			codec->process = gf_codec_process_raw_media_pull;
 		}
@@ -502,7 +498,6 @@ exit:
 /*special handling of decoders not using ESM*/
 static GF_Err PrivateScene_Process(GF_Codec *codec, u32 TimeAvailable)
 {
-	Bool resume_clock;
 	u32 now;
 	GF_Channel *ch;
 	GF_Scene *scene_locked;
@@ -522,7 +517,6 @@ static GF_Err PrivateScene_Process(GF_Codec *codec, u32 TimeAvailable)
 
 	ch = (GF_Channel*)gf_list_get(codec->inChannels, 0);
 	if (!ch) return GF_OK;
-	resume_clock = 0;
 	/*init channel clock*/
 	if (!ch->IsClockInit) {
 		Bool started;
@@ -1012,7 +1006,7 @@ GF_Err gf_codec_get_capability(GF_Codec *codec, GF_CodecCapability *cap)
 
 	if (codec->flags & GF_ESM_CODEC_IS_RAW_MEDIA) {
 		GF_BitStream *bs;
-		u32 pf, w, h, stride, out_size, sr, nb_ch, bpp, ch_cfg;
+		u32 pf, w, h, stride=0, out_size, sr, nb_ch, bpp, ch_cfg;
 		GF_Channel *ch = gf_list_get(codec->odm->channels, 0);
 		if (!ch || !ch->esd->decoderConfig->decoderSpecificInfo || !ch->esd->decoderConfig->decoderSpecificInfo->data) return 0;
 		bs = gf_bs_new(ch->esd->decoderConfig->decoderSpecificInfo->data, ch->esd->decoderConfig->decoderSpecificInfo->dataLength, GF_BITSTREAM_READ);
@@ -1059,6 +1053,15 @@ GF_Err gf_codec_get_capability(GF_Codec *codec, GF_CodecCapability *cap)
 			return GF_OK;
 		case GF_CODEC_CHANNEL_CONFIG:
 			cap->cap.valueInt = ch_cfg;
+			return GF_OK;
+		case GF_CODEC_PAR:
+			cap->cap.valueInt = 0;
+			return GF_OK;
+		case GF_CODEC_PADDING_BYTES:
+			cap->cap.valueInt = 0;
+			return GF_OK;
+		case GF_CODEC_RESILIENT:
+			cap->cap.valueInt = 1;
 			return GF_OK;
 		}
 	}
@@ -1120,17 +1123,8 @@ static GF_Err Codec_LoadModule(GF_Codec *codec, GF_ESD *esd, u32 PL)
 	GF_BaseDecoder *ifce, *dec_ifce;
 	u32 i, plugCount;
 	u32 ifce_type;
-	char *cfg;
-	u32 cfg_size, dec_confidence;
+	u32 dec_confidence;
 	GF_Terminal *term = codec->odm->term;
-
-	if (esd->decoderConfig->decoderSpecificInfo) {
-		cfg = esd->decoderConfig->decoderSpecificInfo->data;
-		cfg_size = esd->decoderConfig->decoderSpecificInfo->dataLength;
-	} else {
-		cfg = NULL;
-		cfg_size = 0;
-	}
 
 	switch (esd->decoderConfig->streamType) {
 	case GF_STREAM_AUDIO:

@@ -26,6 +26,7 @@
 #include "../../include/gpac/network.h"
 #include "../../include/gpac/cache.h"
 #include "media_memory.h"
+#include "media_control.h"
 
 
 
@@ -77,13 +78,13 @@ static void term_on_connect(void *user_priv, GF_ClientService *service, LPNETCHA
 	}
 	/*this is service connection*/
 	if (!netch) {
-		gf_term_service_media_event(service->owner, GF_EVENT_MEDIA_END_SESSION_SETUP);
+		gf_term_service_media_event(service->owner, GF_EVENT_MEDIA_SETUP_DONE);
 		if (err) {
 			char msg[5000];
 			snprintf(msg, sizeof(msg), "Cannot open %s", service->url);
 			gf_term_message(term, service->url, msg, err);
 
-			gf_term_service_media_event(service->owner, GF_EVENT_MEDIA_ERROR);
+			gf_term_service_media_event(service->owner, GF_EVENT_ERROR);
 
 			/*destroy service only if attached*/
 			if (root) {
@@ -313,6 +314,7 @@ static void term_on_media_add(void *user_priv, GF_ClientService *service, GF_Des
 		char *frag, *ext;
 		GF_ESD *esd;
 		char *url;
+		u32 match_esid = 0;
 		GF_MediaObject *mo = gf_list_get(scene->scene_objects, i);
 
 		if ((mo->OD_ID != GF_MEDIA_EXTERNAL_ID) && (min_od_id<mo->OD_ID)) 
@@ -355,14 +357,17 @@ static void term_on_media_add(void *user_priv, GF_ClientService *service, GF_Des
 		if (!strnicmp(url, "file://localhost", 16)) url += 16;
 		else if (!strnicmp(url, "file://", 7)) url += 7;
 		else if (!strnicmp(url, "gpac://", 7)) url += 7;
+		else if (!strnicmp(url, "pid://", 6)) match_esid = atoi(url+6);
 
-		if (!strstr(service->url, url)) {
+		if (!match_esid && !strstr(service->url, url)) {
 			if (ext) ext[0] = '#';
 			continue;
 		}
 		if (ext) ext[0] = '#';
 
 		esd = gf_list_get(od->ESDescriptors, 0);
+		if (match_esid && (esd->ESID != match_esid)) 
+			continue;
 		/*match type*/
 		switch (esd->decoderConfig->streamType) {
 		case GF_STREAM_VISUAL:
@@ -451,6 +456,8 @@ static void term_on_command(void *user_priv, GF_ClientService *service, GF_Netwo
 		/*get exclusive access to media scheduler, to make sure ODs are not being
 		manipulated*/
 		gf_mx_p(term->mm_mx);
+		if (!gf_list_count(od_list))
+			GF_LOG(GF_LOG_WARNING, GF_LOG_MEDIA, ("[ODM] No object manager found for the scene (URL: %s), buffer occupancy will remain unchanged\n", service->url));
 		i=0;
 		while ((odm = (GF_ObjectManager*)gf_list_enum(od_list, &i))) {
 			u32 j, count;
@@ -588,7 +595,10 @@ static char *get_mime_type(GF_Terminal *term, const char *url, GF_Err *ret_code,
 			if (*ret_code) break;
 			if (gf_dm_sess_get_status(sess)>=GF_NETIO_DATA_EXCHANGE) {
 				const char * mime = gf_dm_sess_mime_type(sess);
-				if (mime) ret = gf_strdup(mime);
+				/* The mime type is returned lower case */
+				if (mime){
+					ret = gf_strdup(mime);
+				}
 				break;
 			}
 		}
@@ -826,8 +836,9 @@ exit:
 
 GF_ClientService *gf_term_service_new(GF_Terminal *term, struct _od_manager *owner, const char *url, const char *parent_url, GF_Err *ret_code)
 {
-	GF_DownloadSession *download_session;
+	GF_DownloadSession *download_session = NULL;
 	char *sURL;
+	const char *opt;
 	GF_ClientService *serv;
 	GF_InputService *ifce = gf_term_can_handle_service(term, url, parent_url, 0, &sURL, ret_code, &download_session);
 	if (!ifce) return NULL;
@@ -840,6 +851,20 @@ GF_ClientService *gf_term_service_new(GF_Terminal *term, struct _od_manager *own
 	serv->Clocks = gf_list_new();
 	serv->dnloads = gf_list_new();
 	serv->pending_service_session = download_session;
+
+	opt = gf_cfg_get_key(term->user->config, "Network", "HTTPRebuffer");
+	if (!opt) {
+		opt = "5000";
+		gf_cfg_set_key(term->user->config, "Network", "HTTPRebuffer", "5000");
+	}
+	serv->download_rebuffer = atoi(opt);
+	opt = gf_cfg_get_key(term->user->config, "Network", "HTTPAutoRebuffer");
+	if (!opt) {
+		opt = "no";
+		gf_cfg_set_key(term->user->config, "Network", "HTTPAutoRebuffer", "no");
+	}
+	serv->auto_rebuffer = !strcmp(opt, "yes") ? 1 : 0;
+
 	gf_list_add(term->net_services, serv);
 
 	return serv;
@@ -1058,6 +1083,9 @@ void gf_term_download_update_stats(GF_DownloadSession * sess)
 	case GF_NETIO_WAIT_FOR_REPLY:
 		gf_term_on_message(serv, GF_OK, "Waiting for reply...");
 		break;
+	case GF_NETIO_PARSE_REPLY:
+		gf_term_on_message(serv, GF_OK, "Starting download...");
+		break;
 	case GF_NETIO_DATA_EXCHANGE:
 		/*notify some connection / ...*/
 		if (total_size) {
@@ -1071,6 +1099,61 @@ void gf_term_download_update_stats(GF_DownloadSession * sess)
 			gf_term_send_event(serv->term, &evt);
 		}
 		GF_LOG(GF_LOG_DEBUG, GF_LOG_NETWORK, ("[HTTP] %s received %d / %d\n", szURI, bytes_done, total_size));
+		gf_term_service_media_event_with_download(serv->owner, GF_EVENT_MEDIA_PROGRESS, bytes_done, total_size, bytes_per_sec);
+
+		if ( (serv->download_rebuffer || serv->auto_rebuffer) && serv->owner && !(serv->owner->flags & GF_ODM_DESTROYED) && serv->owner->duration) {
+			GF_Clock *ck = gf_odm_get_media_clock(serv->owner);
+			Double download_percent, playback_percent, adj_percent;
+			download_percent = 100 * bytes_done; 
+			download_percent /= total_size;
+
+			playback_percent = 100 * serv->owner->current_time; 
+			playback_percent /= serv->owner->duration;
+			if (serv->auto_rebuffer)
+				adj_percent = 0.0;
+			else
+				adj_percent = 100.0 * serv->download_rebuffer / serv->owner->duration;
+
+			if (playback_percent >= download_percent) {
+				if (gf_clock_is_started(ck)) {
+					GF_LOG(GF_LOG_INFO, GF_LOG_NETWORK, ("[HTTP Resource] Played %d %% but downloaded %d %% - Pausing\n", (u32) playback_percent, (u32) download_percent));
+					mediacontrol_pause(serv->owner);
+					gf_term_service_media_event(serv->owner, GF_EVENT_MEDIA_WAITING);
+					gf_term_on_message(serv, GF_OK, "HTTP Buffering ...");
+				}
+			} else if (playback_percent + adj_percent <= download_percent) {
+				Double time_to_play = 0;
+				Double time_to_download = 0;
+				/*automatic rebuffer: make sure we can finish playback before resuming*/
+				if (serv->auto_rebuffer) {
+					if (bytes_per_sec) {
+						time_to_download = 1000.0*(total_size - bytes_done);
+						time_to_download /= bytes_per_sec;
+					}
+					time_to_play = (Double) serv->owner->duration;
+					time_to_play -= serv->owner->current_time;
+				}
+				if ((time_to_download<=time_to_play) && !gf_clock_is_started(ck)) {
+					GF_LOG(GF_LOG_INFO, GF_LOG_NETWORK, ("[HTTP Resource] Played %d %% and downloaded %d %% - Resuming\n", (u32) playback_percent, (u32) download_percent));
+					if (serv->auto_rebuffer) {
+						GF_LOG(GF_LOG_INFO, GF_LOG_NETWORK, ("[HTTP Resource] Auto-rebuffer done: should be done downloading in %d ms and remains %d ms to play\n", (u32) time_to_download, (u32) (serv->owner->duration - serv->owner->current_time) ));
+					}
+					gf_term_service_media_event(serv->owner, GF_EVENT_MEDIA_PLAYING);
+					mediacontrol_resume(serv->owner);
+					gf_term_on_message(serv, GF_OK, "HTTP Resuming playback");
+				}
+			}
+		}
+		break;
+	case GF_NETIO_DATA_TRANSFERED:
+		gf_term_service_media_event(serv->owner, GF_EVENT_MEDIA_LOAD_DONE);
+		if (serv->owner && !(serv->owner->flags & GF_ODM_DESTROYED) && serv->owner->duration) {
+			GF_Clock *ck = gf_odm_get_media_clock(serv->owner);
+			if (!gf_clock_is_started(ck)) {
+				GF_LOG(GF_LOG_INFO, GF_LOG_NETWORK, ("[HTTP Resource] Done retrieving file - resuming playback\n"));
+				mediacontrol_resume(serv->owner);
+			}
+		}
 		break;
 	}
 }

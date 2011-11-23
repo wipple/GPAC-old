@@ -842,7 +842,7 @@ TODO clean: figure out whether we use a mouse or a touch device - if touch devic
 Bool gf_sc_exec_event_vrml(GF_Compositor *compositor, GF_Event *ev)
 {
 	u32 res = 0;
-	GF_SensorHandler *hs, *hs_grabbed;
+	GF_SensorHandler *hs;
 	GF_List *tmp;
 	u32 i, count, stype;
 
@@ -881,8 +881,6 @@ Bool gf_sc_exec_event_vrml(GF_Compositor *compositor, GF_Event *ev)
 		compositor->prev_hit_appear = compositor->hit_appear;
 	}
 
-
-	hs_grabbed = NULL;
 	/*if we have a hit node at the compositor level, use "touch" as default cursor - this avoid
 	resetting the cursor when the picked node is a DOM node in a composite texture*/
 	stype = (compositor->hit_node!=NULL) ? GF_CURSOR_TOUCH : GF_CURSOR_NORMAL;
@@ -902,7 +900,11 @@ Bool gf_sc_exec_event_vrml(GF_Compositor *compositor, GF_Event *ev)
 		/*call the sensor LAST, as this may triger a destroy of the scene the sensor is in 
 		this is only true for anchors, as other other sensors output events are queued as routes untill next pass*/
 		res += hs->OnUserEvent(hs, 1, 0, ev, compositor);
-		if ((stype == TAG_MPEG4_Anchor) || (stype == TAG_X3D_Anchor) ) {
+		if ((stype == TAG_MPEG4_Anchor)
+#ifndef GPAC_DISABLE_X3D
+						|| (stype == TAG_X3D_Anchor) 
+#endif
+		) {
 			/*subscene with active sensor has been deleted, we cannot continue process the sensors stack*/
 			if (count != gf_list_count(compositor->sensors))
 				break;
@@ -1723,8 +1725,7 @@ static GF_Node *browse_parent_for_focus(GF_Compositor *compositor, GF_Node *elt,
 	}
 
 	if (prev_focus) {
-		u32 i, count;
-		count = gf_node_list_get_count(child);
+		u32 i;
 		/*!! this may happen when walking up PROTO nodes !!*/
 		for (i=idx; i>0; i--) {
 			n = gf_node_list_get_child(child, i-1);
@@ -1947,7 +1948,7 @@ static Bool forward_event(GF_Compositor *compositor, GF_Event *ev, Bool consumed
 
 Bool gf_sc_exec_event(GF_Compositor *compositor, GF_Event *evt)
 {
-	s32 x, y;
+	s32 x=0, y=0;
 	Bool switch_coords=0;
 	Bool ret=0;
 	if (evt->type<=GF_EVENT_MOUSEWHEEL) {

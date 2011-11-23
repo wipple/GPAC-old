@@ -73,8 +73,14 @@ GF_ESD *IMG_GetESD(IMGLoader *read)
 		u32 mtype, w, h;
 		GF_BitStream *bs = gf_bs_from_file(read->stream, GF_BITSTREAM_READ);
 		gf_img_parse(bs, &OTI, &mtype, &w, &h, &esd->decoderConfig->decoderSpecificInfo->data, &esd->decoderConfig->decoderSpecificInfo->dataLength);
-		esd->decoderConfig->objectTypeIndication = OTI;
 		gf_bs_del(bs);
+
+		if (!OTI) {
+			GF_LOG(GF_LOG_WARNING, GF_LOG_CODEC, ("[IMG_IN] Unable to guess format image - assigning from extension\n"));
+			if (read->img_type==IMG_JPEG) OTI = GPAC_OTI_IMAGE_JPEG;
+			else if (read->img_type==IMG_PNG) OTI = GPAC_OTI_IMAGE_PNG;
+		}
+		esd->decoderConfig->objectTypeIndication = OTI;
 
 		if (read->img_type == IMG_PNGD) {
 			GF_Descriptor *d = gf_odf_desc_new(GF_ODF_AUX_VIDEO_DATA);
@@ -190,7 +196,12 @@ void jp_download_file(GF_InputService *plug, const char *url)
 	IMGLoader *read = (IMGLoader *) plug->priv;
 
 	read->dnload = gf_term_download_new(read->service, url, 0, IMG_NetIO, read);
-	if (!read->dnload) gf_term_on_connect(read->service, NULL, GF_NOT_SUPPORTED);
+	if (!read->dnload) {
+		gf_term_on_connect(read->service, NULL, GF_NOT_SUPPORTED);
+	} else {
+		/*start our download (threaded)*/
+		gf_dm_sess_process(read->dnload);
+	}
 	/*service confirm is done once fetched*/
 }
 

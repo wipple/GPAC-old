@@ -372,6 +372,13 @@ LRESULT APIENTRY DD_WindowProc(HWND hWnd, UINT msg, UINT wParam, LONG lParam)
 			ctx->orig_wnd_proc = 0L;
 		}
 		break;
+	case WM_DISPLAYCHANGE:
+		ctx->dd_lost = 1;
+		memset(&evt, 0, sizeof(GF_Event));
+		evt.type = GF_EVENT_VIDEO_SETUP;
+		evt.setup.back_buffer = 1;
+		vout->on_event(vout->evt_cbk_hdl, &evt);
+		break;
 
 	case WM_ACTIVATE:
 		if (!ctx->on_secondary_screen && ctx->fullscreen && (LOWORD(wParam)==WA_INACTIVE) 
@@ -1015,19 +1022,23 @@ GF_Err DD_ProcessEvent(GF_VideoOutput*dr, GF_Event *evt)
 	/*if scene resize resize window*/
 	case GF_EVENT_SIZE:
 		if (ctx->owns_hwnd) {
-			if (ctx->windowless)
-				SetWindowPos(ctx->os_hwnd, NULL, 0, 0, evt->size.width, evt->size.height, SWP_NOZORDER | SWP_NOMOVE | SWP_ASYNCWINDOWPOS);
-			else 
-				SetWindowPos(ctx->os_hwnd, NULL, 0, 0, evt->size.width + ctx->off_w, evt->size.height + ctx->off_h, SWP_NOZORDER | SWP_NOMOVE | SWP_ASYNCWINDOWPOS);
-
 			if (ctx->fullscreen) {
 				ctx->store_width = evt->size.width;
 				ctx->store_height = evt->size.height;
+			} else {
+				if (ctx->windowless)
+					SetWindowPos(ctx->os_hwnd, NULL, 0, 0, evt->size.width, evt->size.height, SWP_NOZORDER | SWP_NOMOVE | SWP_ASYNCWINDOWPOS);
+				else 
+					SetWindowPos(ctx->os_hwnd, NULL, 0, 0, evt->size.width + ctx->off_w, evt->size.height + ctx->off_h, SWP_NOZORDER | SWP_NOMOVE | SWP_ASYNCWINDOWPOS);
 			}
 		}
 		break;
 	/*HW setup*/
 	case GF_EVENT_VIDEO_SETUP:
+		if (ctx->dd_lost) {
+			ctx->dd_lost = 0;
+			DestroyObjects(ctx);
+		}
 		ctx->is_setup=1;
 		switch (evt->setup.opengl_mode) {
 		case 0:

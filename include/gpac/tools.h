@@ -93,8 +93,9 @@ extern "C" {
  *
  *	Macro formating a 4-character code (or 4CC) "abcd" as 0xAABBCCDD
 */
+#ifndef GF_4CC
 #define GF_4CC(a,b,c,d) (((a)<<24)|((b)<<16)|((c)<<8)|(d))
-
+#endif
 
 /*!
  *	\brief GPAC feature list
@@ -661,6 +662,14 @@ u32 gf_sys_clock();
  *	\param ms Amount of time to sleep in milliseconds.
  */
 void gf_sleep(u32 ms);
+
+/*!
+ *	\brief Create Directory
+ *
+ *	Create a directory within the full path.
+ *	\param DirPathName the dir path name.
+ */
+GF_Err gf_mkdir(char* DirPathName);
 
 /*!
  *	\brief CRC32 compute

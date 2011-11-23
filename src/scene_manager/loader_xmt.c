@@ -30,6 +30,8 @@
 #include "../../include/gpac/internal/scenegraph_dev.h"
 #include "../../include/gpac/nodes_x3d.h"
 
+void gf_sm_update_bitwrapper_buffer(GF_Node *node, const char *fileName);
+
 #ifndef GPAC_DISABLE_LOADER_XMT
 
 
@@ -904,6 +906,9 @@ static u32 xmt_parse_sf_field(GF_XMTParser *parser, GF_FieldInfo *info, GF_Node 
 		break;
 	case GF_SG_VRML_SFSTRING:
 		res = xmt_parse_string(parser, info->name, (SFString*)info->far_ptr, 0, a_value); 
+		if (n->sgprivate->tag==TAG_MPEG4_BitWrapper) {
+			gf_sm_update_bitwrapper_buffer(n, parser->load->fileName);
+		}
 		break;
 	case GF_SG_VRML_SFSCRIPT:
 		res = xmt_parse_script(parser, info->name, (SFScript *)info->far_ptr, 0, a_value); 
@@ -1400,7 +1405,7 @@ static GF_Node *xmt_parse_element(GF_XMTParser *parser, char *name, const char *
 {
 	GF_Err e;
 	GF_FieldInfo info;
-	u32	tag, i, count, ID;
+	u32	tag, i, ID;
 	Bool register_def = 0;
 	Bool is_script = 0;
 	GF_Node *node;
@@ -1642,7 +1647,6 @@ static GF_Node *xmt_parse_element(GF_XMTParser *parser, char *name, const char *
 				ID = 0;
 				register_def = 0;
 				tag = 0;
-				count = 0;
 			}
 		}
 	} else {

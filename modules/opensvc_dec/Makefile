@@ -2,7 +2,7 @@ include ../../config.mak
 
 vpath %.c $(SRC_PATH)/modules/opensvc_dec
 
-CFLAGS= $(OPTFLAGS) -I"$(SRC_PATH)/include"
+CFLAGS=$(OPTFLAGS) -I"$(SRC_PATH)/include" $(OSVC_CFLAGS)
 
 ifeq ($(DEBUGBUILD), yes)
 CFLAGS+=-g
@@ -14,7 +14,7 @@ CFLAGS+=-pg
 LDFLAGS+=-pg
 endif
 
-LDFLAGS+=-lOpenSVCDec
+EXTRALIBS+=-L../../bin/gcc -lgpac $(OSVC_LDFLAGS)
 
 #common obj
 OBJS= opensvc_dec.o

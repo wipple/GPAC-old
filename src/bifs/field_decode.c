@@ -125,8 +125,15 @@ GF_Err gf_bifs_dec_sf_field(GF_BifsDecoder * codec, GF_BitStream *bs, GF_Node *n
 		if (node && (node->sgprivate->tag==TAG_MPEG4_CacheTexture) && (field->fieldIndex<=2)) {
 			M_CacheTexture *ct = (M_CacheTexture *) node;
 			ct->data_len = length;
+			if (ct->data) gf_free(ct->data);
 			ct->data = gf_malloc(sizeof(char)*length);
-			gf_bs_read_data(bs, ct->data, length);
+			gf_bs_read_data(bs, (char*)ct->data, length);
+		} else if (node && (node->sgprivate->tag==TAG_MPEG4_BitWrapper) ) {
+			M_BitWrapper *bw = (M_BitWrapper*) node;
+			if (bw->buffer.buffer) gf_free(bw->buffer.buffer);
+			bw->buffer_len = length;
+			bw->buffer.buffer = gf_malloc(sizeof(char)*length);
+			gf_bs_read_data(bs, (char*)bw->buffer.buffer, length);
 		} else {
 			if ( ((SFString *)field->far_ptr)->buffer ) gf_free( ((SFString *)field->far_ptr)->buffer);
 			((SFString *)field->far_ptr)->buffer = (char *)gf_malloc(sizeof(char)*(length+1));
@@ -683,7 +690,6 @@ static void UpdateTimeNode(GF_BifsDecoder * codec, GF_Node *node)
 GF_Node *gf_bifs_dec_node(GF_BifsDecoder * codec, GF_BitStream *bs, u32 NDT_Tag)
 {
 	u32 nodeID, NDTBits, node_type, node_tag, ProtoID, BVersion;
-	u8 node_flag;
 	Bool skip_init, reset_qp14;
 	GF_Node *new_node;
 	GF_Err e;
@@ -703,7 +709,6 @@ GF_Node *gf_bifs_dec_node(GF_BifsDecoder * codec, GF_BitStream *bs, u32 NDT_Tag)
 
 
 	BVersion = GF_BIFS_V1;
-	node_flag = 0;
 
 	/*this is a USE statement*/
 	if (gf_bs_read_int(bs, 1)) {

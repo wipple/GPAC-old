@@ -1306,7 +1306,6 @@ static JSBool dom_node_setProperty(JSContext *c, JSObject *obj, SMJS_PROP_SETTER
 {
 	u32 tag;
 	GF_Node *n;
-	GF_ParentNode *par;
 
 	n = dom_get_node(c, obj);
 	/*note an element - we don't support property setting on document yet*/
@@ -1315,7 +1314,6 @@ static JSBool dom_node_setProperty(JSContext *c, JSObject *obj, SMJS_PROP_SETTER
 	if (!SMJS_ID_IS_INT(id)) return JS_TRUE;
 
 	tag = n ? gf_node_get_tag(n) : 0;
-	par = (GF_ParentNode*)n;
 
 	switch (SMJS_ID_TO_INT(id)) {
 	/*"nodeValue"*/
@@ -1905,6 +1903,7 @@ static void gf_svg_set_attribute(GF_Node *n, char * ns, char *name, char *val)
 	}
 
 	if (gf_node_get_attribute_by_name(n, name, ns_code,  1, 1, &info)==GF_OK) {
+		GF_Err e;
 		if (!strcmp(name, "from") || !strcmp(name, "to") || !strcmp(name, "values") ) {
 			GF_FieldInfo attType;
 			SMIL_AttributeName *attname;
@@ -1926,7 +1925,10 @@ static void gf_svg_set_attribute(GF_Node *n, char * ns, char *name, char *val)
 
 			anim_value_type = attname->type;
 		}
-		gf_svg_parse_attribute(n, &info, val, anim_value_type);
+		e = gf_svg_parse_attribute(n, &info, val, anim_value_type);
+		if (e != GF_OK) {
+			GF_LOG(GF_LOG_ERROR, GF_LOG_SCRIPT, ("[DOM] Error parsing attribute\n"));
+		}
 
 		if (info.fieldType==SVG_ID_datatype) {
 			char *idname = *(SVG_String*)info.far_ptr;
@@ -1951,14 +1953,16 @@ static JSBool SMJS_FUNCTION(xml_element_set_attribute)
 	if (!n) return JS_TRUE;
 	if ((argc < 2)) return JS_TRUE;
 
-	if (!JSVAL_CHECK_STRING(argv[0])) return JS_TRUE;
+	if (!JSVAL_CHECK_STRING(argv[0])) 
+		return JS_TRUE;
 
 	idx = 1;
 	_val = name = ns = NULL;
 	/*NS version*/
 	if (argc==3) {
 		char *sep;
-		if (!JSVAL_CHECK_STRING(argv[1])) return JS_TRUE;
+		if (!JSVAL_CHECK_STRING(argv[1])) 
+			return JS_TRUE;
 		ns = js_get_utf8(c, argv[0]);
 		gf_sg_add_namespace(n->sgprivate->scenegraph, ns, NULL);
 		name = SMJS_CHARS(c, argv[1]);
@@ -1988,7 +1992,8 @@ static JSBool SMJS_FUNCTION(xml_element_set_attribute)
 	} else {
 		goto exit;
 	}
-	if (!name || !val) goto exit;
+	if (!name || !val) 
+		goto exit;
 
 
 	/* For on* attribute (e.g. onclick), we create a couple listener/handler elements on setting the attribute */
@@ -2055,7 +2060,6 @@ static JSBool SMJS_FUNCTION(xml_element_elements_by_tag)
 
 static JSBool SMJS_FUNCTION(xml_element_set_id)
 {
-	const char *node_name;
 	u32 node_id;
 	char *name;
 	Bool is_id;
@@ -2075,7 +2079,7 @@ static JSBool SMJS_FUNCTION(xml_element_set_id)
 		name = SMJS_CHARS(c, argv[0]);
 		is_id = (JSVAL_TO_BOOLEAN(argv[1])==JS_TRUE) ? 1 : 0;
 	}
-	node_name = gf_node_get_name_and_id(n, &node_id);
+	gf_node_get_name_and_id(n, &node_id);
 	if (node_id && is_id) {
 		/*we only support ONE ID per node*/
 		SMJS_FREE(c, name);
@@ -2267,22 +2271,29 @@ static JSBool event_getProperty(JSContext *c, JSObject *obj, SMJS_PROP_GETTER, j
 		case 42:
 			*vp = INT_TO_JSVAL(evt->detail); return JS_TRUE;
 
-		/*MAE*/
+		case 52:/*loaded*/
+			if (!evt->media_event) return JS_TRUE;
+			*vp = INT_TO_JSVAL( evt->media_event->loaded_size);
+			return JS_TRUE;
+		case 53:/*total*/
+			if (!evt->media_event) return JS_TRUE;
+			*vp = INT_TO_JSVAL( evt->media_event->total_size);
+			return JS_TRUE;
 		case 54:/*bufferLevelValid*/
-			if (!evt->mae) return JS_TRUE;
-			*vp = BOOLEAN_TO_JSVAL( evt->mae->bufferValid ? JS_TRUE : JS_FALSE);
+			if (!evt->media_event) return JS_TRUE;
+			*vp = BOOLEAN_TO_JSVAL( evt->media_event->bufferValid ? JS_TRUE : JS_FALSE);
 			return JS_TRUE;
 		case 55:/*bufferLevel*/
-			if (!evt->mae) return JS_TRUE;
-			*vp = INT_TO_JSVAL( evt->mae->level);
+			if (!evt->media_event) return JS_TRUE;
+			*vp = INT_TO_JSVAL( evt->media_event->level);
 			return JS_TRUE;
 		case 56:/*bufferRemainingTime*/
-			if (!evt->mae) return JS_TRUE;
-			*vp = JS_MAKE_DOUBLE(c, evt->mae->remaining_time);
+			if (!evt->media_event) return JS_TRUE;
+			*vp = JS_MAKE_DOUBLE(c, evt->media_event->remaining_time);
 			return JS_TRUE;
 		case 57:/*status*/
-			if (!evt->mae) return JS_TRUE;
-			*vp = INT_TO_JSVAL( evt->mae->status);
+			if (!evt->media_event) return JS_TRUE;
+			*vp = INT_TO_JSVAL( evt->media_event->status);
 			return JS_TRUE;
 
 		/*VRML ones*/
@@ -2881,7 +2892,6 @@ static JSBool SMJS_FUNCTION(xml_http_send)
 	GF_SceneGraph *scene;
 	char *data = NULL;
 	XMLHTTPContext *ctx;
-	GF_Err e;
 	SMJS_OBJ
 	SMJS_ARGS
 
@@ -2917,18 +2927,18 @@ static JSBool SMJS_FUNCTION(xml_http_send)
 	SMJS_FREE(c, data);
 
 	if (!strncmp(ctx->url, "http://", 7)) {
-		ctx->sess = gf_dm_sess_new(par.dnld_man, ctx->url, 0, xml_http_on_data, ctx, &e);
-		
+		GF_Err e;
+
+		ctx->sess = gf_dm_sess_new(par.dnld_man, ctx->url, ctx->async ? 0 : GF_NETIO_SESSION_NOT_THREADED, xml_http_on_data, ctx, &e);			
 		if (!ctx->sess) return JS_TRUE;
-	
-		/*just wait for destruction*/
-		if (!ctx->async) {
-			while (ctx->sess) {
-				gf_sg_lock_javascript(ctx->c, 0);
-				gf_sleep(20);
-				gf_sg_lock_javascript(ctx->c, 1);
-			}
+
+		/*start our download (whether the session is threaded or not)*/
+		e = gf_dm_sess_process(ctx->sess);
+		if (e!=GF_OK) {
+			GF_LOG(GF_LOG_ERROR, GF_LOG_SCRIPT, ("[XmlHttpRequest] Error processing %s: %s\n", ctx->url, gf_error_to_string(e) ));
 		}
+		/**/
+		if (!ctx->async && ctx->sess) gf_dm_sess_del(ctx->sess);
 	} else {
 		u64 fsize;
 		FILE * xmlf;

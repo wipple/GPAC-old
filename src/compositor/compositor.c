@@ -1642,10 +1642,10 @@ GF_Err gf_sc_get_screen_buffer(GF_Compositor *compositor, GF_VideoSurface *frame
 
 GF_Err gf_sc_get_offscreen_buffer(GF_Compositor *compositor, GF_VideoSurface *framebuffer, u32 view_idx, u32 depth_dump_mode)
 {
-	GF_Err e;
 	if (!compositor || !framebuffer) return GF_BAD_PARAM;
 #ifndef GPAC_DISABLE_3D
 	if (compositor->visual->type_3d && compositor->visual->nb_views && (compositor->visual->autostereo_type>GF_3D_STEREO_SIDE)) {
+		GF_Err e;
 		gf_mx_p(compositor->mx);
 		e = compositor_3d_get_offscreen_buffer(compositor, framebuffer, view_idx, depth_dump_mode);
 		if (e != GF_OK) gf_mx_v(compositor->mx);
@@ -1746,8 +1746,8 @@ static void gf_sc_setup_root_visual(GF_Compositor *compositor, GF_Node *top_node
 			/*move to perspective 3D when simulating depth*/
 #ifdef GF_SR_USE_DEPTH
 			if (compositor->display_depth) {
-				compositor->visual->type_3d = 2;
-				compositor->visual->camera.is_3D = 1;
+				compositor->visual->type_3d = 0;
+				compositor->visual->camera.is_3D = 0;
 			} else 
 #endif
 			{
@@ -2540,6 +2540,8 @@ static Bool gf_sc_on_event_ex(GF_Compositor *compositor , GF_Event *event, Bool 
 	if (compositor->msg_type & GF_SR_IN_RECONFIG) {
 		if (event->type==GF_EVENT_VIDEO_SETUP) {
 			compositor->reset_graphics = 2;
+			if (event->setup.back_buffer) 
+				compositor->recompute_ar = 1;
 		}
 		return 0;
 	}
@@ -2564,6 +2566,8 @@ static Bool gf_sc_on_event_ex(GF_Compositor *compositor , GF_Event *event, Bool 
 		{
 			Bool locked = gf_mx_try_lock(compositor->mx);
 			compositor->reset_graphics = 2;
+			if (event->setup.back_buffer) 
+				compositor->recompute_ar = 1;
 			if (locked) gf_mx_v(compositor->mx);
 		}
 		break;

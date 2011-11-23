@@ -201,4 +201,20 @@ public class Osmo4GLSurfaceView extends GLSurfaceView implements GPACInstanceInt
             }
         });
     }
+    
+    /**
+     * @see com.gpac.Osmo4.GPACInstanceInterface#setGpacLogs(String tools_at_levels)
+     */
+    @Override
+    public void setGpacLogs(final String tools_at_levels) {
+        queueEvent(new Runnable() {
+
+            @Override
+            public void run() {
+                GPACInstance instance = getInstance();
+                if (instance != null)
+                    instance.setGpacLogs(tools_at_levels);
+            }
+        });
+    }
 }

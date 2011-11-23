@@ -120,6 +120,9 @@ GF_MediaObject *gf_mo_register(GF_Node *node, MFURL *url, Bool lock_timelines, B
 	case TAG_MPEG4_AnimationStream: 
 		obj_type = GF_MEDIA_OBJECT_UPDATES; 
 		break;
+	case TAG_MPEG4_BitWrapper:
+		obj_type = GF_MEDIA_OBJECT_SCENE;
+		break;
 	case TAG_MPEG4_InputSensor: 
 		obj_type = GF_MEDIA_OBJECT_INTERACT; 
 		break;
@@ -181,9 +184,6 @@ GF_MediaObject *gf_mo_register(GF_Node *node, MFURL *url, Bool lock_timelines, B
 		scene = scene->root_od->parentscene;
 
 	res = gf_scene_get_media_object_ex(scene, url, obj_type, lock_timelines, syncRef, force_new_res, node);
-
-	if (res) {
-	}
 	return res;
 }
 
@@ -449,6 +449,10 @@ char *gf_mo_fetch_data(GF_MediaObject *mo, Bool resync, Bool *eos, u32 *timestam
 #ifndef GPAC_DISABLE_VRML
 		mediasensor_update_timing(mo->odm, mo->odm->codec->CB->HasSeenEOS);
 #endif
+	
+		if (mo->odm->parentscene->is_dynamic_scene)
+			mo->odm->parentscene->root_od->current_time = mo->odm->current_time;
+
 		mo->timestamp = CU->TS;
 		GF_LOG(GF_LOG_DEBUG, GF_LOG_MEDIA, ("[ODM%d] At OTB %d fetch frame TS %d size %d - %d unit in CB\n", mo->odm->OD->objectDescriptorID, gf_clock_time(mo->odm->codec->ck), mo->timestamp, mo->framesize, mo->odm->codec->CB->UnitCount));
 		/*signal EOS after rendering last frame, not while rendering it*/

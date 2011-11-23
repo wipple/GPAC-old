@@ -91,7 +91,7 @@ s32 gf_mv12_next_slice_start(unsigned char *pbuffer, u32 startoffset, u32 buflen
 u8 gf_mp3_num_channels(u32 hdr);
 u16 gf_mp3_sampling_rate(u32 hdr);
 u16 gf_mp3_window_size(u32 hdr);
-u16 gf_mp3_bit_rate(u32 hdr);
+u32 gf_mp3_bit_rate(u32 hdr);
 u8 gf_mp3_object_type_indication(u32 hdr);
 u8 gf_mp3_layer(u32 hdr);
 u16 gf_mp3_frame_size(u32 hdr);
@@ -233,7 +233,7 @@ void gf_img_parse(GF_BitStream *bs, u8 *OTI, u32 *mtype, u32 *width, u32 *height
 GF_Err gf_img_jpeg_dec(char *jpg, u32 jpg_size, u32 *width, u32 *height, u32 *pixel_format, char *dst, u32 *dst_size, u32 dst_nb_comp);
 
 GF_Err gf_img_png_dec(char *png, u32 png_size, u32 *width, u32 *height, u32 *pixel_format, char *dst, u32 *dst_size);
-GF_Err gf_img_png_file_dec(char *png_file, u32 *width, u32 *height, u32 *pixel_format, char **dst, u32 *dst_size);
+GF_Err gf_img_file_dec(char *png_file, u32 *oti, u32 *width, u32 *height, u32 *pixel_format, char **dst, u32 *dst_size);
 GF_Err gf_img_png_enc(char *data, u32 width, u32 height, s32 stride, u32 pixel_format, char *dst, u32 *dst_size);
 
 #ifdef __cplusplus

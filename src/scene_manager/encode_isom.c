@@ -297,14 +297,12 @@ static GF_Err gf_sm_import_specials(GF_SceneManager *ctx)
 {
 	GF_Err e;
 	u32 i, j, n, m, k;
-	GF_ESD *esd;
 	GF_AUContext *au;
 	GF_StreamContext *sc;
 
 	i=0;
 	while ((sc = (GF_StreamContext*)gf_list_enum(ctx->streams, &i))) {
 		if (sc->streamType != GF_STREAM_OD) continue;
-		esd = NULL;
 		j=0;
 		while ((au = (GF_AUContext *)gf_list_enum(sc->AUs, &j))) {
 			GF_ODCom *com;
@@ -348,7 +346,6 @@ static GF_Err gf_sm_import_specials(GF_SceneManager *ctx)
 static GF_ESD *gf_sm_locate_esd(GF_SceneManager *ctx, u16 ES_ID)
 {
 	u32 i, j, n, m, k;
-	GF_ESD *esd;
 	GF_AUContext *au;
 	GF_StreamContext *sc;
 	if (!ES_ID) return NULL;
@@ -356,7 +353,6 @@ static GF_ESD *gf_sm_locate_esd(GF_SceneManager *ctx, u16 ES_ID)
 	i=0;
 	while ((sc = (GF_StreamContext*)gf_list_enum(ctx->streams, &i))) {
 		if (sc->streamType != GF_STREAM_OD) continue;
-		esd = NULL;
 		j=0;
 		while ((au = (GF_AUContext *)gf_list_enum(sc->AUs, &j))) {
 			GF_ODCom *com;
@@ -1036,12 +1032,19 @@ static GF_Err gf_sm_encode_od(GF_SceneManager *ctx, GF_ISOFile *mp4, char *media
 						GF_ESD *imp_esd;
 						m=0;
 						while ((imp_esd = (GF_ESD*)gf_list_enum(od->ESDescriptors, &m))) {
-							switch (imp_esd->decoderConfig->streamType) {
-							case GF_STREAM_SCENE:
-							case GF_STREAM_OD:
-								continue;
-							default:
-								break;
+							/*do not import scene and OD streams*/
+							if (imp_esd->decoderConfig) {
+								switch (imp_esd->decoderConfig->streamType) {
+								case GF_STREAM_SCENE:
+									/*import AFX streams, but not others*/
+									if (imp_esd->decoderConfig->objectTypeIndication==GPAC_OTI_SCENE_AFX) 
+										break;
+									continue;
+								case GF_STREAM_OD:
+									continue;
+								default:
+									break;
+								}
 							}
 
 							switch (imp_esd->tag) {

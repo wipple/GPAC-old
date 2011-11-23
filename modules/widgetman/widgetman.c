@@ -1209,7 +1209,6 @@ static JSBool SMJS_FUNCTION(wm_widget_activate)
 
 static void wm_handle_dom_event(GF_Node *hdl, GF_DOM_Event *event, GF_Node *observer)
 {
-	JSBool ret;
 	GF_FieldInfo info;
 	GF_Node *n;
 	jsval argv[1], rval, jsfun;
@@ -1227,7 +1226,7 @@ static void wm_handle_dom_event(GF_Node *hdl, GF_DOM_Event *event, GF_Node *obse
 	if (event->type != GF_EVENT_ATTR_MODIFIED) {
 		jsfun = (jsval) handler->js_fun_val;
 		if (JSVAL_IS_OBJECT(jsfun))
-			ret = JS_CallFunctionValue(handler->js_context, wid->obj, (jsval) handler->js_fun_val, 0, 0, &rval);
+			JS_CallFunctionValue(handler->js_context, wid->obj, (jsval) handler->js_fun_val, 0, 0, &rval);
 		return;
 	}
 
@@ -1277,7 +1276,7 @@ static void wm_handle_dom_event(GF_Node *hdl, GF_DOM_Event *event, GF_Node *obse
 
 	jsfun = (jsval) handler->js_fun_val;
 	if (JSVAL_IS_OBJECT(jsfun))
-		ret = JS_CallFunctionValue(handler->js_context, wid->obj, (jsval) handler->js_fun_val, 1, argv, &rval);
+		JS_CallFunctionValue(handler->js_context, wid->obj, (jsval) handler->js_fun_val, 1, argv, &rval);
 }
 
 static JSBool SMJS_FUNCTION(wm_widget_get_param_value)
@@ -1542,7 +1541,7 @@ static JSBool SMJS_FUNCTION(wm_widget_get_context)
 	const char *str;
 	char *att;
 	SMJS_OBJ
-	SMJS_ARGS
+	//SMJS_ARGS
 	GF_WidgetInstance *wid = (GF_WidgetInstance *)JS_GetPrivate(c, obj);
 	if (!wid) return JS_FALSE;
 	if (!wid->scene) {
@@ -2161,7 +2160,6 @@ GF_WidgetComponentInstance *wm_activate_component(JSContext *c, GF_WidgetInstanc
 static JSBool SMJS_FUNCTION(wm_widget_is_interface_bound)
 {
 	u32 i, count;
-	Bool check_fake_bind = 0;
 	JSObject *cookie;
 	GF_WidgetInterface *ifce;
 	SMJS_OBJ
@@ -2174,10 +2172,6 @@ static JSBool SMJS_FUNCTION(wm_widget_is_interface_bound)
 	cookie = NULL;
 	if ((argc==2) && JSVAL_IS_OBJECT(argv[1]) )
 		cookie = JSVAL_TO_OBJECT(argv[1]);
-
-	if ((argc==3) && JSVAL_IS_BOOLEAN(argv[2]) )
-		check_fake_bind = JSVAL_TO_BOOLEAN(argv[2])==JS_TRUE ? 1 : 0;
-
 
 	SMJS_SET_RVAL(BOOLEAN_TO_JSVAL(JS_FALSE));
 	count = gf_list_count(wid->bound_ifces);
@@ -2867,7 +2861,7 @@ static void wm_set_default_start_file(GF_WidgetManager *wm, GF_WidgetContent *co
 	content->encoding = gf_strdup("utf-8");
 }
 
-static GF_WidgetContent *wm_add_icon(GF_Widget *widget, const char *icon_relocated_path, const char *icon_localized_path)
+static GF_WidgetContent *wm_add_icon(GF_Widget *widget, const char *icon_relocated_path, const char *icon_localized_path, const char *uri_fragment)
 {
 	GF_WidgetContent *icon;
 	u32 i, count;
@@ -2884,8 +2878,18 @@ static GF_WidgetContent *wm_add_icon(GF_Widget *widget, const char *icon_relocat
 	if (already_in) return NULL;
 
 	GF_SAFEALLOC(icon, GF_WidgetContent);
-	icon->src = gf_strdup(icon_localized_path);
-	icon->relocated_src = gf_strdup(icon_relocated_path);
+	if (uri_fragment) {
+		icon->src = gf_malloc(strlen(icon_localized_path) + strlen(uri_fragment) + 1);
+		strcpy(icon->src, icon_localized_path);
+		strcat(icon->src, uri_fragment);
+
+		icon->relocated_src = gf_malloc(strlen(icon_relocated_path) + strlen(uri_fragment) + 1);
+		strcpy(icon->relocated_src, icon_relocated_path);
+		strcat(icon->relocated_src, uri_fragment);
+	} else {
+		icon->src = gf_strdup(icon_localized_path);
+		icon->relocated_src = gf_strdup(icon_relocated_path);
+	}
 	icon->interfaces = gf_list_new();
 	icon->components = gf_list_new();
 	icon->preferences = gf_list_new();
@@ -2900,19 +2904,19 @@ static void wm_set_default_icon_files(GF_WidgetManager *wm, const char *widget_p
 	Bool result;
 
 	result = wm_relocate_url(wm, widget_path, "icon.svg", relocated_path, localized_path);
-	if (result) wm_add_icon(widget, relocated_path, localized_path);
+	if (result) wm_add_icon(widget, relocated_path, localized_path, NULL);
 
 	result = wm_relocate_url(wm, widget_path, "icon.ico", relocated_path, localized_path);
-	if (result) wm_add_icon(widget, relocated_path, localized_path);
+	if (result) wm_add_icon(widget, relocated_path, localized_path, NULL);
 
 	result = wm_relocate_url(wm, widget_path, "icon.png", relocated_path, localized_path);
-	if (result) wm_add_icon(widget, relocated_path, localized_path);
+	if (result) wm_add_icon(widget, relocated_path, localized_path, NULL);
 
 	result = wm_relocate_url(wm, widget_path, "icon.gif", relocated_path, localized_path);
-	if (result) wm_add_icon(widget, relocated_path, localized_path);
+	if (result) wm_add_icon(widget, relocated_path, localized_path, NULL);
 
 	result = wm_relocate_url(wm, widget_path, "icon.jpg", relocated_path, localized_path);
-	if (result) wm_add_icon(widget, relocated_path, localized_path);
+	if (result) wm_add_icon(widget, relocated_path, localized_path, NULL);
 }
 
 GF_WidgetInstance *wm_load_widget(GF_WidgetManager *wm, const char *path, u32 InstanceID, Bool skip_context)
@@ -3167,7 +3171,7 @@ GF_WidgetInstance *wm_load_widget(GF_WidgetManager *wm, const char *path, u32 In
 				if (sep) sep[0] = '#';
 				if (!result) continue;
 
-				iconic = wm_add_icon(widget, relocated, localized_path);
+				iconic = wm_add_icon(widget, relocated, localized_path, sep);
 				if (iconic) {
 					wm_parse_mpegu_content_element(iconic, icon, mpegu_ns_prefix, global_prefs);
 					icon_width = (char *)wm_xml_get_attr(icon, "width");
@@ -3436,7 +3440,7 @@ static JSBool SMJS_FUNCTION(wm_initialize)
 	u32 i, count;
 	const char*opt;
 	SMJS_OBJ
-	SMJS_ARGS
+	//SMJS_ARGS
 	GF_WidgetManager *wm = (GF_WidgetManager *)JS_GetPrivate(c, obj);
 
 	count = gf_cfg_get_key_count(wm->term->user->config, "Widgets");

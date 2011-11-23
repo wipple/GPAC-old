@@ -320,7 +320,6 @@ static JSBool svg_element_getProperty(JSContext *c, JSObject *obj, SMJS_PROP_GET
 	if (!SMJS_ID_IS_INT(id)) return JS_TRUE;
 	prop_id = SMJS_ID_TO_INT(id);
 
-
 	switch (prop_id) {
 	case 0: /*id*/
 	{
@@ -517,6 +516,9 @@ JSBool SMJS_FUNCTION_EXT(svg_udom_smil_time_insert, Bool is_end)
 		info.far_ptr = ((SVGTimedAnimBaseElement *)n)->timingp->end;
 	} else {
 		info.far_ptr = ((SVGTimedAnimBaseElement *)n)->timingp->begin;
+	}
+	if (!info.far_ptr) {
+		return JS_FALSE;
 	}
 
 
@@ -1217,7 +1219,6 @@ static JSBool SMJS_FUNCTION_EXT(svg_get_bbox, Bool get_screen)
 {
 	GF_JSAPIParam par;
 	SMJS_OBJ
-	SMJS_ARGS
 	GF_Node *n = dom_get_element(c, obj);
 	if (!n || argc) return JS_TRUE;
 
@@ -1254,7 +1255,6 @@ JSBool SMJS_FUNCTION(svg_udom_get_screen_ctm)
 {
 	GF_JSAPIParam par;
 	SMJS_OBJ
-	SMJS_ARGS
 	GF_Node *n = dom_get_element(c, obj);
 	if (!n || argc) return JS_TRUE;
 

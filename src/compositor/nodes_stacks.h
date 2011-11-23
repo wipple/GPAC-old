@@ -156,6 +156,8 @@ void compositor_init_transformmatrix2d(GF_Compositor *compositor, GF_Node *node)
 void compositor_init_indexed_line_set2d(GF_Compositor *compositor, GF_Node *node);
 void compositor_init_indexed_face_set2d(GF_Compositor *compositor, GF_Node *node);
 
+void compositor_init_bitwrapper(GF_Compositor *compositor, GF_Node *node);
+
 void compositor_init_viewport(GF_Compositor *compositor, GF_Node *node);
 
 void tr_mx2d_get_matrix(GF_Node *n, GF_Matrix2D *mat);
@@ -320,6 +322,8 @@ Bool compositor_svg_get_viewport(GF_Node *n, GF_Rect *rc);
 void svg_pause_animation(GF_Node *n, Bool pause);
 void svg_pause_audio(GF_Node *n, Bool pause);
 void svg_pause_video(GF_Node *n, Bool pause);
+
+void compositor_svg_video_modified(GF_Compositor *compositor, GF_Node *node);
 
 #endif
 

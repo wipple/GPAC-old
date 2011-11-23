@@ -42,6 +42,7 @@ typedef struct __tag_osmozilla
 	int window_set;
 	unsigned int height, width;
 
+	int supports_xembed;
 	/*GPAC term*/
 	GF_User *user;
 	GF_Terminal *term;
@@ -55,6 +56,7 @@ typedef struct __tag_osmozilla
 	/*timing info of current url*/
 	double duration;
 	char can_seek;
+	int use_gui;
 
 	/*log file if any*/
 	FILE *logs;

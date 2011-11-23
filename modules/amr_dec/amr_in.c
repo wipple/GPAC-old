@@ -262,6 +262,9 @@ static void AMR_DownloadFile(GF_InputService *plug, char *url)
 	if (!read->dnload) {
 		read->needs_connection = 0;
 		gf_term_on_connect(read->service, NULL, GF_NOT_SUPPORTED);
+	} else {
+		/*start our download (threaded)*/
+		gf_dm_sess_process(read->dnload);
 	}
 	/*service confirm is done once fetched*/
 }
@@ -464,17 +467,17 @@ fetch_next:
 		switch (read->mtype) {
 		case TYPE_AMR:
 			ft = (toc >> 3) & 0x0F;
-			read->data_size = GF_AMR_FRAME_SIZE[ft];
+			read->data_size = (u32)GF_AMR_FRAME_SIZE[ft];
 			break;
 		case TYPE_AMR_WB:
 			ft = (toc >> 3) & 0x0F;
-			read->data_size = GF_AMR_WB_FRAME_SIZE[ft];
+			read->data_size = (u32)GF_AMR_WB_FRAME_SIZE[ft];
 			break;
 		default:
 			for (i=0; i<GF_SMV_EVRC_RATE_TO_SIZE_NB; i++) {
 				if (GF_SMV_EVRC_RATE_TO_SIZE[2*i]==toc) {
 					/*remove rate_type byte*/
-					read->data_size = GF_SMV_EVRC_RATE_TO_SIZE[2*i+1] - 1;
+					read->data_size = (u32)GF_SMV_EVRC_RATE_TO_SIZE[2*i+1] - 1;
 					break;
 				}
 			}

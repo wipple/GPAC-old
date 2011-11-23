@@ -345,13 +345,13 @@ static void Channel_UpdateBuffering(GF_Channel *ch, Bool update_info)
 {
 	if (update_info && ch->MaxBuffer) gf_scene_buffering_info(ch->odm->parentscene ? ch->odm->parentscene : ch->odm->subscene);
 
-	gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_DATA_PROGRESS);
+	gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_PROGRESS);
 	
 	if (!Channel_NeedsBuffering(ch, 0)) {
 		ch_buffer_off(ch);
 		if (ch->MaxBuffer && update_info) gf_scene_buffering_info(ch->odm->parentscene ? ch->odm->parentscene : ch->odm->subscene);
 
-		gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_PLAYABLE);
+		gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_PLAYING);
 	}
 }
 
@@ -578,7 +578,7 @@ static void Channel_DispatchAU(GF_Channel *ch, u32 duration)
 	} else {
 		/*trigger the data progress every 500 ms*/
 		if (ch->last_au_time + 500 > time) {
-			gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_DATA_PROGRESS);
+			gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_PROGRESS);
 			ch->last_au_time = time;
 		}
 	}
@@ -680,13 +680,21 @@ static void gf_es_check_timing(GF_Channel *ch)
 
 void gf_es_dispatch_raw_media_au(GF_Channel *ch, char *payload, u32 payload_size, u32 cts)
 {
+	u32 now;
 	GF_CompositionMemory *cb;
 	GF_CMUnit *cu;
 	if (!payload || !ch->odm->codec->CB) return;
 	if (!ch->odm->codec->CB->no_allocation) return;
 
-	if (cts + 100 < gf_clock_real_time(ch->clock)) {
-		GF_LOG(GF_LOG_WARNING, GF_LOG_MEDIA, ("[ODM%d] Raw Frame dispatched at OTB %d but frame TS is %d ms - DROPPING\n", ch->odm->OD->objectDescriptorID, gf_clock_real_time(ch->clock), cts));
+	now = gf_clock_real_time(ch->clock);
+	if (cts + ch->MinBuffer < now) {
+		if (ch->MinBuffer && (ch->is_raw_channel==2)) {
+			ch->clock->clock_init = 0;
+			gf_clock_set_time(ch->clock, cts);
+			GF_LOG(GF_LOG_WARNING, GF_LOG_MEDIA, ("[ODM%d] Raw Frame dispatched at OTB %d but frame TS is %d ms - adjusting clock\n", ch->odm->OD->objectDescriptorID, now, cts));
+		} else {
+			GF_LOG(GF_LOG_WARNING, GF_LOG_MEDIA, ("[ODM%d] Raw Frame dispatched at OTB %d but frame TS is %d ms - DROPPING\n", ch->odm->OD->objectDescriptorID, now, cts));
+		}
 		return;
 	}
 
@@ -1347,7 +1355,7 @@ void gf_es_drop_au(GF_Channel *ch)
 	/*if we get under our limit, rebuffer EXCEPT WHEN EOS is signaled*/
 	if (!ch->IsEndOfStream && Channel_NeedsBuffering(ch, 1)) {
 		ch_buffer_on(ch);
-		gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_NOT_PLAYABLE);
+		gf_term_service_media_event(ch->odm, GF_EVENT_MEDIA_WAITING);
 	}
 
 	/*unlock the channel*/

@@ -213,10 +213,12 @@ void PrintUsage()
 		"\n"
 		"\t-help:          show this screen\n"
 		"\n"
-		"MP4Client - GPAC command line player and dumper - version %s\n"
-		"GPAC Written by Jean Le Feuvre (c) 2001-2005 - ENST (c) 2005-200X\n",
+		"MP4Client - GPAC command line player and dumper - version "GPAC_FULL_VERSION"\n"
+		"GPAC Written by Jean Le Feuvre (c) 2001-2005 - ENST (c) 2005-200X\n"
+		"GPAC Configuration: " GPAC_CONFIGURATION "\n"
+		"Features: %s\n", 
 		GF_IMPORT_DEFAULT_FPS,
-		GPAC_FULL_VERSION
+		gpac_features()
 		);
 }
 
@@ -460,7 +462,7 @@ Bool GPAC_EventProc(void *ptr, GF_Event *evt)
 {
 	if (!term) return 0;
 	
-	if (gui_mode) {
+	if (gui_mode==1) {
 		if (evt->type==GF_EVENT_QUIT) Run = 0;
 		return 0;
 	}
@@ -638,7 +640,7 @@ Bool GPAC_EventProc(void *ptr, GF_Event *evt)
 		ResetCaption();
 		break;
 	case GF_EVENT_EOS:
-		if (loop_at_end) restart = 1;
+		if (!playlist && loop_at_end) restart = 1;
 		break;
 	case GF_EVENT_SIZE:
 		if (user.init_flags & GF_TERM_WINDOWLESS) {
@@ -1344,9 +1346,15 @@ force_input:
 		case '\n':
 		case 'N':
 			if (playlist) {
+				int res;
 				gf_term_disconnect(term);
 
-				if (fscanf(playlist, "%s", the_url) == EOF) {
+				res = fscanf(playlist, "%s", the_url);
+				if ((res == EOF) && loop_at_end) {
+					fseek(playlist, 0, SEEK_SET);
+					res = fscanf(playlist, "%s", the_url);
+				}
+				if (res == EOF) {
 					fprintf(stdout, "No more items - exiting\n");
 					Run = 0;
 				} else {

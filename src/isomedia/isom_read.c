@@ -150,7 +150,7 @@ GF_Err gf_isom_open_progressive(const char *fileName, GF_ISOFile **the_file, u64
 	movie->finalName = NULL;
 #endif /*GPAC_DISABLE_ISOM_WRITE*/
 
-	e = gf_isom_parse_movie_boxes(movie, BytesMissing);
+	e = gf_isom_parse_movie_boxes(movie, BytesMissing, 1);
 	if (e == GF_ISOM_INCOMPLETE_FILE) {
 		//if we have a moov, we're fine
 		if (movie->moov) {
@@ -1707,7 +1707,7 @@ GF_EXPORT
 GF_Err gf_isom_get_chunks_infos(GF_ISOFile *movie, u32 trackNumber, u32 *dur_min, u32 *dur_avg, u32 *dur_max, u32 *size_min, u32 *size_avg, u32 *size_max)
 {
 	GF_TrackBox *trak;
-	u32 i, k, sample_per_chunk, sample_idx, dmin, dmax, smin, smax, tot_chunks;
+	u32 i, k, sample_idx, dmin, dmax, smin, smax, tot_chunks;
 	u64 davg, savg;
 	GF_SampleToChunkBox *stsc;
 	GF_TimeToSampleBox *stts;
@@ -1723,7 +1723,6 @@ GF_Err gf_isom_get_chunks_infos(GF_ISOFile *movie, u32 trackNumber, u32 *dur_min
 	davg = savg = 0;
 	sample_idx = 1;
 	tot_chunks = 0;
-	sample_per_chunk = 0;
 	for (i=0; i<stsc->nb_entries; i++) {
 		u32 nb_chunk = 0;
 		while (1) {
@@ -1916,7 +1915,7 @@ GF_Err gf_isom_refresh_fragmented(GF_ISOFile *movie, u64 *MissingBytes)
 	if (prevsize==size) return GF_OK;
 
 	//ok parse root boxes
-	return gf_isom_parse_movie_boxes(movie, MissingBytes);
+	return gf_isom_parse_movie_boxes(movie, MissingBytes, 1);
 #endif
 }
 
@@ -1994,7 +1993,7 @@ GF_Err gf_isom_open_segment(GF_ISOFile *movie, const char *fileName)
 
 	movie->current_top_box_start = 0;
 	//ok parse root boxes
-	return gf_isom_parse_movie_boxes(movie, &MissingBytes);
+	return gf_isom_parse_movie_boxes(movie, &MissingBytes, 1);
 #endif
 }
 
@@ -2652,5 +2651,16 @@ GF_Err gf_isom_get_rvc_config(GF_ISOFile *movie, u32 track, u32 sampleDescriptio
 	return GF_OK;
 }
 
+GF_EXPORT
+Bool gf_isom_moov_first(GF_ISOFile *movie)
+{
+	u32 i;
+	for (i=0; i<gf_list_count(movie->TopBoxes); i++) {
+		GF_Box *b = gf_list_get(movie->TopBoxes, i);
+		if (b->type == GF_ISOM_BOX_TYPE_MOOV) return 1;
+		if (b->type == GF_ISOM_BOX_TYPE_MDAT) return 0;
+	}
+	return 0;
+}
 
 #endif /*GPAC_DISABLE_ISOM*/

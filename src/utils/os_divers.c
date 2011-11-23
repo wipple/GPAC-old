@@ -29,6 +29,7 @@
 #include <winbase.h>
 #include <winsock.h>
 #include <tlhelp32.h>
+//#include <direct.h>
 
 #if !defined(__GNUC__)
 #pragma comment(lib, "toolhelp")
@@ -41,6 +42,7 @@
 #include <io.h>
 #include <windows.h>
 #include <tlhelp32.h>
+#include <direct.h>
 
 #if !defined(__GNUC__)
 #pragma comment(lib, "winmm")
@@ -119,6 +121,34 @@ void gf_sleep(u32 ms)
 		sel_err = select(0, NULL, NULL, NULL, &tv);
 	} while ( sel_err && (errno == EINTR) );
 #endif
+}
+
+GF_Err gf_mkdir(char* DirPathName)
+{
+#if defined (_WIN32_WCE)
+	TCHAR swzName[MAX_PATH];
+	BOOL res;
+	CE_CharToWide(DirPathName, swzName);
+	res = CreateDirectory(swzName, NULL);
+	if (! res) {
+		int err = GetLastError();
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE, ("Cannot create director %s: last error %d\n", DirPathName, err ));
+	}
+#elif defined (WIN32)
+	int res = mkdir(DirPathName);
+	if (res==-1) {
+		int err = GetLastError();
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE, ("Cannot create director %s: last error %d\n", DirPathName, err ));
+		return GF_IO_ERR;
+	}
+#else
+    int res = mkdir(DirPathName, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+	if (res==-1) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE, ("Cannot create director %s: last error %d\n", DirPathName, errno  ));
+		return GF_IO_ERR;
+	}
+#endif
+	return GF_OK;
 }
 
 #ifndef gettimeofday
@@ -1288,16 +1318,16 @@ Bool gf_sys_get_rti_os(u32 refresh_time_ms, GF_SystemRTInfo *rti, u32 flags)
 	int result;
 	int pagesize;
 	u64 process_u_k_time;
-	mach_msg_type_number_t count = HOST_VM_INFO_COUNT;	
+	double utime, stime;
 	vm_statistics_data_t vmstat;
 	task_t task;
 	kern_return_t error;
 	thread_array_t thread_table;
+	unsigned table_size;
 	thread_basic_info_t thi;
 	thread_basic_info_data_t thi_data;
-	unsigned table_size;
 	struct task_basic_info ti;
-	double utime, stime;
+	mach_msg_type_number_t count = HOST_VM_INFO_COUNT, size = sizeof(ti);
 
 	entry_time = gf_sys_clock();
 	if (last_update_time && (entry_time - last_update_time < refresh_time_ms)) {
@@ -1328,10 +1358,15 @@ Bool gf_sys_get_rti_os(u32 refresh_time_ms, GF_SystemRTInfo *rti, u32 flags)
 		}
 	}
 	
-	
 	error = task_for_pid(mach_task_self(), the_rti.pid, &task);
  	if (error) {
 		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE, ("[RTI] Cannot get process task for PID %d: error %d\n", the_rti.pid, error));
+		return 0;
+	}
+
+	error = task_info(mach_task_self(), TASK_BASIC_INFO, (task_info_t)&ti, &size);
+	if (error) {
+		GF_LOG(GF_LOG_ERROR, GF_LOG_CORE, ("[RTI] Cannot get process task info (PID %d): error %d\n", the_rti.pid, error));
 		return 0;
 	}
 	

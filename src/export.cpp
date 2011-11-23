@@ -43,6 +43,7 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_sys_init) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sys_close) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sleep) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_mkdir) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sys_clock) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sys_get_rti) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sys_get_battery_state) )
@@ -554,6 +555,7 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_delete) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_mode) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_file_size) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_isom_moov_first) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_get_timed_meta_data_info) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_box_new) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_isom_box_del) )
@@ -1106,8 +1108,8 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_img_parse) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_img_jpeg_dec) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_img_png_dec) )
-#pragma comment (linker, EXPORT_SYMBOL(gf_img_png_file_dec) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_img_png_enc) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_img_file_dec) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_m4v_get_profile_name) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_mp3_version) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_mp3_version_name) )
@@ -1149,7 +1151,9 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_sm_load_run) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sm_load_suspend) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sm_import_bifs_subtitle) )
+#ifndef GPAC_DISABLE_LOADER_BT
 #pragma comment (linker, EXPORT_SYMBOL(gf_sm_load_bt_from_string) )
+#endif
 
 #ifndef GPAC_DISABLE_SCENE_ENCODER
 #pragma comment (linker, EXPORT_SYMBOL(gf_sm_encode_to_file) )
@@ -1319,14 +1323,18 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_js_add_root) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_js_add_named_root) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_js_remove_root) )
-
+#pragma comment (linker, EXPORT_SYMBOL(gf_js_vrml_flush_event_out) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sg_js_has_instance) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_sg_lock_javascript) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_sg_try_lock_javascript) )
 
 #ifndef GPAC_DISABLE_SVG
+#pragma comment (linker, EXPORT_SYMBOL(dom_js_pre_destroy) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sg_js_event_add_listener) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sg_js_event_remove_listener) )
 #endif
-#endif
+
+#endif /*GPAC_HAS_SPIDERMONKEY*/
 
 /* scenegraph_vrml.h exports*/
 #pragma comment (linker, EXPORT_SYMBOL(gf_node_replace_child) )
@@ -1397,7 +1405,6 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_sg_get_next_available_proto_id) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sg_set_proto_loader) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sg_sfcolor_to_rgba) )
-#pragma comment (linker, EXPORT_SYMBOL(gf_sg_lock_javascript) )
 
 #ifndef GPAC_DISABLE_X3D
 #pragma comment (linker, EXPORT_SYMBOL(gf_node_x3d_type_by_class_name) )
@@ -1495,9 +1502,9 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_sc_add_audio_listener) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sc_remove_audio_listener) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sc_focus_switch_ring) )
-#pragma comment (linker, EXPORT_SYMBOL(gf_sc_animation_get_scenegraph) )
 
 #ifndef GPAC_DISABLE_SVG
+#pragma comment (linker, EXPORT_SYMBOL(gf_sc_animation_get_scenegraph) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_sc_svg_convert_length_to_display) )
 #endif
 
@@ -1552,6 +1559,15 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_set_pes_framing) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_get_stream_name) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_crc32_check) )
+
+/* carousel.h */
+#pragma comment (linker, EXPORT_SYMBOL(on_ait_section) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_process_ait) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_ait_destroy) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_process_dsmcc) )
+#pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_init_dsmcc_overlord))
+#pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_get_dmscc_overlord))
+
 
 #ifndef GPAC_DISABLE_MPEG2TS_MUX
 #pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_mux_new) )
@@ -1616,10 +1632,3 @@
 #pragma comment (linker, EXPORT_SYMBOL(gf_dvb_mpe_shutdown) )
 #pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_print_mpe_info) )
 #endif
-
-/* carousel.h */
-#pragma comment (linker, EXPORT_SYMBOL(on_ait_section) )
-#pragma comment (linker, EXPORT_SYMBOL(gf_m2ts_process_ait) )
-
-
-

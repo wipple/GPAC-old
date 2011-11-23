@@ -320,8 +320,9 @@ void gf_odm_setup_entry_point(GF_ObjectManager *odm, const char *service_sub_url
 
 	if (!desc) {
 		/*if desc is NULL for a media, the media will be declared later by the service (gf_term_media_add)*/
-		if (od_type != GF_MEDIA_OBJECT_SCENE)
+		if (od_type != GF_MEDIA_OBJECT_SCENE) {
 			return;
+		}
 		/*create empty service descriptor, this will automatically create a dynamic scene*/
 		desc = gf_odf_desc_new(GF_ODF_OD_TAG);
 	}
@@ -456,7 +457,7 @@ GF_Err ODM_ValidateOD(GF_ObjectManager *odm, Bool *hasInline)
 	u16 es_id;
 	GF_ESD *esd, *base_scene;
 	const char *sOpt;
-	u32 lang, nb_od, nb_ocr, nb_scene, nb_mp7, nb_ipmp, nb_oci, nb_mpj, nb_other, prev_st;
+	u32 nb_od, nb_ocr, nb_scene, nb_mp7, nb_ipmp, nb_oci, nb_mpj, nb_other, prev_st;
 
 	nb_od = nb_ocr = nb_scene = nb_mp7 = nb_ipmp = nb_oci = nb_mpj = nb_other = 0;
 	prev_st = 0;
@@ -511,8 +512,8 @@ GF_Err ODM_ValidateOD(GF_ObjectManager *odm, Bool *hasInline)
 		gf_cfg_set_key(odm->term->user->config, "Systems", "Language2CC", "en");
 		gf_cfg_set_key(odm->term->user->config, "Systems", "LanguageName", "English");
 	}
-	lang = (sOpt[0]<<16) | (sOpt[1]<<8) | sOpt[2];
 #if 0
+	lang = (sOpt[0]<<16) | (sOpt[1]<<8) | sOpt[2];
 	if (gf_list_count(odm->OD->ESDescriptors)>1) {
 		ODM_SelectAlternateStream(odm, lang, GF_STREAM_SCENE);
 		ODM_SelectAlternateStream(odm, lang, GF_STREAM_OD);
@@ -867,22 +868,21 @@ clock_setup:
 		/*OD codec acts as main scene codec when used to generate scene graph*/
 		if (! odm->subscene->od_codec) {
 			odm->subscene->od_codec = gf_codec_new(odm, esd, odm->OD_PL, &e);
-			if (e) return e;
-			gf_term_add_codec(odm->term, odm->subscene->od_codec);
+			if (!e) gf_term_add_codec(odm->term, odm->subscene->od_codec);
 		} 
 		dec = odm->subscene->od_codec;
 		break;
 	case GF_STREAM_OCR:
 		/*OD codec acts as main scene codec when used to generate scene graph*/
 		dec = odm->ocr_codec = gf_codec_new(odm, esd, odm->OD_PL, &e);
-		gf_term_add_codec(odm->term, odm->ocr_codec);
+		if (!e) gf_term_add_codec(odm->term, odm->ocr_codec);
 		break;
 	case GF_STREAM_SCENE:
 		/*animationStream */
 		if (!odm->subscene) {
 			if (!odm->codec) {
 				odm->codec = gf_codec_new(odm, esd, odm->Scene_PL, &e);
-				gf_term_add_codec(odm->term, odm->codec);
+				if (!e) gf_term_add_codec(odm->term, odm->codec);
 			}
 			dec = odm->codec;
 		}
@@ -903,7 +903,7 @@ clock_setup:
 		} else {
 			odm->oci_codec = gf_codec_new(odm, esd, odm->OD_PL, &e);
 			odm->oci_codec->odm = odm;
-			gf_term_add_codec(odm->term, odm->oci_codec);
+			if (!e) gf_term_add_codec(odm->term, odm->oci_codec);
 		}
 		break;
 #endif
@@ -1447,7 +1447,7 @@ void gf_odm_play(GF_ObjectManager *odm)
 		return;
 	}
 
-	gf_term_service_media_event(odm, GF_EVENT_MEDIA_DATA_REQUEST);
+	gf_term_service_media_event(odm, GF_EVENT_MEDIA_LOAD_START);
 
 
 	/*start codecs last (otherwise we end up pulling data from channels not yet connected->pbs when seeking)*/
@@ -1582,7 +1582,7 @@ void gf_odm_stop(GF_ObjectManager *odm, Bool force_close)
 			GF_LOG(GF_LOG_INFO, GF_LOG_MEDIA, ("[ODM%d] CH %d At OTB %d requesting STOP\n", odm->OD->objectDescriptorID, ch->esd->ESID, gf_clock_time(ch->clock)));
 		}
 	}
-	gf_term_service_media_event(odm, GF_EVENT_MEDIA_STOP);
+	gf_term_service_media_event(odm, GF_EVENT_ABORT);
 
 	/*stop channels*/
 	i=0;
@@ -1640,7 +1640,7 @@ void gf_odm_on_eos(GF_ObjectManager *odm, GF_Channel *on_channel)
 	} else {
 		if (nb_eos != count) return;
 	}
-	gf_term_service_media_event(odm, GF_EVENT_MEDIA_END_OF_DATA);
+	gf_term_service_media_event(odm, GF_EVENT_MEDIA_LOAD_DONE);
 	
 	if (odm->codec && (on_channel->esd->decoderConfig->streamType==odm->codec->type)) {
 		gf_codec_set_status(odm->codec, GF_ESM_CODEC_EOS);

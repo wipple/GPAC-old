@@ -1311,7 +1311,7 @@ static void svg_traverse_animation(GF_Node *node, void *rs, Bool is_destroy)
 	gf_mx2d_apply_rect(&tr_state->transform, &rc);
 	prev_clip = tr_state->visual->top_clipper;
 	clip = gf_rect_pixelize(&rc);
-//	gf_irect_intersect(&tr_state->visual->top_clipper, &clip);
+	gf_irect_intersect(&tr_state->visual->top_clipper, &clip);
 
 	if (!stack->inline_sg && stack->resource) {
 		stack->inline_sg = gf_mo_get_scenegraph(stack->resource);

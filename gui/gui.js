@@ -28,6 +28,7 @@ UPnP_Enabled = false;
 browser_mode = false;
 upnp_renderers = null;
 current_url = '';
+current_duration = 0.0;
 current_time = 0.0;
 player_control = null;
 
@@ -45,6 +46,7 @@ function new_extension()
 function on_movie_duration(value)
 {
   if (value<0) value=0;
+  current_duration = value;
   player_control.set_duration(value);
   if (UPnP_Enabled) UPnP.MovieDuration = value;
 }
@@ -230,6 +232,7 @@ function compute_movie_size(width, height)
    
    w = width;
    h = height;
+   r_w = r_h = 1;
    if (w < min_width) r_w = Math.ceil(min_width/w);
    if (h < min_height) r_h = Math.ceil(min_height/h);
    if (r_w < r_h) r_w = r_h;
@@ -247,8 +250,8 @@ function initialize() {
     gpac.caption = 'Osmo4';
     current_time = 0;
 
-    min_width = 320;
-    min_height = 240;
+    min_width = 160;
+    min_height = 80;
     
     /*load the UI lib*/
     Browser.loadScript('gwlib.js', false);
@@ -270,6 +273,27 @@ function initialize() {
       }
     }
     movie.children[0].addEventListener('gpac_scene_attached', movie.children[0].on_size, 0);
+
+    movie.children[0].on_media_progress = function(evt) {
+     if (!current_duration) return;
+     /*this is not conform to HTML5, we're using the old MediaAccessEvent syntax ...*/
+     var percent_dload = 100.0 * evt.loaded / evt.total;
+     var percent_playback = 100.0 * current_time / current_duration;
+     //alert('URL data ' + percent_dload + ' - ' + percent_playback + ' playback');     
+    }
+    movie.children[0].addEventListener('progress', movie.children[0].on_media_progress, 0);
+
+    movie.children[0].on_media_playing = function(evt) {
+     alert('URL is now paying');     
+    }
+    movie.children[0].addEventListener('playing', movie.children[0].on_media_playing, 0);
+    movie.children[0].addEventListener('canplay', movie.children[0].on_media_playing, 0);
+
+    movie.children[0].on_media_waiting = function(evt) {
+     alert('URL is now buffering');     
+    }
+    movie.children[0].addEventListener('waiting', movie.children[0].on_media_waiting, 0);
+
     
     display_width = parseInt( gpac.getOption('General', 'LastWidth') );
     display_height = parseInt( gpac.getOption('General', 'LastHeight') );
@@ -413,12 +437,13 @@ function set_movie_url(url)
     test_resource.on_attached = function(evt) {
 
       this.callback_done = true;
+      var current_url = this.url[0];
+      
+      /*process the error or connect service*/
       if (evt.error) {
         var notif = gw_new_message(null, 'Error!', 'Failed to open\n'+this.url[0]+ '\nReason: '+gpac.error_string(evt.error) );
         gpacui_show_window(notif);
       } else {
-        current_url = this.url[0];
-
         movie.children[0].url[0] = current_url;
         movie_ctrl.url[0] = current_url;
         movie_sensor.url[0] = current_url;
@@ -432,11 +457,12 @@ function set_movie_url(url)
           gpac.set_3d(evt.type3d ? 1 : 0);
         }
       }
-      /*and destroy the resource node*/
+      /*destroy the resource node*/
       this.url.length = 0;
       gw_detach_child(this);
       test_resource.removeEventListener('gpac_scene_attached', test_resource.on_attached, 0);
       this.on_attached = null;
+      
     }
     /*get notified when service loads or fails*/
     test_resource.addEventListener('gpac_scene_attached', test_resource.on_attached, 0);

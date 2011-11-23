@@ -776,6 +776,7 @@ void gf_term_connect_with_path(GF_Terminal * term, const char *URL, const char *
 GF_EXPORT
 void gf_term_disconnect(GF_Terminal *term)
 {
+	Bool handle_services;
 	if (!term->root_scene) return;
 	/*resume*/
 	if (term->play_state != GF_STATE_PLAYING) gf_term_set_play_state(term, GF_STATE_PLAYING, 1, 1);
@@ -793,8 +794,18 @@ void gf_term_disconnect(GF_Terminal *term)
 		gf_scene_del(term->root_scene);
 		term->root_scene = NULL;
 	}
+	handle_services = 0;
+	if (term->flags & GF_TERM_NO_DECODER_THREAD) 
+		handle_services = 1;
+	/*if an unthreaded term extension decides to disconnect the scene (validator does so), we must flush services now
+	because we are called from gf_term_handle_services*/
+	if (term->thread_id_handling_services == gf_th_id()) 
+		handle_services = 1;
+
 	while (term->root_scene || gf_list_count(term->net_services_to_remove) || gf_list_count(term->connection_tasks)  || gf_list_count(term->media_queue) ) {
-		gf_term_handle_services(term);
+		if (handle_services) {
+			gf_term_handle_services(term);
+		}
 		gf_sleep(10);
 	}
 }
@@ -947,6 +958,8 @@ void gf_term_handle_services(GF_Terminal *term)
 	if (!gf_mx_try_lock(term->media_queue_mx))
 		return;	
 
+	term->thread_id_handling_services = gf_th_id();
+
 	/*play ODs that need it*/
 	while (gf_list_count(term->media_queue)) {
 		Bool destroy = 0;
@@ -1004,14 +1017,14 @@ void gf_term_handle_services(GF_Terminal *term)
 		/*unlock media queue before sending connect*/
 		gf_term_lock_media_queue(term, 0);
 
-		gf_mx_p(term->net_mx);
+//		gf_mx_p(term->net_mx);
 
 		/*if object has already been attached to its service (eg, task was posted but media_add occured inbetween), ignore*/
 		if (!connect->odm->net_service && !(connect->odm->flags & GF_ODM_DESTROYED) ) {
 			gf_term_connect_object(term, connect->odm, connect->service_url, connect->parent_url);
 		}
 
-		gf_mx_v(term->net_mx);
+//		gf_mx_v(term->net_mx);
 		
 		gf_free(connect->service_url);
 		if (connect->parent_url) gf_free(connect->parent_url);
@@ -1068,14 +1081,16 @@ void gf_term_handle_services(GF_Terminal *term)
 		term->reload_state = 2;
 	}
 	if (term->reload_state == 2) {
-		if (gf_list_count(term->net_services)) return;
-		term->reload_state = 0;
-		if (term->reload_url) {
-			gf_term_connect(term, term->reload_url);
-			gf_free(term->reload_url);
+		if (! gf_list_count(term->net_services)) {
+			term->reload_state = 0;
+			if (term->reload_url) {
+				gf_term_connect(term, term->reload_url);
+				gf_free(term->reload_url);
+			}
+			term->reload_url = NULL;
 		}
-		term->reload_url = NULL;
 	}
+	term->thread_id_handling_services = 0;
 }
 
 void gf_term_queue_node_traverse(GF_Terminal *term, GF_Node *node)
@@ -1102,7 +1117,7 @@ void gf_term_check_connections_for_delete(GF_Terminal *term, GF_ObjectManager *o
 {
 	GF_TermConnectObject *ct;
 	u32 i = 0;
-	while (ct = gf_list_enum(term->connection_tasks, &i)) {
+	while (NULL != (ct = (gf_list_enum(term->connection_tasks, &i)))) {
 		if (ct->odm == odm) {
 			i--;
 			gf_list_rem(term->connection_tasks, i);
@@ -1176,7 +1191,7 @@ void gf_term_lock_net(GF_Terminal *term, Bool LockIt)
 	}
 }
 
-static void mae_collect_info(GF_ClientService *net, GF_ObjectManager *odm, GF_DOMMediaAccessEvent *mae, u32 transport, u32 *min_time, u32 *min_buffer)
+static void media_event_collect_info(GF_ClientService *net, GF_ObjectManager *odm, GF_DOMMediaEvent *media_event, u32 *min_time, u32 *min_buffer)
 {
 	u32 i=0;
 	GF_Channel *ch;
@@ -1185,7 +1200,7 @@ static void mae_collect_info(GF_ClientService *net, GF_ObjectManager *odm, GF_DO
 		u32 val;
 		if (ch->service != net) continue;
 
-		mae->bufferValid = 1;
+		media_event->bufferValid = 1;
 		if (ch->BufferTime>0) {
 			if (ch->MaxBuffer) {
 				val = (ch->BufferTime * 100) / ch->MaxBuffer;
@@ -1199,21 +1214,15 @@ static void mae_collect_info(GF_ClientService *net, GF_ObjectManager *odm, GF_DO
 			*min_time = 0;
 			*min_buffer = 0;
 		}
-		if (mae->nb_streams<20) {
-			mae->streams[mae->nb_streams].streamType = ch->esd->decoderConfig->streamType;
-			mae->streams[mae->nb_streams].mediaType = ch->esd->decoderConfig->objectTypeIndication;
-			mae->streams[mae->nb_streams].transport = transport;
-			mae->nb_streams ++;
-		}
 	}
 }
 
-void gf_term_service_media_event(GF_ObjectManager *odm, u32 event_type)
+void gf_term_service_media_event_with_download(GF_ObjectManager *odm, u32 event_type, u64 loaded_size, u64 total_size, u32 bytes_per_sec)
 {
 #ifndef GPAC_DISABLE_SVG
 	u32 i, count, min_buffer, min_time, transport;
 	Bool locked;
-	GF_DOMMediaAccessEvent mae;
+	GF_DOMMediaEvent media_event;
 	GF_DOM_Event evt;
 	GF_ObjectManager *an_od;
 	GF_Scene *scene;
@@ -1222,46 +1231,44 @@ void gf_term_service_media_event(GF_ObjectManager *odm, u32 event_type)
 	if (odm->mo) {
 		count = gf_list_count(odm->mo->nodes);
 		if (!count) return;
-		if (!(gf_node_get_dom_event_filter(gf_list_get(odm->mo->nodes, 0)) & GF_DOM_EVENT_MEDIA_ACCESS))
+		if (!(gf_node_get_dom_event_filter(gf_list_get(odm->mo->nodes, 0)) & GF_DOM_EVENT_MEDIA))
 			return;
 	} else {
 		count = 0;
 	}
 
 
-	memset(&mae, 0, sizeof(GF_DOMMediaAccessEvent));
+	memset(&media_event, 0, sizeof(GF_DOMMediaEvent));
 	transport = 0;
-	mae.bufferValid = 0;
-	mae.session_name = odm->net_service->url;
-	if (!strnicmp(mae.session_name, "rtsp:", 5) 
-		|| !strnicmp(mae.session_name, "sdp:", 4)
-		|| !strnicmp(mae.session_name, "rtp:", 4)
-	) 
-		transport = 1;
-	else if (!strnicmp(mae.session_name, "dvb:", 4)) 
-		transport = 2;
+	media_event.bufferValid = 0;
+	media_event.session_name = odm->net_service->url;
 
 	min_time = min_buffer = (u32) -1;
 	scene = odm->subscene ? odm->subscene : odm->parentscene;
 	/*get buffering on root OD*/
-	mae_collect_info(odm->net_service, scene->root_od, &mae, transport, &min_time, &min_buffer);
+	media_event_collect_info(odm->net_service, scene->root_od, &media_event, &min_time, &min_buffer);
 	/*get buffering on all ODs*/
 	i=0;
 	while ((an_od = (GF_ObjectManager*)gf_list_enum(scene->resources, &i))) {
-		mae_collect_info(odm->net_service, an_od, &mae, transport, &min_time, &min_buffer);
+		if (odm->net_service == an_od->net_service)
+			media_event_collect_info(odm->net_service, an_od, &media_event, &min_time, &min_buffer);
 	}
 
-	mae.level = min_buffer;
-	mae.remaining_time = INT2FIX(min_time) / 60;
-	mae.status = 0;
+	media_event.level = min_buffer;
+	media_event.remaining_time = INT2FIX(min_time) / 60;
+	media_event.status = 0;
+	media_event.loaded_size = loaded_size;
+	media_event.total_size = total_size;
 
 	memset(&evt, 0, sizeof(GF_DOM_Event));
-	evt.mae = &mae;
+	evt.media_event = &media_event;
 	evt.type = event_type;
 	evt.bubbles = 0;	/*the spec says yes but we force it to NO*/
 
 	/*lock scene to prevent concurrent access of scene data*/
 	locked = gf_mx_try_lock(odm->term->compositor->mx);
+	if (!locked) return;
+
 	for (i=0; i<count; i++) {
 		GF_Node *node = gf_list_get(odm->mo->nodes, i);
 		gf_dom_event_fire(node, &evt);
@@ -1270,10 +1277,14 @@ void gf_term_service_media_event(GF_ObjectManager *odm, u32 event_type)
 		GF_Node *root = gf_sg_get_root_node(scene->graph);
 		if (root) gf_dom_event_fire(root, &evt);
 	}
-	if (locked) gf_sc_lock(odm->term->compositor, 0);
+	gf_sc_lock(odm->term->compositor, 0);
 #endif
 }
 
+void gf_term_service_media_event(GF_ObjectManager *odm, u32 event_type)
+{
+	gf_term_service_media_event_with_download(odm, event_type, 0, 0, 0);
+}
 
 /* Browses all registered relocators (ZIP-based, ISOFF-based or file-system-based to relocate a URI based on the locale */
 Bool gf_term_relocate_url(GF_Terminal *term, const char *service_url, const char *parent_url, char *out_relocated_url, char *out_localized_url) 
@@ -1387,7 +1398,10 @@ static void gf_term_connect_object(GF_Terminal *term, GF_ObjectManager *odm, cha
 			}
 			
 			gf_mx_p(term->net_mx);
-			assert(!odm->net_service);
+			if (odm->net_service) {
+				gf_mx_v(term->net_mx);
+				return;
+			}
 			if (odm->flags & GF_ODM_DESTROYED) {
 				gf_mx_v(term->net_mx);
 				GF_LOG(GF_LOG_WARNING, GF_LOG_MEDIA, ("[ODM%d] Object has been scheduled for destruction - ignoring object setup\n", odm->OD->objectDescriptorID));
@@ -1414,7 +1428,7 @@ static void gf_term_connect_object(GF_Terminal *term, GF_ObjectManager *odm, cha
 	assert(odm->net_service->owner == odm);
 
 	/*OK connect*/
-	gf_term_service_media_event(odm, GF_EVENT_MEDIA_BEGIN_SESSION_SETUP);
+	gf_term_service_media_event(odm, GF_EVENT_MEDIA_SETUP_BEGIN);
 	odm->net_service->ifce->ConnectService(odm->net_service->ifce, odm->net_service, odm->net_service->url);
 
 	/*remove pending download session if any*/

@@ -2,16 +2,16 @@
 #include "../../include/gpac/network.h"
 #include <string.h>
 
+
+#ifndef GPAC_DISABLE_MPEG2TS
+
+
 static void gf_m2ts_Delete_IpPacket(GF_M2TS_IP_Packet *ip_packet);
 
 
 static void empty_list(GF_List * list)
 {
 	void *obj;
-	u32 nb;
-
-	nb = gf_list_count(list);
-
 	while(gf_list_count(list)){
 		obj = gf_list_get(list,0);
 		gf_list_rem(list,0);
@@ -40,11 +40,13 @@ static void on_dvb_mpe_section(GF_M2TS_Demuxer *ts, u32 evt_type, void *par)
 
 		case GF_M2TS_TABLE_ID_MPE_FEC:
 		case GF_M2TS_TABLE_ID_DSM_CC_PRIVATE:
-			if(ts->ip_platform != NULL) {
-				gf_m2ts_process_mpe(ts, (GF_M2TS_SECTION_MPE*)pck->stream, data, u32_data_size, u32_table_id);
-			} else {
+			if ((ts->ip_platform != NULL) || ts->direct_mpe) {
+				GF_M2TS_SECTION_MPE* mpe = (GF_M2TS_SECTION_MPE*)pck->stream;
+				gf_m2ts_process_mpe(ts, mpe, data, u32_data_size, u32_table_id);
+			}
+			else {
 				//printf("Time Slice Parameters for MPE-FEC have not been found yet \n");
-			}						
+			}
 			break;				
 		default:
 			return;
@@ -70,7 +72,6 @@ void gf_dvb_mpe_init(GF_M2TS_Demuxer *ts)
 
 void gf_dvb_mpe_shutdown(GF_M2TS_Demuxer *ts)
 {
-	u32 i_streams, i_targets;
 	GF_M2TS_IP_Stream *ip_stream_buff;
 
 	GF_M2TS_IP_PLATFORM * ip_platform;
@@ -80,8 +81,6 @@ void gf_dvb_mpe_shutdown(GF_M2TS_Demuxer *ts)
 
 	if (!ip_platform) return;
 
-	i_streams = 0;
-	i_targets = 0;
 	if (ip_platform->ip_streams){
 		while(gf_list_count(ip_platform->ip_streams)){
 			ip_stream_buff=gf_list_get(ip_platform->ip_streams, 0);	
@@ -117,6 +116,7 @@ GF_M2TS_ES *gf_dvb_mpe_section_new()
 
 	GF_M2TS_SECTION_MPE *ses;
 	GF_SAFEALLOC(ses, GF_M2TS_SECTION_MPE);
+	ses->mff = NULL;
 	es = (GF_M2TS_ES *)ses;
 	es->flags = GF_M2TS_ES_IS_SECTION | GF_M2TS_ES_IS_MPE;
 	return es;
@@ -159,12 +159,11 @@ void gf_m2ts_process_mpe(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_MPE *mpe, unsigned
 {
 	GF_M2TS_IP_Stream *ip_stream_buff;
 	GF_M2TS_IP_PLATFORM * ip_platform = ts->ip_platform;
-	u32 delta_t;
 	u32 table_boundry_flag;
 	u32 frame_boundry_flag; 
 	u32 offset; 
 	u32 i_streams,j;
-	u32 id,section_length, section_number, last_section_number;
+	u32 section_number, last_section_number;
 	s32 len_left = data_size;
 	assert( ts );
 
@@ -178,11 +177,9 @@ void gf_m2ts_process_mpe(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_MPE *mpe, unsigned
 	}
 	
 	/*get number of rows of mpe_fec_frame from descriptor*/
-	id = data[0];
-	section_length = (data[1] & 0xF)<<8|data[2];
 	section_number = data[6];		
 	last_section_number = data[7];
-	//printf( "table_id: %x section_length: %d section_number: %d last : %d \n",id, section_length, section_number, last_section_number);	
+	//printf( "table_id: %x section_length: %d section_number: %d last : %d \n", data[0], (data[1] & 0xF)<<8|data[2], section_number, last_section_number);	
 	
 	if (ts->direct_mpe) {
 		if (table_id != GF_M2TS_TABLE_ID_DSM_CC_PRIVATE) return;
@@ -201,7 +198,7 @@ void gf_m2ts_process_mpe(GF_M2TS_Demuxer *ts, GF_M2TS_SECTION_MPE *mpe, unsigned
 
 	/*get number of rows of mpe_fec_frame from descriptor*/
 	/* Real-Time Parameters */	
-  	delta_t = (data[8]<<4)|(data[9]>>4);
+  	//delta_t = (data[8]<<4)|(data[9]>>4);
 	table_boundry_flag = (data[9] >> 3 )& 0x1;
 	frame_boundry_flag = (data[9] >> 2 )& 0x1; 
 		
@@ -422,8 +419,7 @@ void gf_m2ts_mpe_send_datagram(GF_M2TS_Demuxer *ts, u32 mpe_pid, unsigned char *
 
 	socket_simu(&ip_pck, ts, 0);
 
-	fprintf(stdout, "MPE PID %d - send datagram %d bytes to %d.%d.%d.%d port:%d\n", mpe_pid, ip_pck.u32_udp_data_size-8, ip_pck.u8_rx_adr[0], ip_pck.u8_rx_adr[1], ip_pck.u8_rx_adr[2], ip_pck.u8_rx_adr[3], ip_pck.u32_rx_udp_port);
-
+	GF_LOG(GF_LOG_DEBUG, GF_LOG_CONTAINER, ("MPE PID %d - send datagram %d bytes to %d.%d.%d.%d port:%d\n", mpe_pid, ip_pck.u32_udp_data_size-8, ip_pck.u8_rx_adr[0], ip_pck.u8_rx_adr[1], ip_pck.u8_rx_adr[2], ip_pck.u8_rx_adr[3], ip_pck.u32_rx_udp_port));
 }
 
 
@@ -1079,6 +1075,7 @@ void socket_simu(GF_M2TS_IP_Packet *ip_packet, GF_M2TS_Demuxer *ts, Bool yield)
 
 		if (gf_sk_is_multicast_address(name) ) {
 			e = gf_sk_setup_multicast(Sock_Struct->sock, name, ip_packet->u32_rx_udp_port, 1/*TTL - FIXME this should be in a cfg file*/, 0, NULL/*FIXME this should be in a cfg file*/);
+			GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("Setting up multicast socket for MPE on %s:%d\n", name, ip_packet->u32_rx_udp_port ));
 		} else {
 			/* 
 				binding of the socket to send data to port 4600 on the local machine 
@@ -1086,6 +1083,7 @@ void socket_simu(GF_M2TS_IP_Packet *ip_packet, GF_M2TS_Demuxer *ts, Bool yield)
 				the second adress is "localhost" and the port is the destination port on localhost
 			*/
 			e = gf_sk_bind(Sock_Struct->sock, "127.0.0.1", ip_packet->u32_rx_udp_port,/*name*/"127.0.0.1", ip_packet->u32_rx_udp_port, 0); 
+			GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("Setting up socket for MPE on 127.0.0.1:%d\n", ip_packet->u32_rx_udp_port ));
 		}
 
 		if (e != GF_OK) {
@@ -1259,10 +1257,10 @@ void setColRS( MPE_FEC_FRAME * mff, u32 offset, u8 * pds, u32 length )
 {
 	if ( mff->current_offset_rs != offset)	{
 		printf ("there is an error hole in the RS from %d to %d \n", mff->current_offset_rs, offset );
-		mff->current_offset_rs = offset;
-		setErrorIndicator( mff->p_error_rs , mff->current_offset_rs , (offset - mff->current_offset_rs)*sizeof(u32));		 
+		setErrorIndicator( mff->p_error_rs , mff->current_offset_rs , (offset - mff->current_offset_rs)*sizeof(u32));
+		mff->current_offset_rs = offset;	
 	} 
-  assert(mff->rows == length);
+	assert(mff->rows == length);
 	memcpy(mff->p_rs + mff->current_offset_rs , pds, length*sizeof(u8) );
 	mff->current_offset_rs = offset + length ; 
 	
@@ -1270,9 +1268,7 @@ void setColRS( MPE_FEC_FRAME * mff, u32 offset, u8 * pds, u32 length )
 
 void getColRS(MPE_FEC_FRAME * mff, u32 offset, u8 * pds, u32 length)
 {
-	
 	memcpy(pds,mff->p_rs + offset, length);
-
 }
 
 void getErrorPositions(MPE_FEC_FRAME *mff, u32 row, u32 * errPositions)
@@ -1310,7 +1306,7 @@ u32  getErrasurePositions( MPE_FEC_FRAME *mff , u32 row, u32 *errasures)
 	return nb;
 }
 
-void setErrorIndicator(u32 * data , u32 offset,u32 length)
+void setErrorIndicator(u32 * data , u32 offset, u32 length)
 {
 //	printf("setting the error indication \n");
 	memset(data+offset, 1, length);
@@ -1321,3 +1317,6 @@ void setErrorIndicator(u32 * data , u32 offset,u32 length)
 	printf ("private descriptor \n");
 	return ;
 }*/
+
+
+#endif //GPAC_DISABLE_MPEG2TS

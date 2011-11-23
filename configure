@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# GPAC MPEG-4 SDK configure script (c) 2003-2005 Jean Le Feuvre
+# GPAC MPEG-4 SDK configure script (c) 2003-2005 Jean Le Feuvre (c) 2005-20XX Telecom ParisTech
 #      inspired from ffmpeg configure by Fabrice Bellard (c) 2000-2002
 #set -v
 
@@ -150,6 +150,10 @@ disable_isoff_frag="no"
 disable_streaming="no"
 enable_depth_compositor="no"
 enable_renoir="no"
+has_avcap="no"
+avcap_cflags=""
+avcap_ldflags="-lavcap"
+has_opensvc="no"
 
 win32="no"
 mingw32="no"
@@ -595,6 +599,7 @@ cat > $TMPC << EOF
 #include <stdio.h>
 int main( void ) { return 0; }
 EOF
+CFLAGS="$CFLAGS -Wall"
 if $cc -o $TMPO $TMPC -fno-strict-aliasing 2> /dev/null  ; then
     CFLAGS="$CFLAGS -fno-strict-aliasing"
     CPPFLAGS="$CPPFLAGS -fno-strict-aliasing"
@@ -604,6 +609,10 @@ if $cc -o $TMPO $TMPC -Wno-pointer-sign 2> /dev/null  ; then
     CPPFLAGS="$CPPFLAGS -Wno-pointer-sign"
 fi
 
+
+#force use of cflags with cc
+cc="$cc $CFLAGS"
+cpp="$cpp $CPPFLAGS"
 
 
 #look for zlib
@@ -659,7 +668,7 @@ EOF
         has_js="local"
         #dc added
     else
-
+        #try pkg-config
         if pkg-config --exists mozilla-js 2> /dev/null  ; then
             js_flags=`pkg-config --cflags mozilla-js`
             js_lib_pkg=`pkg-config --libs mozilla-js`
@@ -667,6 +676,19 @@ EOF
                 has_js="system"
                 js_lib=`pkg-config --libs mozilla-js`
             fi
+        #try firefox folders (starting at ubuntu 11.10, no pkg-config)
+        elif ls -d /usr/lib/firefox* > /dev/null 2>&1 ; then
+            firefox_version=`cd /usr/lib ; ls -d firefox* | grep -v addons | grep -v devel ; cd - > /dev/null`
+            for i in $firefox_version ; do
+                if test "$has_js" = "no" ; then
+                    js_inc="/usr/include/$i"
+                    js_flags="-DXP_UNIX -I$js_inc"
+                    js_lib="-L/usr/lib/$i/ -lxul -lmozsqlite3 -lmozalloc -lnss3"
+                    if $cpp -o $TMPO $TMPCPP $js_flags $js_lib 2> /dev/null  ; then
+                        has_js="$i"
+                    fi
+                fi
+            done
         fi
 
         if test "$has_js" = "no" ; then
@@ -797,6 +819,7 @@ fi
 
 #fi
 
+
 #end JS test
 
 
@@ -811,6 +834,62 @@ if $cpp -o $TMPO $TMPC -I$local_inc/platinum -L$local_lib -lPlatinum -lPltMediaS
 fi
 
 
+#look for avcap support
+avcap_cflags=""
+avcap_ldflags="-lavcap"
+
+cat > $TMPC << EOF
+#include <avcap/avcap.h>
+using namespace avcap;
+int main( void ) {
+ const DeviceCollector::DeviceList& dl = DEVICE_COLLECTOR::instance().getDeviceList();
+ return 0;
+}
+EOF
+if $cpp -o $TMPO $TMPC $avcap_cflags $avcap_ldflags 2> /dev/null  ; then
+  has_avcap="yes"
+else
+if test "$darwin" = "yes" ; then
+avcap_cflags="-I$local_inc -I$local_inc/avcap/osx"
+avcap_ldflags="${wl}-flat_namespace ${wl}-undefined ${wl}suppress -lavcap -lpthread  -framework QuickTime -framework QuartzCore"
+else
+avcap_cflags="-I$local_inc -I$local_inc/avcap/linux"
+avcap_ldflags="-lavcap -lpthread"
+fi
+if $cpp -o $TMPO $TMPC $avcap_cflags -L$local_lib $avcap_ldflags 2> /dev/null  ; then
+  has_avcap="yes"
+  avcap_ldflags="-L../../$local_lib $avcap_ldflags"
+fi
+
+fi
+
+
+#look for opensvc support
+
+if test "$darwin" = "yes" ; then
+osvc_cflags="-I/usr/include -I/usr/local/include"
+osvc_ldflags="-L/usr/lib -L/usr/local/lib -lOpenSVCDec"
+else
+osvc_cflags=""
+osvc_ldflags="-lOpenSVCDec"
+fi
+
+cat > $TMPC << EOF
+#include <OpenSVCDecoder/SVCDecoder_ietr_api.h>
+int main( void ) { return 0; }
+EOF
+if $cpp -o $TMPO $TMPC $osvc_cflags $osvc_ldflags 2> /dev/null  ; then
+  has_opensvc="yes"
+else
+osvc_cflags="-I$local_inc"
+osvc_ldflags="-lOpenSVCDec"
+
+if $cpp -o $TMPO $TMPC $osvc_cflags -L$local_lib $osvc_ldflags 2> /dev/null  ; then
+  has_opensvc="yes"
+  osvc_ldflags="-L../../$local_lib $osvc_ldflags"
+fi
+
+fi
 
 
 #look for freetype support
@@ -1363,10 +1442,10 @@ fi
 
 #look for directfb support
 cat > $TMPC << EOF
-#include <directfb/directfb.h>
+#include <directfb.h>
 int main( void ) { return 0; }
 EOF
-directfb_inc="/usr/include/"
+directfb_inc="/usr/include/directfb"
 directfb_lib="-ldirectfb -lfusion -ldirect"
 if $cc -o $TMPO $TMPC -I$directfb_inc -L$directfb_lib 2> /dev/null  ; then
     has_directfb="yes"
@@ -1794,7 +1873,7 @@ cat > $TMPCPP << EOF
 int main( void ) { return 0; }
 EOF
 
-if $cc -o $TMPO $TMPCPP -I$xulsdk_path $CFLAGS $LDFLAGS 2> /dev/null  ; then
+if $cc -o $TMPO $TMPCPP -I$xulsdk_path $LDFLAGS 2> /dev/null  ; then
     has_xul="system"
     xul_flags="-I$xulsdk_path $xul_flags"
 else
@@ -2119,11 +2198,6 @@ if test "$has_wx" = "yes" ; then
 else
     echo "wxWidgets support: no"
 fi
-if test "$has_platinum" = "yes" ; then
-    echo "Platinum support: yes"
-else
-    echo "Platinum support: no"
-fi
 
 
 echo ""
@@ -2138,6 +2212,8 @@ echo "FAAD: $has_faad"
 echo "XVID: $has_xvid"
 echo "FFMPEG: $has_ffmpeg"
 echo "Xiph OGG: $has_ogg"
+echo "Platinum UPnP: $has_platinum"
+echo "AVCap: $has_avcap"
 if test "$has_ogg" = "no"; then
     has_ogg="no"
 else
@@ -2145,6 +2221,7 @@ else
     echo "Xiph Theora: $has_theora"
 fi
 echo "A52 (AC3): $has_a52"
+echo "OpenSVCDecoder: $has_opensvc"
 
 if test "$enable_renoir" = "yes" ; then
     echo "Renoir enabled - make sure the driver libraries are present in modules/viren_out directory"
@@ -2420,7 +2497,19 @@ if test "$has_wx" = "yes"; then
     echo "WX_LFLAGS=$wx_lflags" >> config.mak
 fi
 
-echo "USE_PLATINUM=$has_platinum" >> config.mak
+echo "CONFIG_PLATINUM=$has_platinum" >> config.mak
+
+echo "CONFIG_AVCAP=$has_avcap" >> config.mak
+if test "$has_avcap" = "yes" ; then
+    echo "AVCAP_CFLAGS=$avcap_cflags" >> config.mak
+    echo "AVCAP_LDFLAGS=$avcap_ldflags" >> config.mak
+fi
+
+echo "CONFIG_OPENSVC=$has_opensvc" >> config.mak
+if test "$has_opensvc" = "yes" ; then
+    echo "OSVC_CFLAGS=$osvc_cflags" >> config.mak
+    echo "OSVC_LDFLAGS=$osvc_ldflags" >> config.mak
+fi
 
 echo "MOZILLA_DIR=$moz_path" >> config.mak
 

@@ -196,9 +196,11 @@ static GF_ObjectDescriptor *MP2TS_GetOD(M2TSIn *m2ts, GF_M2TS_PES *stream, char 
 	case GF_M2TS_AUDIO_LATM_AAC:
 	case GF_M2TS_AUDIO_AAC:
 		if (!dsi) {
-			/*discard regulate until we fetch the AAC config*/
-			m2ts->ts->file_regulate = 0;
-			/*turn on parsing*/
+			/*turn on parsing to get AAC config
+				NB: we removed "no file regulation" since we may get broken files where PMT declares an AAC stream but no AAC PID is in the MUX
+				(filtered out). In this case, "no regulation" will make the entire TS to be read as fast as possible
+			*/
+			m2ts->ts->file_regulate = 2;
 			gf_m2ts_set_pes_framing(stream, GF_M2TS_PES_FRAMING_DEFAULT);
 			gf_odf_desc_del((GF_Descriptor *)esd);
 			return NULL;
@@ -268,7 +270,9 @@ static void MP2TS_SetupProgram(M2TSIn *m2ts, GF_M2TS_Program *prog, Bool regener
 		if (!found) return;
 	}
 #endif
-	if (m2ts->ts->file || m2ts->ts->dnload) m2ts->ts->file_regulate = no_declare ? 0 : 1;
+
+	/*TS is a file, start regulation regardless of how the TS is access (with or without fragment URI)*/
+	if (m2ts->ts->file || m2ts->ts->dnload) m2ts->ts->file_regulate = 1;
 
 	for (i=0; i<count; i++) {
 		GF_M2TS_ES *es = gf_list_get(prog->streams, i);
@@ -469,6 +473,13 @@ static void M2TS_OnEvent(GF_M2TS_Demuxer *ts, u32 evt_type, void *param)
 		evt.forwarded_event.param = ts;
 		gf_term_on_service_event(m2ts->service, &evt);		
 		break;
+	case GF_M2TS_EVT_DSMCC_FOUND:
+		evt.type = GF_EVENT_FORWARDED;
+		evt.forwarded_event.forward_type = GF_EVT_FORWARDED_MPEG2;
+		evt.forwarded_event.service_event_type = evt_type;
+		evt.forwarded_event.param = param;		  
+		gf_term_on_service_event(m2ts->service, &evt);
+		break;
 	case GF_M2TS_EVT_PMT_FOUND:
 		if (gf_list_count(m2ts->ts->programs) == 1) {
 			gf_term_on_connect(m2ts->service, NULL, GF_OK);
@@ -548,7 +559,7 @@ static void M2TS_OnEvent(GF_M2TS_Demuxer *ts, u32 evt_type, void *param)
 			u32 stb = gf_sys_clock();
 			
 			if (m2ts->regulation_pcr_pid==0) {
-				/*we pick the first PCR PID for file regulation - we don't need to make sure this is the PCR of a program being plyaed as we
+				/*we pick the first PCR PID for file regulation - we don't need to make sure this is the PCR of a program being played as we
 				only check buffer levels, not DTS/PTS of the streams in the regulation step*/
 				m2ts->regulation_pcr_pid = ((GF_M2TS_PES_PCK *) param)->stream->pid;
 			} else if (m2ts->regulation_pcr_pid != ((GF_M2TS_PES_PCK *) param)->stream->pid) {
@@ -669,7 +680,7 @@ void m2ts_net_io(void *cbk, GF_NETIO_Parameter *param)
 {
 	GF_Err e;
 	M2TSIn *m2ts = (M2TSIn *) cbk;
-        assert( m2ts );
+	assert( m2ts );
 	/*handle service message*/
 	gf_term_download_update_stats(m2ts->ts->dnload);
 
@@ -677,33 +688,35 @@ void m2ts_net_io(void *cbk, GF_NETIO_Parameter *param)
 		e = GF_EOS;
 	} else if (param->msg_type==GF_NETIO_DATA_EXCHANGE) {
 		e = GF_OK;
-                assert( m2ts->ts);
-                if (param->size > 0){
-                  /*process chunk*/
-                  assert(param->data);
-		  if (m2ts->network_buffer_size < param->size){
-			  m2ts->network_buffer = gf_realloc(m2ts->network_buffer, sizeof(char) * param->size);
-			  m2ts->network_buffer_size = param->size;
-		  }
-		  assert( m2ts->network_buffer );
-		  memcpy(m2ts->network_buffer, param->data, param->size);
-                  gf_m2ts_process_data(m2ts->ts, m2ts->network_buffer, param->size);
-                }
+		assert( m2ts->ts);
+		if (param->size > 0){
+			/*process chunk*/
+			assert(param->data);
+			if (m2ts->network_buffer_size < param->size){
+				m2ts->network_buffer = gf_realloc(m2ts->network_buffer, sizeof(char) * param->size);
+				m2ts->network_buffer_size = param->size;
+			}
+			assert( m2ts->network_buffer );
+			memcpy(m2ts->network_buffer, param->data, param->size);
+			gf_m2ts_process_data(m2ts->ts, m2ts->network_buffer, param->size);
+		}
 
 		/*if asked to regulate, wait until we get a play request*/
-		if (m2ts->ts->run_state && !m2ts->ts->nb_playing && m2ts->ts->file_regulate) {
-			while (m2ts->ts->run_state && !m2ts->ts->nb_playing && m2ts->ts->file_regulate) {
+		if (m2ts->ts->run_state && !m2ts->ts->nb_playing && (m2ts->ts->file_regulate==1)) {
+			while (m2ts->ts->run_state && !m2ts->ts->nb_playing && (m2ts->ts->file_regulate==1) ) {
 				gf_sleep(50);
 				continue;
 			}
 		} else {
 			gf_sleep(1);
 		}
+#if 1 //see commit 3642: crashes when reload quickly with http
 		if (!m2ts->ts->run_state) {
 			if (m2ts->ts->dnload) 
 				gf_term_download_del( m2ts->ts->dnload );
 			m2ts->ts->dnload = NULL;
 		}
+#endif
 
 	} else {
 		e = param->error;
@@ -1005,7 +1018,7 @@ static GF_Err M2TS_ServiceCommand(GF_InputService *plug, GF_NetworkCommand *com)
 		/*mark pcr as not initialized*/
 		if (pes->program->pcr_pid==pes->pid) pes->program->first_dts=0;
 		gf_m2ts_set_pes_framing(pes, GF_M2TS_PES_FRAMING_DEFAULT);
-		GF_LOG(GF_LOG_DEBUG, GF_LOG_CONTAINER, ("[M2TSIn] Setting default reframing for PID %d\n", pes->pid));
+		GF_LOG(GF_LOG_INFO, GF_LOG_CONTAINER, ("[M2TSIn] Setting default reframing for PID %d\n", pes->pid));
 		/*this is a multplex, only trigger the play command for the first stream activated*/
 		if (!ts->nb_playing) {
 			ts->start_range = (u32) (com->play.start_range*1000);

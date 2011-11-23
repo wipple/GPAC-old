@@ -194,6 +194,8 @@ enum
 	GF_M2TS_EVT_CAT_UPDATE,
 	/*AIT has been found (carousel) */
 	GF_M2TS_EVT_AIT_FOUND,
+	/*DSCM-CC has been found (carousel) */
+	GF_M2TS_EVT_DSMCC_FOUND,
 
 };
 
@@ -259,6 +261,9 @@ typedef struct GF_M2TS_SectionFilter
 	/* indicates that the section header with table id and extended table id ... is
 	   not parsed by the TS demuxer and left for the application  */
 	Bool direct_dispatch;
+
+	/* this field is used for AIT sections, to link the AIT with the program */
+	u32 service_id;
 
 	gf_m2ts_section_callback process_section; 
 } GF_M2TS_SectionFilter;
@@ -329,11 +334,12 @@ enum
 			GF_SLConfig *slcfg; \
 			s16 component_tag; \
 			void *user; \
-			u64 first_dts;
+			u64 first_dts; \
+			u32 service_id;
 
 struct tag_m2ts_es
 {
-	ABSTRACT_ES
+	ABSTRACT_ES	
 };
 
 
@@ -633,6 +639,10 @@ struct tag_m2ts_demux
 
 	const char *(*query_next)(void *udta);
 	void *udta_query;
+
+	/*Carousel*/	
+	GF_List* dsmcc_controler;
+	void* carousel_info;
 };
 
 GF_M2TS_Demuxer *gf_m2ts_demux_new();
@@ -719,8 +729,7 @@ enum
 	GF_M2TS_DVB_TIME_SLICE_FEC_DESCRIPTOR 		   = 0x77,
 	/* ... */
 	GF_M2TS_DVB_EAC3_DESCRIPTOR				= 0x7A,
-	GF_M2TS_DVB_LOGICAL_CHANNEL_DESCRIPTOR = 0x83,	
-	
+	GF_M2TS_DVB_LOGICAL_CHANNEL_DESCRIPTOR = 0x83,		
 };
 
 /* Reserved PID values */
@@ -755,7 +764,11 @@ enum {
 	GF_M2TS_TABLE_ID_IPMP_CONTROL	= 0x07, 
 	/* 0x08 - 0x37 reserved */
 	/* 0x38 - 0x3D DSM-CC defined */
-	GF_M2TS_TABLE_ID_DSM_CC_PRIVATE	= 0x3E, /* used for MPE (only, not MPE-FEC) */
+	GF_M2TS_TABLE_ID_DSM_CC_ENCAPSULATED_DATA		= 0x3A, 
+	GF_M2TS_TABLE_ID_DSM_CC_UN_MESSAGE				= 0x3B, /* used for MPE (only, not MPE-FEC) */
+	GF_M2TS_TABLE_ID_DSM_CC_DOWNLOAD_DATA_MESSAGE	= 0x3C, /* used for MPE (only, not MPE-FEC) */
+	GF_M2TS_TABLE_ID_DSM_CC_STREAM_DESCRIPTION		= 0x3D, /* used for MPE (only, not MPE-FEC) */
+	GF_M2TS_TABLE_ID_DSM_CC_PRIVATE					= 0x3E, /* used for MPE (only, not MPE-FEC) */
 	/* 0x3F DSM-CC defined */
 	GF_M2TS_TABLE_ID_NIT_ACTUAL		= 0x40, /* max size for section 1024 */
 	GF_M2TS_TABLE_ID_NIT_OTHER		= 0x41,

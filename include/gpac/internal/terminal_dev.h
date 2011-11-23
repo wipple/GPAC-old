@@ -74,6 +74,9 @@ struct _net_service
 	/*quick hack for avoiding double session creation*/
 	GF_DownloadSession *pending_service_session;
 
+	/*rebuffer window for http/...*/
+	u32 download_rebuffer;
+	Bool auto_rebuffer;
 };
 
 
@@ -396,6 +399,9 @@ struct _tag_terminal
 	GF_List *event_filters;	/*list of extensions filtering events*/
 	GF_Mutex *evt_mx;
 	u32 in_event_filter;
+
+	/*ID of the thread currently in handle_services routine, 0 if none*/
+	u32 thread_id_handling_services;
 
 	/*static URI relocator for locales*/
 	GF_TermLocales locales;
@@ -1023,6 +1029,7 @@ Bool gf_term_send_event(GF_Terminal *term, GF_Event *evt);
 
 /*media access events */
 void gf_term_service_media_event(GF_ObjectManager *odm, u32 event_type);
+void gf_term_service_media_event_with_download(GF_ObjectManager *odm, u32 event_type, u64 loaded_size, u64 total_size, u32 bytes_per_sec);
 
 /*checks the URL and returns the ODID (MPEG-4 od://) or GF_MEDIA_EXTERNAL_ID for all regular URLs*/
 u32 gf_mo_get_od_id(MFURL *url);

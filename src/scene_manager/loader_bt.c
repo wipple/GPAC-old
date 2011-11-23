@@ -31,6 +31,74 @@
 #include "../../include/gpac/nodes_x3d.h"
 /*for key codes...*/
 #include "../../include/gpac/user.h"
+#include "../../include/gpac/base_coding.h"
+
+
+void gf_sm_update_bitwrapper_buffer(GF_Node *node, const char *fileName)
+{
+	u32 data_size = 0;
+	char *data = NULL;
+	char *buffer;
+	M_BitWrapper *bw = (M_BitWrapper *)node;
+
+	if (!bw->buffer.buffer) return;
+	buffer = bw->buffer.buffer;
+	if (!strnicmp(buffer, "file://", 7)) {
+		char *url = gf_url_concatenate(fileName, buffer+7);
+		if (url) {
+			FILE *f = fopen(url, "rb");
+			if (f) {
+				fseek(f, 0, SEEK_END);
+				data_size = ftell(f);
+				fseek(f, 0, SEEK_SET);
+				data = gf_malloc(sizeof(char)*data_size);
+				if (data) {
+					size_t s = fread(data, 1, data_size, f);
+					assert(s == data_size);
+				}
+				fclose(f);
+			}
+			gf_free(url);
+		}
+	} else {
+		Bool base_64 = 0;
+		if (!strnicmp(buffer, "data:application/octet-string", 29)) {
+			char *sep = strchr(bw->buffer.buffer, ',');
+			base_64 = strstr(bw->buffer.buffer, ";base64") ? 1 : 0;
+			if (sep) buffer = sep+1;
+		}
+
+		if (base_64) {
+			data_size = 2*strlen(buffer);
+			data = (char*)gf_malloc(sizeof(char)*data_size);
+			if (data)
+				data_size = gf_base64_decode(buffer, strlen(buffer), data, data_size);
+		} else {
+			u32 i, c;
+			char s[3];
+			data_size = strlen(buffer) / 3;
+			data = (char*)gf_malloc(sizeof(char) * data_size);
+			if (data) {
+				s[2] = 0;
+				for (i=0; i<data_size; i++) {
+					s[0] = buffer[3*i+1];
+					s[1] = buffer[3*i+2];
+					sscanf(s, "%02X", &c);
+					data[i] = (unsigned char) c;
+				}
+			}
+		}
+	}
+	gf_free(bw->buffer.buffer);
+	bw->buffer.buffer = NULL;
+	bw->buffer_len = 0;
+	if (data) {
+		bw->buffer.buffer = data;
+		bw->buffer_len = data_size;
+	}
+
+}
+
 
 #ifndef GPAC_DISABLE_LOADER_BT
 
@@ -773,6 +841,7 @@ static void gf_bt_update_timenode(GF_BTParser *parser, GF_Node *node)
 	}
 }
 
+
 void gf_bt_sffield(GF_BTParser *parser, GF_FieldInfo *info, GF_Node *n)
 {
 	switch (info->fieldType) {
@@ -864,6 +933,10 @@ void gf_bt_sffield(GF_BTParser *parser, GF_FieldInfo *info, GF_Node *n)
 				((SFString *)info->far_ptr)->buffer = str;
 			else
 				gf_free(str);
+
+			if (n->sgprivate->tag==TAG_MPEG4_BitWrapper) {
+				gf_sm_update_bitwrapper_buffer(n, parser->load->fileName);
+			}
 		} else {
 			goto err;
 		}
@@ -1153,7 +1226,7 @@ u32 gf_bt_get_node_tag(GF_BTParser *parser, char *node_name)
 	if (parser->is_wrl && !(parser->load->flags & GF_SM_LOAD_MPEG4_STRICT)) {
 #ifndef GPAC_DISABLE_X3D
 		tag = gf_node_x3d_type_by_class_name(node_name);
-		if (!tag) 
+		if (!tag)
 #endif
 			tag = gf_node_mpeg4_type_by_class_name(node_name);
 		if (tag) return tag;
@@ -1266,7 +1339,7 @@ GF_Node *gf_bt_sf_node(GF_BTParser *parser, char *node_name, GF_Node *parent, ch
 		if (!parser->parsing_proto) init_node = 1;
 	}
 	is_script = 0;
-	if ((tag==TAG_MPEG4_Script) 
+	if ((tag==TAG_MPEG4_Script)
 #ifndef GPAC_DISABLE_X3D
 		|| (tag==TAG_X3D_Script)
 #endif
@@ -1367,7 +1440,7 @@ GF_Node *gf_bt_sf_node(GF_BTParser *parser, char *node_name, GF_Node *parent, ch
 						str = "children";
 						parser->last_error = gf_node_get_field_by_name(node, str, &info);
 					}
-					else 
+					else
 #endif
 					if (!strcmp(str, "collide")) {
 						Bool b;
@@ -1380,7 +1453,6 @@ GF_Node *gf_bt_sf_node(GF_BTParser *parser, char *node_name, GF_Node *parent, ch
 
 			if (is_script && parser->last_error) {
 				u32 eType, fType;
-				GF_ScriptField *sf;
 				eType = 0;
 				if (!strcmp(str, "eventIn") || !strcmp(str, "inputOnly")) eType = GF_SG_SCRIPT_TYPE_EVENT_IN;
 				else if (!strcmp(str, "eventOut") || !strcmp(str, "outputOnly")) eType = GF_SG_SCRIPT_TYPE_EVENT_OUT;
@@ -1397,7 +1469,7 @@ GF_Node *gf_bt_sf_node(GF_BTParser *parser, char *node_name, GF_Node *parent, ch
 				}
 				parser->last_error = GF_OK;
 				str = gf_bt_get_next(parser, 0);
-				sf = gf_sg_script_field_new(node, eType, fType, str);
+				gf_sg_script_field_new(node, eType, fType, str);
 				parser->last_error = gf_node_get_field_by_name(node, str, &info);
 
 				if (parser->parsing_proto && gf_bt_set_field_is(parser, &info, node)) continue;
@@ -1768,12 +1840,10 @@ next_field:
 
 	if (externProto) {
 		SFURL *url;
-		u32 nb_urls;
 		Bool has_urls = 0;
 		if (gf_bt_check_code(parser, '[')) has_urls = 1;
 
 		gf_sg_vrml_mf_reset(&proto->ExternProto, GF_SG_VRML_MFURL);
-		nb_urls = 0;
 		do {
 			str = gf_bt_get_next(parser, 0);
 			gf_sg_vrml_mf_append(&proto->ExternProto, GF_SG_VRML_MFURL, (void **) &url);
@@ -2172,7 +2242,7 @@ GF_Err gf_bt_parse_bifs_command(GF_BTParser *parser, char *name, GF_List *cmdLis
 		char csep;
 		GF_Node *targetNode, *idxNode, *childNode, *fromNode;
 		GF_FieldInfo targetField, idxField, childField, fromField;
-		
+
 		targetNode = idxNode = childNode = fromNode = NULL;
 		str = gf_bt_get_next(parser, 1);
 		/*get source node*/
@@ -2202,7 +2272,7 @@ GF_Err gf_bt_parse_bifs_command(GF_BTParser *parser, char *name, GF_List *cmdLis
 					/*get idx node*/
 					idxNode = gf_bt_peek_node(parser, str);
 					if (!idxNode) return gf_bt_report(parser, GF_BAD_PARAM, "%s: unknown node", field);
-					if (!gf_bt_check_code(parser, '.')) 
+					if (!gf_bt_check_code(parser, '.'))
 						return gf_bt_report(parser, GF_BAD_PARAM, "XREPLACE: '.' expected");
 
 					/*get idx field*/
@@ -2214,7 +2284,7 @@ GF_Err gf_bt_parse_bifs_command(GF_BTParser *parser, char *name, GF_List *cmdLis
 				}
 			}
 			gf_bt_check_code(parser, ']');
-		
+
 			/*check if we have a child node*/
 			if (gf_bt_check_code(parser, '.')) {
 				s32 apos = pos;
@@ -3180,7 +3250,7 @@ GF_Err gf_bt_loader_run_intern(GF_BTParser *parser, GF_Command *init_com, Bool i
 
 	vrml_root_node = NULL;
 	has_id = 0;
-	
+
 	if (init_com)
 		parser->in_com = 0 ;
 
@@ -3333,8 +3403,8 @@ GF_Err gf_bt_loader_run_intern(GF_BTParser *parser, GF_Command *init_com, Bool i
 		/*BIFS commands*/
 		else if (!strcmp(str, "REPLACE") || !strcmp(str, "INSERT") || !strcmp(str, "APPEND") || !strcmp(str, "DELETE")
 			/*BIFS extended commands*/
-			|| !strcmp(str, "GLOBALQP") || !strcmp(str, "MULTIPLEREPLACE") || !strcmp(str, "MULTIPLEINDREPLACE") || !strcmp(str, "XDELETE") || !strcmp(str, "DELETEPROTO") || !strcmp(str, "INSERTPROTO") 
-			|| !strcmp(str, "XREPLACE") 
+			|| !strcmp(str, "GLOBALQP") || !strcmp(str, "MULTIPLEREPLACE") || !strcmp(str, "MULTIPLEINDREPLACE") || !strcmp(str, "XDELETE") || !strcmp(str, "DELETEPROTO") || !strcmp(str, "INSERTPROTO")
+			|| !strcmp(str, "XREPLACE")
 			) {
 			Bool is_base_stream = parser->stream_id ? 0 : 1;
 
@@ -3423,13 +3493,14 @@ GF_Err gf_bt_loader_run_intern(GF_BTParser *parser, GF_Command *init_com, Bool i
 static GF_Err gf_sm_load_bt_initialize(GF_SceneLoader *load, const char *str, Bool input_only)
 {
 	u32 size;
+	char *sep;
 	gzFile gzInput;
 	GF_Err e;
 	unsigned char BOM[5];
 	GF_BTParser *parser = load->loader_priv;
-	
+
 	parser->last_error = GF_OK;
-	
+
 	if (load->fileName) {
 		FILE *test = gf_f64_open(load->fileName, "rb");
 		if (!test) return GF_URL_ERROR;
@@ -3455,7 +3526,7 @@ static GF_Err gf_sm_load_bt_initialize(GF_SceneLoader *load, const char *str, Bo
 			parser->initialized = 0;
 			return GF_OK;
 		}
-		strncpy(BOM, str, 5); 
+		strncpy(BOM, str, 5);
 	}
 
 	/*0: no unicode, 1: UTF-16BE, 2: UTF-16LE*/
@@ -3481,6 +3552,9 @@ static GF_Err gf_sm_load_bt_initialize(GF_SceneLoader *load, const char *str, Bo
 		if (parser->gz_in) gzseek(parser->gz_in, 3, SEEK_CUR);
 	}
 	parser->initialized = 1;
+
+	sep = strrchr(load->fileName, '.');
+	if (sep && !strnicmp(sep, ".wrl", 4)) parser->is_wrl = 1;
 
 	if (input_only) return GF_OK;
 

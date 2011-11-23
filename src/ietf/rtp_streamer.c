@@ -438,6 +438,8 @@ GF_RTPStreamer *gf_rtp_streamer_new_extended(u32 streamType, u32 oti, u32 timeSc
 					   streamType, oti, PL_ID, MinSize, MaxSize, avgTS, maxDTSDelta, IV_length, KI_length, mpeg4mode);
 
 
+	if (force_dts_delta) stream->packetizer->slMap.DTSDeltaLength = force_dts_delta;
+
 	e = rtp_stream_init_channel(stream, MTU + 12, ip_dest, port, TTL, ifce_addr);
 	if (e) {
 		GF_LOG(GF_LOG_ERROR, GF_LOG_RTP, ("[RTP Packetizer] Failed to create RTP channel - error %s\n", gf_error_to_string(e) ));

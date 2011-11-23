@@ -24,6 +24,9 @@
 
 #ifdef GPAC_HAS_FAAD
 
+#ifdef __GNUC__
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#endif
 #include <faad.h>
 
 #include "../../include/gpac/modules/codec.h"

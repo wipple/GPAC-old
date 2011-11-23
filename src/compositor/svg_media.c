@@ -80,7 +80,6 @@ static Bool svg_video_get_transform_behavior(GF_TraverseState *tr_state, SVGAllA
 static void SVG_Draw_bitmap(GF_TraverseState *tr_state)
 {
 	DrawableContext *ctx = tr_state->ctx;
-
 	if (!tr_state->visual->DrawBitmap(tr_state->visual, tr_state, ctx, NULL)) {
 		visual_2d_texture_path(tr_state->visual, ctx->drawable->path, ctx, tr_state);
 	}
@@ -287,7 +286,7 @@ static void svg_traverse_bitmap(GF_Node *node, void *rs, Bool is_destroy)
 			stack->audio = NULL;
 		}
 		stack->audio_dirty = 1;
-
+		
 		if (stack->txurl.count) svg_play_texture(stack, &all_atts);
 		gf_node_dirty_clear(node, GF_SG_SVG_XLINK_HREF_DIRTY);
 	}
@@ -298,6 +297,7 @@ static void svg_traverse_bitmap(GF_Node *node, void *rs, Bool is_destroy)
 			gf_node_dirty_clear(node, 0);
 			SVG_Build_Bitmap_Graph((SVG_video_stack*)gf_node_get_private(node), tr_state);
 		}
+		
 	} 
 
 	if (tr_state->traversing_mode == TRAVERSE_GET_BOUNDS) {
@@ -437,11 +437,9 @@ static void SVG_Update_video(GF_TextureHandler *txh)
 	SVG_video_stack *stack = (SVG_video_stack *) gf_node_get_private(txh->owner);
 	
 	if (!txh->is_open) {
-		u32 tag;
 		SVG_InitialVisibility init_vis;
 		if (stack->first_frame_fetched) return;
 
-		tag = gf_node_get_tag(txh->owner);
 		init_vis = SVG_INITIALVISIBILTY_WHENSTARTED;
 
 		if (gf_node_get_attribute_by_tag(txh->owner, TAG_SVG_ATT_initialVisibility, 0, 0, &init_vis_info) == GF_OK) {
@@ -564,6 +562,29 @@ void svg_pause_video(GF_Node *n, Bool pause)
 	if (pause) gf_mo_pause(st->txh.stream);
 	else gf_mo_resume(st->txh.stream);
 }
+
+void compositor_svg_video_modified(GF_Compositor *compositor, GF_Node *node)
+{
+	/*if href has been modified, stop the video (and associated audio if any) right away - we cannot wait for next traversal to
+	process this as the video could be in a hidden subtree not traversed*/
+	if (gf_node_dirty_get(node) & GF_SG_SVG_XLINK_HREF_DIRTY) {
+		SVG_video_stack *st = gf_node_get_private(node);
+		/*WARNING - stack may be NULL at this point when inserting the video from script*/
+		if (st && st->txh.is_open) {
+			if (st->audio) {
+				svg_audio_smil_evaluate_ex(NULL, 0, SMIL_TIMING_EVAL_REMOVE, st->audio, st->txh.owner);
+				gf_node_unregister(st->audio, NULL);
+				st->audio = NULL;
+			}
+			/*reset cached URL to avoid reopening the resource in the smil timing callback*/
+			gf_sg_vrml_mf_reset(&st->txurl, GF_SG_VRML_MFURL);
+			gf_sc_texture_stop(&st->txh);
+		}
+	}
+	/*and force a redraw of next frame*/
+	gf_sc_next_frame_state(compositor, GF_SC_DRAW_FRAME);
+}
+
 
 /*********************/
 /* SVG audio element */
