@@ -242,25 +242,27 @@ Bool gf_mo_get_visual_info(GF_MediaObject *mo, u32 *width, u32 *height, u32 *str
 				const char *opt;
 				u32 r, g, b, a;
 				M_Background2D *back = (M_Background2D *) gf_sg_find_node_by_name(mo->odm->parentscene->graph, "DYN_BACK");
-				switch (cap.cap.valueInt) {
-				case GF_PIXEL_ARGB:
-				case GF_PIXEL_RGBA:
-				case GF_PIXEL_YUVA:
-					opt = gf_cfg_get_key(mo->odm->term->user->config, "Compositor", "BackColor");
-					if (!opt) {
-						gf_cfg_set_key(mo->odm->term->user->config, "Compositor", "BackColor", "FF999999");
-						opt = "FF999999";
+				if (back) {
+					switch (cap.cap.valueInt) {
+					case GF_PIXEL_ARGB:
+					case GF_PIXEL_RGBA:
+					case GF_PIXEL_YUVA:
+						opt = gf_cfg_get_key(mo->odm->term->user->config, "Compositor", "BackColor");
+						if (!opt) {
+							gf_cfg_set_key(mo->odm->term->user->config, "Compositor", "BackColor", "FF999999");
+							opt = "FF999999";
+						}
+						sscanf(opt, "%02X%02X%02X%02X", &a, &r, &g, &b);
+						back->backColor.red = INT2FIX(r)/255;
+						back->backColor.green = INT2FIX(g)/255;
+						back->backColor.blue = INT2FIX(b)/255;
+						break;
+					default:
+						back->backColor.red = back->backColor.green = back->backColor.blue = FIX_ONE;
+						break;
 					}
-					sscanf(opt, "%02X%02X%02X%02X", &a, &r, &g, &b);
-					back->backColor.red = INT2FIX(r)/255;
-					back->backColor.green = INT2FIX(g)/255;
-					back->backColor.blue = INT2FIX(b)/255;
-					break;
-				default:
-					back->backColor.red = back->backColor.green = back->backColor.blue = FIX_ONE;
-					break;
+					gf_node_dirty_set((GF_Node *)back, 0, 1);
 				}
-				gf_node_dirty_set((GF_Node *)back, 0, 1);
 			}
 		}
 	}
@@ -626,11 +628,14 @@ Bool gf_mo_stop(GF_MediaObject *mo)
 
 	mo->num_open--;
 	if (!mo->num_open && mo->odm) {
+		if (mo->odm->flags & GF_ODM_DESTROYED) return 1;
+
 		/*do not stop directly, this can delete channel data currently being decoded (BIFS anim & co)*/
 		gf_term_lock_media_queue(mo->odm->term, 1);
 		/*if object not in media queue, add it*/
-		if (gf_list_find(mo->odm->term->media_queue, mo->odm)<0)
+		if (gf_list_find(mo->odm->term->media_queue, mo->odm)<0) {
 			gf_list_add(mo->odm->term->media_queue, mo->odm);
+		}
 		
 		/*signal STOP request*/
 		if ((mo->OD_ID==GF_MEDIA_EXTERNAL_ID) || (mo->odm && mo->odm->OD && (mo->odm->OD->objectDescriptorID==GF_MEDIA_EXTERNAL_ID))) {
@@ -734,15 +739,10 @@ Bool gf_mo_is_same_url(GF_MediaObject *obj, MFURL *an_url, Bool *keep_fragment, 
 	u32 i;
 	char szURL1[GF_MAX_PATH], szURL2[GF_MAX_PATH], *ext;
 
-	if (obj->OD_ID==GF_MEDIA_EXTERNAL_ID) {
-		if (!obj->URLs.count) {
-			if (!obj->odm) return 0;
-			strcpy(szURL1, obj->odm->net_service->url);
-		} else {
-			strcpy(szURL1, obj->URLs.vals[0].url);
-		}
+	if (!obj->URLs.count) {
+		if (!obj->odm) return 0;
+		strcpy(szURL1, obj->odm->net_service->url);
 	} else {
-		if (!obj->URLs.count) return 0;
 		strcpy(szURL1, obj->URLs.vals[0].url);
 	}
 
@@ -794,6 +794,8 @@ Bool gf_mo_is_same_url(GF_MediaObject *obj, MFURL *an_url, Bool *keep_fragment, 
 		for (i=0; i<an_url->count; i++) {
 			if (an_url->vals[i].url && !stricmp(szURL1, an_url->vals[i].url)) return 1;
 		}
+		/*not same resource, we will have to check fragment as URL might point to a sub-service or single stream of a mux*/
+		if (keep_fragment) *keep_fragment = 1;
 		return 0;
 	}
 	ext = strrchr(szURL1, '#');
@@ -1062,7 +1064,7 @@ Bool gf_mo_set_position(GF_MediaObject *mo, GF_Window *src, GF_Window *dst)
 }
 
 GF_EXPORT
-Bool gf_mo_has_audio(GF_MediaObject *mo)
+u32 gf_mo_has_audio(GF_MediaObject *mo)
 {
 	char *sub_url, *ext;
 	u32 i;
@@ -1071,6 +1073,7 @@ Bool gf_mo_has_audio(GF_MediaObject *mo)
 	GF_Scene *scene;
 	if (!mo || !mo->odm) return 0;
 	if (mo->type != GF_MEDIA_OBJECT_VIDEO) return 0;
+	if (!mo->odm->net_service) return 2;
 
 	ns = mo->odm->net_service;
 	scene = mo->odm->parentscene;

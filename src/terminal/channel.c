@@ -659,7 +659,12 @@ static void gf_es_check_timing(GF_Channel *ch)
 	/*if channel is not the OCR, shift all time stamps to match the current time at clock init*/
 	else if (!ch->IsClockInit ) {
 //		ch->ts_offset += gf_clock_real_time(ch->clock);
-		if (ch->clock->clock_init) ch->IsClockInit = 1;
+		if (ch->clock->clock_init) {
+			ch->IsClockInit = 1;
+			if (ch->odm->flags & GF_ODM_INHERIT_TIMELINE) {
+				ch->ts_offset += gf_clock_real_time(ch->clock) - ch->CTS;
+			}
+		}
 	}
 	/*deal with some broken DMB streams were the timestamps on BIFS/OD are not set (0) or completely out of sync
 	of the OCR clock (usually audio). If the audio codec (BSAC ...) is not found, we force re-initializing of the clock
@@ -680,6 +685,11 @@ void gf_es_dispatch_raw_media_au(GF_Channel *ch, char *payload, u32 payload_size
 	if (!payload || !ch->odm->codec->CB) return;
 	if (!ch->odm->codec->CB->no_allocation) return;
 
+	if (cts + 100 < gf_clock_real_time(ch->clock)) {
+		GF_LOG(GF_LOG_WARNING, GF_LOG_MEDIA, ("[ODM%d] Raw Frame dispatched at OTB %d but frame TS is %d ms - DROPPING\n", ch->odm->OD->objectDescriptorID, gf_clock_real_time(ch->clock), cts));
+		return;
+	}
+
 	cb = ch->odm->codec->CB;
 	cu = gf_cm_lock_input(cb, cts, 1);
 	if (cu) {
@@ -689,7 +699,7 @@ void gf_es_dispatch_raw_media_au(GF_Channel *ch, char *payload, u32 payload_size
 			cu->data = payload;
 			size = payload_size;
 			cu->TS = cts;
-			GF_LOG(GF_LOG_DEBUG, GF_LOG_MEDIA, ("[ODM%d] Raw Frame dispatched to CB - TS %d ms\n", ch->odm->OD->objectDescriptorID, cu->TS));
+			GF_LOG(GF_LOG_DEBUG, GF_LOG_MEDIA, ("[ODM%d] Raw Frame dispatched to CB - TS %d ms - OTB %d ms - OTB_drift %d ms\n", ch->odm->OD->objectDescriptorID, cu->TS, gf_clock_real_time(ch->clock), gf_clock_time(ch->clock) ));
 		}
 		gf_cm_unlock_input(cb, cu, size, 1);
 
@@ -762,18 +772,30 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 			/*channel is the OCR, re-initialize the clock with the proper OCR*/
 			if (gf_es_owns_clock(ch)) {
 				u32 OCR_TS;
+
+				/*timestamps of PCR stream haven been shifted - shift the OCR as well*/
+				if (ch->seed_ts) {
+					u64 diff_ts;
+					Double scale = hdr.m2ts_pcr ? 27000000 : ch->esd->slConfig->OCRResolution;
+					scale /= ch->ts_res;
+					diff_ts = (u64) (ch->seed_ts * scale);
+					hdr.objectClockReference -= diff_ts;
+				}
+
 				/*if SL is mapped from network module(eg not coded), OCR=PCR shall be given in 27Mhz units*/
 				if (hdr.m2ts_pcr) {
 					OCR_TS = (u32) ( hdr.objectClockReference / 27000);
 				} else {
 					OCR_TS = (u32) ( (s64) (hdr.objectClockReference) * ch->ocr_scale);
 				}
+				OCR_TS += ch->ts_offset;
 				ch->clock->clock_init = 0;
+
 				gf_clock_set_time(ch->clock, OCR_TS);
 				/*many TS streams deployed with HLS have broken PCRs - we will check their consistency
 				when receiving the first AU with DTS/CTS on this channel*/
 				ch->clock->probe_ocr = 1;
-				GF_LOG(GF_LOG_INFO, GF_LOG_SYNC, ("[SyncLayer] ES%d: initializing clock at STB %d from OCR TS %d (origial TS "LLD") - %d buffering - OTB %d\n", ch->esd->ESID, gf_term_get_time(ch->odm->term), OCR_TS, hdr.objectClockReference, ch->clock->Buffering, gf_clock_time(ch->clock) ));
+				GF_LOG(GF_LOG_INFO, GF_LOG_SYNC, ("[SyncLayer] ES%d: initializing clock at STB %d from OCR TS %d (original TS "LLD") - %d buffering - OTB %d\n", ch->esd->ESID, gf_term_get_time(ch->odm->term), OCR_TS, hdr.objectClockReference, ch->clock->Buffering, gf_clock_time(ch->clock) ));
 				if (ch->clock->clock_init) ch->IsClockInit = 1;
 
 			}
@@ -784,7 +806,7 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 			u32 ck;
 			u32 OCR_TS = (u32) ( hdr.objectClockReference / 27000);
 			ck = gf_clock_time(ch->clock);
-			GF_LOG(GF_LOG_DEBUG, GF_LOG_SYNC, ("[SyncLayer] ES%d: At OTB %d - OCR Discontinuity OCR: adjusting to %d (origial TS "LLD") - original clock %d\n", ch->esd->ESID, gf_clock_real_time(ch->clock), OCR_TS, hdr.objectClockReference, ck));
+			GF_LOG(GF_LOG_DEBUG, GF_LOG_SYNC, ("[SyncLayer] ES%d: At OTB %d - OCR Discontinuity OCR: adjusting to %d (original TS "LLD") - original clock %d\n", ch->esd->ESID, gf_clock_real_time(ch->clock), OCR_TS, hdr.objectClockReference, ck));
 //			gf_clock_set_time(ch->clock, (u32) OCR_TS);
 		}
 		/*compute clock drift*/
@@ -797,7 +819,7 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 				OCR_TS = (u32) ( (s64) (hdr.objectClockReference) * ch->ocr_scale);
 			}
 			ck = gf_clock_time(ch->clock);
-			GF_LOG(GF_LOG_DEBUG, GF_LOG_SYNC, ("[SyncLayer] ES%d: At OTB %d adjusting OCR to %d (origial TS "LLD") - diff %d\n", ch->esd->ESID, gf_clock_real_time(ch->clock), OCR_TS, hdr.objectClockReference, (s32) OCR_TS - (s32) ck));
+			GF_LOG(GF_LOG_DEBUG, GF_LOG_SYNC, ("[SyncLayer] ES%d: At OTB %d adjusting OCR to %d (original TS "LLD") - diff %d\n", ch->esd->ESID, gf_clock_real_time(ch->clock), OCR_TS, hdr.objectClockReference, (s32) OCR_TS - (s32) ck));
 //			gf_clock_set_time(ch->clock, (u32) OCR_TS);
 		}
 #else
@@ -810,7 +832,7 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 				OCR_TS = (u32) ( (s64) (hdr.objectClockReference) * ch->ocr_scale);
 			}
 			ck = gf_clock_time(ch->clock);
-			GF_LOG(GF_LOG_DEBUG, GF_LOG_SYNC, ("[SyncLayer] ES%d: At OTB %d got OCR %d (origial TS "LLD") - diff %d%s\n", ch->esd->ESID, gf_clock_real_time(ch->clock), OCR_TS, hdr.objectClockReference, (s32) OCR_TS - (s32) ck, (hdr.m2ts_pcr==2) ? " - PCR Discontinuity flag" : "" ));
+			GF_LOG(GF_LOG_DEBUG, GF_LOG_SYNC, ("[SyncLayer] ES%d: At OTB %d got OCR %d (original TS "LLD") - diff %d%s\n", ch->esd->ESID, gf_clock_real_time(ch->clock), OCR_TS, hdr.objectClockReference, (s32) OCR_TS - (s32) ck, (hdr.m2ts_pcr==2) ? " - PCR Discontinuity flag" : "" ));
 		}
 #endif
 		if (!payload_size) return;
@@ -883,7 +905,7 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 				GF_LOG(GF_LOG_WARNING, GF_LOG_SYNC, ("[SyncLayer] ES%d: missed end of AU (DTS %d)\n", ch->esd->ESID, ch->DTS));
 			}
 			if (ch->codec_resilient) {
-				if (!ch->IsClockInit) gf_es_check_timing(ch);
+				if (!ch->IsClockInit && !ch->skip_time_check_for_pending) gf_es_check_timing(ch);
 				Channel_DispatchAU(ch, 0);
 			} else {
 				gf_free(ch->buffer);
@@ -892,6 +914,7 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 				ch->len = ch->allocSize = 0;
 			}
 		}
+		ch->skip_time_check_for_pending = 0;
 		AUSeqNum = hdr.AU_sequenceNumber;
 		/*Get CTS */
 		if (ch->esd->slConfig->useTimestampsFlag) {
@@ -928,7 +951,7 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 					s32 diff_ts = ch->DTS;
 					diff_ts -= ch->clock->init_time;
 					if (ABS(diff_ts) > 10000) {
-						GF_LOG(GF_LOG_ERROR, GF_LOG_SYNC, ("[SyncLayer] ES%d: invalid clock reference detected - DTS %d OCR %d - using DTS as OCR\n", ch->DTS, ch->clock->init_time));
+						GF_LOG(GF_LOG_ERROR, GF_LOG_SYNC, ("[SyncLayer] ES%d: invalid clock reference detected - DTS %d but OCR %d - using DTS as OCR\n", ch->esd->ESID, ch->DTS, ch->clock->init_time));
 						ch->clock->clock_init = 0;
 						gf_clock_set_time(ch->clock, ch->DTS-1000);
 					}
@@ -941,7 +964,8 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 			}
 		} else {
 			/*use CU duration*/
-			if (!ch->IsClockInit) ch->DTS = ch->CTS = ch->ts_offset;
+			if (!ch->IsClockInit)
+				ch->DTS = ch->CTS = ch->ts_offset;
 
 			if (!ch->esd->slConfig->AUSeqNumLength) {
 				if (!ch->au_sn) {
@@ -1137,6 +1161,8 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 		}
 	}
 
+	gf_es_lock(ch, 1);
+
 	if (hdr.paddingFlag && !EndAU) {	
 		/*to do - this shouldn't happen anyway */
 
@@ -1157,6 +1183,9 @@ void gf_es_receive_sl_packet(GF_ClientService *serv, GF_Channel *ch, char *paylo
 	}
 
 	if (EndAU) Channel_DispatchAU(ch, hdr.au_duration);
+
+
+	gf_es_lock(ch, 0);
 }
 
 

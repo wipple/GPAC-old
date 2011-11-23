@@ -2030,28 +2030,32 @@ static GF_Err http_parse_remaining_body(GF_DownloadSession * sess, char * sHTTP)
             return GF_OK;
         }
 
-        if (e) {
-	    if (e == GF_IP_CONNECTION_CLOSED){
-		u32 len = gf_cache_get_content_length(sess->cache_entry);
-		if (size > 0)
-			gf_dm_data_received(sess, sHTTP, size);
-		if (len == 0){
-                	sess->total_size = sess->bytes_done;
-			// HTTP 1.1 without content length...
-			gf_dm_sess_notify_state(sess, GF_NETIO_DATA_TRANSFERED, GF_OK);
-			assert(sess->server_name);
-			GF_LOG(GF_LOG_ERROR, GF_LOG_NETWORK, ("[HTTP] Disconnected from %s: %s\n", sess->server_name, gf_error_to_string(e)));
-                	sess->status = GF_NETIO_DISCONNECTED;
-			gf_cache_set_content_length(sess->cache_entry, sess->bytes_done);
-			e = GF_OK;
+		if (e) {
+			if (e == GF_IP_CONNECTION_CLOSED){
+				u32 len = gf_cache_get_content_length(sess->cache_entry);
+				if (size > 0)
+					gf_dm_data_received(sess, sHTTP, size);
+				if ( ( (len == 0) && sess->use_cache_file) 
+					/*ivica patch*/
+					|| (size==0)
+				) {
+					sess->total_size = sess->bytes_done;
+					// HTTP 1.1 without content length...
+					gf_dm_sess_notify_state(sess, GF_NETIO_DATA_TRANSFERED, GF_OK);
+					assert(sess->server_name);
+					GF_LOG(GF_LOG_ERROR, GF_LOG_NETWORK, ("[HTTP] Disconnected from %s: %s\n", sess->server_name, gf_error_to_string(e)));
+					sess->status = GF_NETIO_DISCONNECTED;
+					if (sess->use_cache_file) 
+						gf_cache_set_content_length(sess->cache_entry, sess->bytes_done);
+					e = GF_OK;
+				}
+			}
+			gf_dm_disconnect(sess, 1);
+			sess->last_error = e;
+			gf_dm_sess_notify_state(sess, sess->status, e);
+			return e;
 		}
-	    }
-            gf_dm_disconnect(sess, 1);
-            sess->last_error = e;
-            gf_dm_sess_notify_state(sess, sess->status, e);
-            return e;
-        }
-        gf_dm_data_received(sess, sHTTP, size);
+		gf_dm_data_received(sess, sHTTP, size);
 
         /*socket empty*/
         if (size < GF_DOWNLOAD_BUFFER_SIZE) return GF_OK;
@@ -2171,16 +2175,23 @@ static GF_Err wait_for_header_and_parse(GF_DownloadSession *sess, char * sHTTP)
             if (hdr_sep) hdr_sep[0] = 0;
         }
 
-        par.error = 0;
+		/*header signaling is moved after response processing*/
+#if 0
+		par.error = 0;
         par.msg_type = GF_NETIO_PARSE_HEADER;
         par.name = hdr;
         par.value = hdr_val;
-        GF_LOG(GF_LOG_DEBUG, GF_LOG_NETWORK, ("[HTTP] Processing header %s: %s\n", hdr, hdr_val));
         gf_dm_sess_user_io(sess, &par);
+#endif
+
+        GF_LOG(GF_LOG_DEBUG, GF_LOG_NETWORK, ("[HTTP] Processing header %s: %s\n", hdr, hdr_val));
 
         if (!stricmp(hdr, "Content-Length") ) {
             ContentLength = (u32) atoi(hdr_val);
             gf_cache_set_content_length(sess->cache_entry, ContentLength);
+			/*Ivica patch*/
+			if (ContentLength==0)
+				sess->use_cache_file = 0;
         }
         else if (!stricmp(hdr, "Content-Type")) {
             char * mime_type = gf_strdup(hdr_val);
@@ -2432,6 +2443,36 @@ static GF_Err wait_for_header_and_parse(GF_DownloadSession *sess, char * sHTTP)
         e = GF_REMOTE_SERVICE_ERROR;
         goto exit;
     }
+
+
+    /* FIXME UGLY CODE DUPLICATION to fix later on: we only send the headers to the user if no problem in response (eg no relocation, ...)*/
+    while (1) {
+        char *sep, *hdr_sep, *hdr, *hdr_val;
+        if ( (s32) LinePos + 4 > BodyStart) break;
+        LinePos = gf_token_get_line(sHTTP, LinePos , bytesRead, buf, 1024);
+        if (LinePos < 0) break;
+
+        hdr_sep = NULL;
+        hdr_val = NULL;
+        hdr = buf;
+        sep = strchr(buf, ':');
+        if (sep) {
+            sep[0]=0;
+            hdr_val = sep+1;
+            while (hdr_val[0]==' ') hdr_val++;
+            hdr_sep = strrchr(hdr_val, '\r');
+            if (hdr_sep) hdr_sep[0] = 0;
+        }
+
+        par.error = 0;
+        par.msg_type = GF_NETIO_PARSE_HEADER;
+        par.name = hdr;
+        par.value = hdr_val;
+        gf_dm_sess_user_io(sess, &par);
+        if (sep) sep[0]=':';
+        if (hdr_sep) hdr_sep[0] = '\r';
+    }
+
 
     if (sess->http_read_type != GET)
         sess->use_cache_file = 0;

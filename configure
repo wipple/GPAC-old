@@ -1,9 +1,11 @@
 #!/bin/sh
 #
 # GPAC MPEG-4 SDK configure script (c) 2003-2005 Jean Le Feuvre
-#		inspired from ffmpeg configure by Fabrice Bellard (c) 2000-2002
+#      inspired from ffmpeg configure by Fabrice Bellard (c) 2000-2002
 #set -v
-# set temporary file name
+
+
+#set temporary file name
 if test ! -z "$TMPDIR" ; then
     TMPDIR1="${TMPDIR}"
 elif test ! -z "$TEMPDIR" ; then
@@ -11,6 +13,7 @@ elif test ! -z "$TEMPDIR" ; then
 else
     TMPDIR1="/tmp"
 fi
+
 
 #thanks to ffmpeg for this
 for v in "$@"; do
@@ -28,7 +31,8 @@ TMPE="${TMPDIR1}/gpac-conf-${RANDOM}-$$-${RANDOM}"
 TMPO="${TMPDIR1}/gpac-conf-${RANDOM}-$$-${RANDOM}.o"
 TMPS="${TMPDIR1}/gpac-conf-${RANDOM}-$$-${RANDOM}.S"
 
-# default parameters
+
+#default parameters
 DESTDIR=""
 prefix="/usr/local"
 mandir=""
@@ -64,6 +68,7 @@ js_lib="-ljs"
 lm_lib=""
 has_mingw_directx="no"
 has_js="no"
+has_platinum="no"
 has_ft="no"
 has_jpeg="no"
 has_png="no"
@@ -171,7 +176,9 @@ OSS_LDFLAGS=""
 INSTFLAGS=""
 is_64="no"
 
-#Configure Usage
+
+
+#configure usage
 if test x"$1" = x"-h" -o x"$1" = x"--help" ; then
     cat << EOF
 
@@ -213,16 +220,17 @@ GPAC configuration options:
   --disable-opt            disable GCC optimizations
   --disable-ipv6           disable IPV6 support
   --disable-wx             disable wxWidgets support
-  --disable-alsa           disable ALSA audio
-  --disable-jack           disable Jack audio
+  --disable-platinum       disable Platinum UPnP support
+  --disable-alsa           disable Alsa audio
   --disable-oss-audio      disable OSS audio
-  --disable-pulseaudio     disable PulseAudio audio
-  --disable-x11            disable all X11 support
+  --enable-jack            enable  Jack audio
+  --disable-jack           disable Jack audio
+  --enable-pulseaudio      enable  Pulse audio
+  --disable-pulseaudio     disable Pulse audio
   --disable-x11-shm        disable X11 shared memory support
   --disable-x11-xv         disable X11 Xvideo support
   --disable-sdl            disable SDL support
   --enable-fixed-point     enable fixed-point math
-  --force-fixed-point      force fixed-point math without changing gpac math.h header
   --enable-tinygl          enable TinyGL support
   --disable-directx        disable DirectX support
   --enable-joystick        enable joystick support
@@ -232,8 +240,8 @@ GPAC configuration options:
   --enable-amr-nb          enable AMR NB library
   --enable-amr-wb          enable AMR WB library
   --enable-amr             enable both AMR NB and WB libraries
-  --static-mp4box          configure for static linking of MP4Box
-  --enable-static-bin      configure for static linking of all applications
+  --enable-static-bin      GPAC static build
+  --static-mp4box          configure for static linking of MP4Box.
   --enable-depth           enables depth handling in the compositor
 
 Configuration options for libgpac - all options can be enabled with --enable-optname
@@ -252,6 +260,7 @@ Configuration options for libgpac - all options can be enabled with --enable-opt
   --disable-m2ps           disable MPEG2 PS
   --disable-m2ts           disable MPEG2 TS
   --disable-m2ts-mux       disable MPEG2 TS Multiplexer
+  --disable-dvb4linux      disable dvb4linux support
   --disable-parsers        disable AV parsers
   --disable-import         disable media importers
   --disable-export         disable media exporters
@@ -273,6 +282,7 @@ Configuration options for libgpac - all options can be enabled with --enable-opt
 Extra libraries configuration. You can turn a libray off or force using the local version in gpac/extra_lib/
   --use-js=OPT             force SpiderMonkey ECMAScript OPT=[no,local]
   --use-ft=OPT             force FreeType OPT=[no,local]
+  --use-zlib=OPT           force ZLIB OPT=[no,local]
   --use-jpeg=OPT           force JPEG OPT=[no,local]
   --use-png=OPT            force PNG OPT=[no,local]
   --use-faad=OPT           force FAAD OPT=[no,local]
@@ -283,7 +293,7 @@ Extra libraries configuration. You can turn a libray off or force using the loca
   --use-vorbis=OPT         force vorbis OPT=[no,system,local]
   --use-theora=OPT         force theora OPT=[no,system,local]
   --use-openjpeg=OPT       force openjpeg OPT=[no,system,local]
-  --use-a52=OPT            force a52 OPT=[no,system,local]
+  --use-a52=OPT            force a52 (ac3) OPT=[no,system,local]
 
 NOTE: The object files are build at the place where configure is launched
 EOF
@@ -386,7 +396,7 @@ EOF
     ppc64)
         cpu="powerpc"
         libdir="lib64"
-        ;;  
+        ;;
     "Power Macintosh"|ppc)
         cpu="powerpc"
         ;;
@@ -436,8 +446,8 @@ case $target_os in
         esac
 
         SHFLAGS=-nostart
-        # no need for libm, but the inet stuff
-        # Check for BONE
+        #no need for libm, but the inet stuff
+        #check for BONE
         if (echo $BEINCLUDES|grep 'headers/be/bone' >/dev/null); then
             extralibs="-lbind -lsocket"
         else
@@ -451,11 +461,12 @@ case $target_os in
         readelf="greadelf"
         LDFLAGS="${opt#--extra-ldflags=}"
         instflags=""
-        # check for 64-bit
-cat > $TMPC << EOF
+        #check for 64-bit
+        cat > $TMPC << EOF
 #include <stdio.h>
 int main( void ) { return 0; }
 EOF
+
         CFLAGS_NO_LTO=$(echo ${CFLAGS} | sed -e 's/\ -flto[-A-Za-z0-9=]*//g')
         $cc ${CFLAGS_NO_LTO} -o $TMPO $TMPC 2>/dev/null && $($readelf -h $TMPO | grep "Class:.*ELF64$" >/dev/null 2>&1)
         if test $? -eq 0; then
@@ -511,13 +522,13 @@ EOF
         darwin="yes"
         gcc_version=`$cc -v 2>&1 | grep version | cut -d ' ' -f3`
         case "$gcc_version" in
-            *2.95*) 
+            *2.95*)
                 CFLAGS="$CFLAGS -no-cpp-precomp -pipe -fomit-frame-pointer"
                 ;;
             3.*)
                 CFLAGS="$CFLAGS -no-cpp-precomp -pipe -fomit-frame-pointer -mdynamic-no-pic -fno-common"
                 ;;
-            4.*) 
+            4.*)
                 CFLAGS="$CFLAGS -pipe -fomit-frame-pointer -fno-common"
                 ;;
         esac
@@ -559,18 +570,20 @@ if test -n "$opt_libdir"; then
 fi
 
 # Defines directory for binaries and libs (ex. for TinyGL)
-target_bin_dir="" 
+target_bin_dir=""
 if test "$cross_prefix" = "" ; then
     target_bin_dir=`${cc} -v 2>&1 | grep -e '^Target:' | awk ' {print $2}'`-${cc_orig}
 else
     target_bin_dir=${cross_prefix}${cc_orig}
 fi
 
+
 #if test "$source_path_used" = "yes" ; then
 mkdir -p extra_lib
 mkdir -p extra_lib/lib
 mkdir -p extra_lib/lib/gcc
 #fi
+
 
 #OK check for all local & systems lib
 local_inc=$source_path/extra_lib/include
@@ -591,6 +604,8 @@ if $cc -o $TMPO $TMPC -Wno-pointer-sign 2> /dev/null  ; then
     CPPFLAGS="$CPPFLAGS -Wno-pointer-sign"
 fi
 
+
+
 #look for zlib
 cat > $TMPC << EOF
 #include <zlib.h>
@@ -605,6 +620,7 @@ else
     echo "error: zlib not found on system or in local libs"
     exit 1
 fi
+
 
 
 #check dlopen
@@ -623,6 +639,7 @@ else
         exit 1
     fi
 fi
+
 
 
 #look for spidermonkey JS support
@@ -761,7 +778,6 @@ EOF
 fi
 
 
-
 if test "$has_js" != "no" ; then
     if test "$linux" = "yes" ; then
         if test "$cpu" != "sh4"; then
@@ -781,8 +797,20 @@ fi
 
 #fi
 
-
 #end JS test
+
+
+
+#look for platinum support
+cat > $TMPC << EOF
+#include <Platinum.h>
+int main( void ) { return 0; }
+EOF
+if $cpp -o $TMPO $TMPC -I$local_inc/platinum -L$local_lib -lPlatinum -lPltMediaServer -lPltMediaConnect -lPltMediaRenderer -lNeptune -lZlib 2> /dev/null  ; then
+  has_platinum="yes"
+fi
+
+
 
 
 #look for freetype support
@@ -845,6 +873,7 @@ if $cc -o $TMPO $TMPC $CFLAGS $LDFLAGS $LINK_SSL 2> /dev/null  ; then
 fi
 
 
+
 #look for JPEG support
 cat > $TMPC << EOF
 #include <stdio.h>
@@ -890,6 +919,8 @@ else
     fi
 fi
 
+
+
 #look for OpenJPEG support
 cat > $TMPC << EOF
 #include <stdio.h>
@@ -906,6 +937,8 @@ elif test "$alt_macosx_dir" != "" ; then
 elif $cc -o $TMPO $TMPC -I$local_inc/openjpeg -L$local_lib -lopenjpeg 2> /dev/null  ; then
     has_openjpeg="local"
 fi
+
+
 
 #look for PNG support
 cat > $TMPC << EOF
@@ -939,6 +972,8 @@ else
     fi
 fi
 
+
+
 #look for MAD support
 cat > $TMPC << EOF
 #include <mad.h>
@@ -954,6 +989,8 @@ elif test "$alt_macosx_dir" != "" ; then
 elif $cc -o $TMPO $TMPC -I$local_inc/mad -L$local_lib -lmad 2> /dev/null  ; then
     has_mad="local"
 fi
+
+
 
 #look for A52DEC support
 cat > $TMPC << EOF
@@ -973,6 +1010,8 @@ elif test "$alt_macosx_dir" != "" ; then
 elif $cc -o $TMPO $TMPC -I$local_inc -L$local_lib -la52 2> /dev/null  ; then
     has_a52="local"
 fi
+
+
 
 #look for XVID support
 cat > $TMPC << EOF
@@ -998,6 +1037,8 @@ else
     fi
 fi
 
+
+
 #look for FAAD support
 cat > $TMPC << EOF
 #include <faad.h>
@@ -1015,12 +1056,16 @@ elif $cc -o $TMPO $TMPC -I$local_inc/faad -L$local_lib -lfaad -lm 2> /dev/null  
 fi
 
 
+
 #look for FFMPEG support
 
 if pkg-config --exists libavcodec libavformat libswscale 2> /dev/null  ; then
     ffmpeg_cflags=`pkg-config --cflags libavcodec libavformat libswscale libavutil`
     ffmpeg_lflags=`pkg-config --libs libavcodec libavformat libswscale libavutil`
     has_ffmpeg="system"
+else
+    ffmpeg_cflags=``
+    ffmpeg_lflags=`-lz -lavcodec -lavformat`
 fi
 
 cat > $TMPC << EOF
@@ -1037,36 +1082,38 @@ else
 #include <ffmpeg/avcodec.h>
 int main( void ) { return 0; }
 EOF
+
 fi
 
-if test "$cross_prefix"  != "" ; then 
-    if $cc -o $TMPO $TMPC -I$prefix/include -L$prefix/lib -lz -lavcodec -lavformat -lavutil 2> /dev/null  ; then
+if test "$cross_prefix"  != "" ; then
+    if $cc -o $TMPO $TMPC -I$prefix/include -L$prefix/lib $ffmpeg_lflags 2> /dev/null  ; then
         has_ffmpeg="system"
         ffmpeg_cflags="-I$prefix/include"
-        ffmpeg_lflags="-L$prefix/lib -lz -lavcodec -lavformat -lavutil"
+        ffmpeg_lflags="-L$prefix/lib $ffmpeg_lflags"
     else
-        if $cc -o $TMPO $TMPC -I$local_inc -L$local_lib -lz -lavcodec -lavformat 2> /dev/null  ; then
+        if $cc -o $TMPO $TMPC -I$local_inc -L$local_lib $ffmpeg_lflags 2> /dev/null  ; then
             has_ffmpeg="local"
             ffmpeg_cflags="-I$local_inc/include"
-            ffmpeg_lflags="-L$local_lib/lib -lz -lavcodec -lavformat -lavutil"
-            echo OK 
+            ffmpeg_lflags="-L$local_lib/lib $ffmpeg_lflags"
+            echo OK
         fi
     fi
 else
-    if $cc -o $TMPO $TMPC -lz -lavcodec -lavformat 2> /dev/null  ; then
+    if $cc -o $TMPO $TMPC $ffmpeg_lflags 2> /dev/null  ; then
         has_ffmpeg="system"
     elif test "$alt_macosx_dir" != "" ; then
-        if $cc -o $TMPO $TMPC -I$alt_macosx_dir/include -L$alt_macosx_dir/lib -lz -lavcodec -lavformat 2> /dev/null ; then
+        if $cc -o $TMPO $TMPC -I$alt_macosx_dir/include -L$alt_macosx_dir/lib $ffmpeg_lflags 2> /dev/null ; then
             has_ffmpeg="system"
             ffmpeg_cflags="-I$alt_macosx_dir/include"
-            ffmpeg_lflags="-L$alt_macosx_dir/lib -lz -lavcodec -lavformat"
+            ffmpeg_lflags="-L$alt_macosx_dir/lib $ffmpeg_lflags"
         fi
-    elif $cc -o $TMPO $TMPC -I$local_inc -L$local_lib -lz -lavcodec -lavformat 2> /dev/null  ; then
+    elif $cc -o $TMPO $TMPC -I$local_inc -L$local_lib $ffmpeg_lflags 2> /dev/null  ; then
         has_ffmpeg="local"
         ffmpeg_cflags="-I$local_inc"
-        ffmpeg_lflags="-L$local_lib -lz -lavcodec -lavformat -lavutil"
+        ffmpeg_lflags="-L$local_lib $ffmpeg_lflags"
     fi
 fi
+
 
 
 #look for vorbis support
@@ -1085,6 +1132,8 @@ elif $cc -o $TMPO $TMPC -I$local_inc -L$local_lib -lvorbis -lm 2> /dev/null  ; t
     has_vorbis="local"
 fi
 
+
+
 #look for theora support
 cat > $TMPC << EOF
 #include <theora/theora.h>
@@ -1100,6 +1149,8 @@ elif test "$alt_macosx_dir" != "" ; then
 elif $cc -o $TMPO $TMPC -I$local_inc -L$local_lib -ltheora -logg -lm 2> /dev/null  ; then
     has_theora="local"
 fi
+
+
 
 #look for OGG support
 cat > $TMPC << EOF
@@ -1121,14 +1172,14 @@ else
 fi
 
 
+
 #look for OSS support
-
 if test "$darwin" = "yes" ; then
-
     cat > $TMPC << EOF
 #include <soundcard.h>
 int main( void ) { return 0; }
 EOF
+
     if $cc -o $TMPO $TMPC -DLIBOSS_INTERNAL -I$alt_macosx_dir/include/ -I$alt_macosx_dir/include/liboss -L$alt_macosx_dir/lib -loss 2> /dev/null ; then
         has_oss_audio="SYS"
         OSS_CFLAGS="-DLIBOSS_INTERNAL -I$alt_macosx_dir/include/ -I$alt_macosx_dir/include/liboss"
@@ -1155,12 +1206,14 @@ EOF
 #include <soundcard.h>
 int main( void ) { return 0; }
 EOF
+
         if $cc -o $TMPO $TMPC 2> /dev/null  ; then
             has_oss_audio="YES"
         fi
     fi
 
 fi
+
 
 
 #look for wxWidgets support
@@ -1208,9 +1261,9 @@ EOF
 fi
 #end wx test
 
-# If svg isn't disabled
+#if svg isn't disabled
 if test "$disable_svg" != "yes"; then
-    # Then we check libxm2 presence via pkg-config
+    #then check libxm2 presence via pkg-config
     if pkg-config libxml-2.0 --exists > /dev/null 2>&1  ; then
         libxml2_cflags=`pkg-config libxml-2.0 --cflags`
         libxml2_lib_flags=`pkg-config libxml-2.0 --libs`
@@ -1219,7 +1272,8 @@ if test "$disable_svg" != "yes"; then
 fi
 
 
-# look for IPv6
+
+#look for IPv6
 cat > $TMPC << EOF
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -1238,7 +1292,9 @@ if $cc -o $TMPE $TMPC > /dev/null 2>&1  ; then
     has_ipv6="yes"
 fi
 
-# look for DVB4linux
+
+
+#look for DVB4linux
 cat > $TMPC << EOF
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
@@ -1250,7 +1306,9 @@ if $cc -o $TMPE $TMPC > /dev/null 2>&1  ; then
     has_dvb4linux="yes"
 fi
 
-# look for XMLRPC
+
+
+#look for XMLRPC
 cat > $TMPC << EOF
 #include <xmlrpc-c/base.h>
 #include <xmlrpc-c/server.h>
@@ -1263,9 +1321,11 @@ if $cc -o $TMPE $TMPC > /dev/null 2>&1  ; then
     has_xmlrpc="yes"
 fi
 
-# look for alsa
+
+
+#look for alsa
 cat > $TMPC << EOF
-#include <alsa/asoundlib.h>	      
+#include <alsa/asoundlib.h>
 int main( void ) {
 }
 EOF
@@ -1274,15 +1334,20 @@ if $cc -o $TMPE $TMPC > /dev/null 2>&1  ; then
     has_alsa="yes"
 fi
 
-# look for pulseaudio
+
+
+#look for pulseaudio
 cat > $TMPC << EOF
 #include <pulse/pulseaudio.h>
 int main( void ) {
 }
 EOF
+
 if $cc -o $TMPE $TMPC > /dev/null 2>&1  ; then
     has_pulseaudio="yes"
 fi
+
+
 
 #look for jack
 cat > $TMPC << EOF
@@ -1294,12 +1359,14 @@ if $cc -o $TMPE $TMPC > /dev/null 2>&1  ; then
     has_jack="yes"
 fi
 
+
+
 #look for directfb support
 cat > $TMPC << EOF
 #include <directfb/directfb.h>
 int main( void ) { return 0; }
 EOF
-directfb_inc="/opt/STM/STLinux-2.3/devkit/sh4/target/usr/include/directfb"
+directfb_inc="/usr/include/"
 directfb_lib="-ldirectfb -lfusion -ldirect"
 if $cc -o $TMPO $TMPC -I$directfb_inc -L$directfb_lib 2> /dev/null  ; then
     has_directfb="yes"
@@ -1310,6 +1377,7 @@ cat > $TMPC << EOF
 #include <X11/Xlib.h>
 int main( void ) { return 0; }
 EOF
+
 if $cc -o $TMPO $TMPC -I$X11_PATH/include -L$X11_PATH/lib 2> /dev/null  ; then
     has_x11="yes"
 
@@ -1394,6 +1462,7 @@ fi
 #end SDL check
 
 
+#overwrite detection with manual settings
 for opt do
     case "$opt" in
         ### General build options
@@ -1481,13 +1550,29 @@ for opt do
             if test "$tmp_has_png" = "system" ; then
                 if test "$has_png"  != "system" ; then
                     if test "$cross_prefix"  != "" ; then
-                        echo 
+                        echo
                         echo "WARNING: PNG has been forced to system, but we are cross-compiling, it will have to be on target"
-                        echo 
+                        echo
                     else
-                        echo 
+                        echo
                         echo "WARNING!! : PNG has been forced to system even though it hasn't been found in this host"
-                        echo 
+                        echo
+                    fi
+                fi
+            fi
+            has_png=$tmp_has_png
+            ;;
+        --use-zlib=*) tmp_has_zlib=${opt#--use-zlib=}
+            if test "$tmp_has_zlib" = "system" ; then
+                if test "$has_zlib"  != "system" ; then
+                    if test "$cross_prefix"  != "" ; then
+                        echo
+                        echo "WARNING: ZLIB has been forced to system, but we are cross-compiling, it will have to be on target"
+                        echo
+                    else
+                        echo
+                        echo "WARNING!! : ZLIB has been forced to system even though it hasn't been found in this host"
+                        echo
                     fi
                 fi
             fi
@@ -1502,41 +1587,7 @@ for opt do
         --use-openjpeg=*) has_openjpeg=${opt#--use-openjpeg=}
             ;;
 
-        ### Configuration options for libgpac
-        # Short-circuit for disabling all features with a single option
-        --disable-all)
-            disable_3d="yes";
-            disable_svg="yes";
-            disable_vrml="yes";
-            disable_od="yes";
-            disable_bifs="yes";
-            disable_bifs_enc="yes";
-            disable_laser="yes";
-            disable_beng="yes";
-            disable_qtvr="yes";
-            disable_avi="yes";
-            disable_ogg="yes";
-            disable_m2ps="yes";
-            disable_m2ts="yes";
-            disable_m2ts_mux="yes";
-            disable_parsers="yes";
-            disable_import="yes";
-            disable_export="yes";
-            disable_swf="yes";
-            disable_scene_stats="yes";
-            disable_scene_dump="yes";
-            disable_scene_encode="yes";
-            disable_loader_isoff="yes";
-            disable_od_dump="yes";
-            disable_mcrypt="yes";
-            disable_isoff="yes";
-            disable_isoff_write="yes";
-            disable_isoff_hint="yes";
-            disable_isoff_frag="yes";
-            disable_streaming="yes";
-            disable_x3d="yes";
-            disable_loader_bt="yes";
-            disable_loader_xmt="yes";
+        --disable-all) has_pulseaudio="no"; has_alsa="no"; disable_3d="yes"; disable_svg="yes"; disable_vrml="yes"; disable_od="yes"; disable_bifs="yes"; disable_bifs_enc="yes"; disable_laser="yes"; disable_beng="yes"; disable_qtvr="yes";  disable_avi="yes"; disable_ogg="yes"; disable_m2ps="yes"; disable_m2ts="yes"; disable_m2ts_mux="yes"; disable_parsers="yes"; disable_import="yes"; disable_export="yes"; disable_swf="yes"; disable_scene_stats="yes"; disable_scene_dump="yes"; disable_scene_encode="yes"; disable_loader_isoff="yes"; disable_od_dump="yes"; disable_mcrypt="yes"; disable_isoff="yes"; disable_isoff_write="yes"; disable_isoff_hint="yes"; disable_isoff_frag="yes"; disable_streaming="yes"; disable_x3d="yes"; disable_loader_bt="yes"; disable_loader_xmt="yes"; has_dvb4linux="no"
             ;;
 
         --disable-3d) disable_3d="yes"
@@ -1598,6 +1649,8 @@ for opt do
         --disable-m2ts-mux) disable_m2ts_mux="yes"
             ;;
         --enable-m2ts-mux) disable_m2ts_mux="no"
+            ;;
+        --disable-dvb4linux) has_dvb4linux="no"
             ;;
         --disable-parsers) disable_parsers="yes"
             ;;
@@ -1672,8 +1725,9 @@ for opt do
     esac
 done
 
-#look for OpenGL support or for TinyGL support
 
+
+#look for OpenGL support or for TinyGL support
 LINK3D=""
 INCL3D=""
 DarwinGL="no"
@@ -1684,12 +1738,14 @@ if test "$darwin" = "yes" ; then
 #include <OpenGL/glu.h>
 int main( void ) { glEnable(GL_NORMALIZE); return 0; }
 EOF
+
 else
     cat > $TMPC << EOF
 #include <GL/gl.h>
 #include <GL/glu.h>
 int main( void ) { glEnable(GL_NORMALIZE); return 0; }
 EOF
+
 fi
 
 if test "$disable_3d" = "no" ; then
@@ -1721,6 +1777,7 @@ cat > $TMPC << EOF
 #include <GL/gl.h>
 int main( void ) { int a ; a = TINYGL ; }
 EOF
+
 if test "$enable_tinygl" = "yes"  ;then
     if $cc -o $TMPO $TMPC -lTinyGL 2> /dev/null  ; then
         has_tinygl="yes"
@@ -1728,6 +1785,7 @@ if test "$enable_tinygl" = "yes"  ;then
         LINK3D="-lTinyGL"
     fi
 fi
+
 
 
 #look for GECKO support
@@ -1753,6 +1811,7 @@ else
         fi
     fi
 fi
+
 
 
 #look for joystick support
@@ -1806,6 +1865,8 @@ else
 fi
 
 
+
+#man dir
 if test x"$mandir" = x""; then
     mandir="${prefix}/man"
 fi
@@ -1826,13 +1887,14 @@ if test "$cpu" = "sh4"; then
     fi
 fi
 
+
+
 #prepare for config.h writing
 TMPH="${TMPDIR1}/gpac-conf-${RANDOM}-$$-${RANDOM}.h"
 echo "/* Automatically generated by configure */" > $TMPH
 echo "#ifndef GF_CONFIG_H" >> $TMPH
 echo "#define GF_CONFIG_H" >> $TMPH
 echo "#define GPAC_CONFIGURATION \"$GPAC_CONFIGURATION\"" >> $TMPH
-
 
 version="`grep '#define GPAC_VERSION ' \"$source_path/include/gpac/tools.h\" | cut -d '"' -f 2`"
 
@@ -2057,6 +2119,11 @@ if test "$has_wx" = "yes" ; then
 else
     echo "wxWidgets support: no"
 fi
+if test "$has_platinum" = "yes" ; then
+    echo "Platinum support: yes"
+else
+    echo "Platinum support: no"
+fi
 
 
 echo ""
@@ -2197,7 +2264,7 @@ fi
 
 if test "$use_memory_tracking" = "yes"; then
     echo "#define GPAC_MEMORY_TRACKING" >> $TMPH
-elif test "$use_std_alloc" = "yes"; then 
+elif test "$use_std_alloc" = "yes"; then
     echo "#define GPAC_STD_ALLOCATOR" >> $TMPH
 fi
 
@@ -2353,6 +2420,8 @@ if test "$has_wx" = "yes"; then
     echo "WX_LFLAGS=$wx_lflags" >> config.mak
 fi
 
+echo "USE_PLATINUM=$has_platinum" >> config.mak
+
 echo "MOZILLA_DIR=$moz_path" >> config.mak
 
 echo "CONFIG_XUL=$has_xul" >> config.mak
@@ -2422,11 +2491,12 @@ echo "GPAC_ENST=$GPAC_ENST" >> config.mak
 echo "GPAC_ENST_INC=$GPAC_ENST" >> config.mak
 
 
-# build tree in object directory if source path is different from current one
+
+#build tree in object directory if source path is different from current one
 if test "$source_path_used" = "yes" ; then
 
     echo "Creating compilation tree image"
-    SRC_DIRS="src src/utils src/isomedia src/ietf src/odf src/bifs src/scenegraph src/terminal src/mcrypt src/media_tools src/scene_manager src/compositor src/laser" 
+    SRC_DIRS="src src/utils src/isomedia src/ietf src/odf src/bifs src/scenegraph src/terminal src/mcrypt src/media_tools src/scene_manager src/compositor src/laser"
 
     APP_DIRS="applications/mp4box applications/mp4client applications/osmozilla applications/osmo4_wx applications/mp42ts"
 
@@ -2478,7 +2548,8 @@ echo "LOCAL_INC_PATH=$local_inc" >> config.mak
 
 echo "#endif" >> $TMPH
 
-# Do not overwrite config.h if unchanged to avoid superfluous rebuilds.
+
+#do not overwrite config.h if unchanged to avoid superfluous rebuilds.
 if ! cmp -s $TMPH config.h; then
     rm -f config.h
     mv -f $TMPH config.h
@@ -2486,7 +2557,9 @@ else
     echo "config.h is unchanged"
 fi
 
+
 rm -f $TMPO $TMPC $TMPE $TMPS $TMPCPP $TMPH
+
 
 if [ ! -d "./bin" ]; then
     mkdir ./bin
@@ -2500,5 +2573,6 @@ fi
 
 echo '%.opic : %.c' >> config.mak
 echo '	$(CC) $(CFLAGS) $(PIC_CFLAGS) -c $< -o $@' >> config.mak
+
 
 echo "Done - type 'make help' for make info, 'make' to build"

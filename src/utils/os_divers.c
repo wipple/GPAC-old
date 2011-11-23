@@ -1571,11 +1571,9 @@ char * gf_get_default_cache_directory(){
 #ifdef _WIN32_WCE
 	return gf_strdup( "\\windows\\temp" );
 #elif defined(WIN32)
-	char szPath[512];
-	GetWindowsDirectory(szPath, 507);
-	if (szPath[strlen(szPath)-1] != '\\')
-		strcat((char*)szPath, "\\");
-	strcat((char *)szPath, "Temp");
+	char szPath[MAX_PATH];
+	/*ivica patch*/
+	GetTempPath(MAX_PATH, szPath);
 	return gf_strdup( szPath );
 #else
 	return gf_strdup("/tmp");
@@ -1786,3 +1784,21 @@ GF_Err gf_global_resource_unlock(GF_GlobalLock * lock){
 	gf_free(lock);
 	return GF_OK;
 }
+
+#ifdef GPAC_ANDROID
+
+fm_callback_func fm_cbk = NULL;
+static void *fm_cbk_obj = NULL;
+
+void gf_fm_request_set_callback(void *cbk_obj, fm_callback_func cbk_func) {
+	fm_cbk = cbk_func;
+	fm_cbk_obj = cbk_obj;
+}
+
+void gf_fm_request_call(u32 type, u32 param, int *value) {
+	if (fm_cbk)
+		fm_cbk(fm_cbk_obj, type, param, value);
+}
+
+#endif //GPAC_ANDROID
+

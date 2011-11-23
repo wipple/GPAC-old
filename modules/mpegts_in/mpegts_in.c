@@ -277,13 +277,13 @@ static void MP2TS_SetupProgram(M2TSIn *m2ts, GF_M2TS_Program *prog, Bool regener
 		if (!es->user)
 			gf_m2ts_set_pes_framing((GF_M2TS_PES *)es, GF_M2TS_PES_FRAMING_SKIP);
 
-		if (!prog->pmt_iod && !no_declare) {
+		if (!prog->pmt_iod && !no_declare) {						
 			MP2TS_DeclareStream(m2ts, (GF_M2TS_PES *)es, NULL, 0);
 		} 
 		/*if IOD, streams not declared through OD framework are refered to by pid:// scheme, and will be declared upon
 		request by the terminal through GetServiceDesc*/
 	}
-
+	
 	/*force scene regeneration*/
 	if (!prog->pmt_iod && regenerate_scene)
 		gf_term_add_media(m2ts->service, NULL, 0);
@@ -473,11 +473,16 @@ static void M2TS_OnEvent(GF_M2TS_Demuxer *ts, u32 evt_type, void *param)
 		if (gf_list_count(m2ts->ts->programs) == 1) {
 			gf_term_on_connect(m2ts->service, NULL, GF_OK);
 			m2ts->is_connected = 1;
-		}
-
+		}		
 		/*do not declare if  single program was requested for playback*/
 		MP2TS_SetupProgram(m2ts, param, m2ts->request_all_pids, m2ts->request_all_pids ? 0 : 1);
-		M2TS_FlushRequested(m2ts);
+		M2TS_FlushRequested(m2ts);		
+		/* Send the TS to the a user if needed. Useful to check the number of received programs*/
+		evt.type = GF_EVENT_FORWARDED;
+		evt.forwarded_event.forward_type = GF_M2TS_EVT_PMT_FOUND;
+		evt.forwarded_event.service_event_type = evt_type;
+		evt.forwarded_event.param = param;
+		gf_term_on_service_event(m2ts->service, &evt);		
 		break;
 	case GF_M2TS_EVT_PMT_REPEAT:
 //	case GF_M2TS_EVT_PMT_UPDATE:
@@ -1020,8 +1025,6 @@ static GF_Err M2TS_ServiceCommand(GF_InputService *plug, GF_NetworkCommand *com)
 			}
 			return GF_STREAM_NOT_FOUND;
 		}
-
-		gf_m2ts_set_pes_framing(pes, GF_M2TS_PES_FRAMING_SKIP);
 		/* In case of EOS, we may receive a stop command after no one is playing */
 		if (ts->nb_playing)
 		  ts->nb_playing--;
@@ -1031,9 +1034,11 @@ static GF_Err M2TS_ServiceCommand(GF_InputService *plug, GF_NetworkCommand *com)
 			while (ts->run_state!=2) gf_sleep(2);
 			if (gf_list_count(m2ts->ts->requested_progs)) {
 				ts->file_regulate = 0;
+				gf_m2ts_set_pes_framing(pes, GF_M2TS_PES_FRAMING_SKIP);
 				return TSDemux_DemuxPlay(ts);
 			}
 		}
+		gf_m2ts_set_pes_framing(pes, GF_M2TS_PES_FRAMING_SKIP);
 		return GF_OK;
 	case GF_NET_CHAN_CONFIG:
 		pes = M2TS_GetChannel(m2ts, com->base.on_channel);

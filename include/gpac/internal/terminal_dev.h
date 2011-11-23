@@ -356,10 +356,10 @@ struct _tag_terminal
 
 	/*net services*/
 	GF_List *net_services;
-	/*net services to be connected*/
-	GF_List *net_services_to_connect;
 	/*net services to be destroyed*/
 	GF_List *net_services_to_remove;
+	/*connection tasks pending*/
+	GF_List *connection_tasks;
 	/*channels waiting for service CONNECT ack to be setup*/
 	GF_List *channels_pending;
 	/*media objects pending for stop/play*/
@@ -422,8 +422,8 @@ Bool gf_term_forward_event(GF_Terminal *term, GF_Event *evt, Bool consumed, Bool
 
 /*error report function*/
 void gf_term_message(GF_Terminal *app, const char *service, const char *message, GF_Err error);
-/*creates service for given OD / URL*/
-void gf_term_connect_object(GF_Terminal *app, GF_ObjectManager *odm, char *serviceURL, char *parent_url);
+/*posts a request to connect a given object*/
+void gf_term_post_connect_object(GF_Terminal *term, GF_ObjectManager *odm, char *serviceURL, char *parent_url);
 /*creates service for given channel / URL*/
 GF_Err gf_term_connect_remote_channel(GF_Terminal *app, GF_Channel *ch, char *URL);
 
@@ -438,10 +438,11 @@ void gf_term_close_service(GF_Terminal *app, GF_ClientService *service);
 
 /*locks media quaue*/
 void gf_term_lock_media_queue(GF_Terminal *app, Bool LockIt);
-
 /*locks net manager*/
 void gf_term_lock_net(GF_Terminal *app, Bool LockIt);
 
+/*checks no connection on the ODM are pending - of so, remove them*/
+void gf_term_check_connections_for_delete(GF_Terminal *term, GF_ObjectManager *odm);
 
 /*locks scene compositor*/
 void gf_term_lock_compositor(GF_Terminal *app, Bool LockIt);
@@ -615,6 +616,9 @@ struct _es_channel
 	/* used in Carousel, to skip packets until the end of AU */ 
 	u8 carousel_type;
 	Bool skip_carousel_au;
+
+	/*discard clock initialization when dispatching pending AU - this is used when TS discontinuities / MPA_TIME happen*/
+	Bool skip_time_check_for_pending;
 	
 	/* TimeStamp to Media Time mapping*/
 	/*TS (in TSResolution) corresponding to the SeedTime of the decoder. Delivered by net, otherwise 0*/
@@ -692,6 +696,8 @@ void gf_es_init_dummy(GF_Channel *ch);
 void gf_es_config_drm(GF_Channel *ch, GF_NetComDRMConfig *isma_cryp);
 /*dispatch raw media AU to the composition buffer and BLOCKS until the AU is consumed by the decoder*/
 void gf_es_dispatch_raw_media_au(GF_Channel *ch, char *payload, u32 payload_size, u32 cts);
+/*returns true if this stream owns its clock, false if it simply refers to it*/
+Bool gf_es_owns_clock(GF_Channel *ch);
 
 /*
 		decoder stuff

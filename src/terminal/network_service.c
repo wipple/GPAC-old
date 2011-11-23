@@ -87,7 +87,7 @@ static void term_on_connect(void *user_priv, GF_ClientService *service, LPNETCHA
 
 			/*destroy service only if attached*/
 			if (root) {
-				gf_mx_p(term->media_queue_mx);
+				gf_term_lock_media_queue(term, 1);
 				service->ifce->CloseService(service->ifce);
 				root->net_service = NULL;
 				if (service->owner && service->nb_odm_users) service->nb_odm_users--;
@@ -97,7 +97,7 @@ static void term_on_connect(void *user_priv, GF_ClientService *service, LPNETCHA
 					/*and queue for destroy*/
 					gf_list_add(term->net_services_to_remove, service);
 				}
-				gf_mx_v(term->media_queue_mx);
+				gf_term_lock_media_queue(term, 0);
 
 				if (!root->parentscene) {
 					GF_Event evt;
@@ -214,13 +214,13 @@ static void term_on_disconnect(void *user_priv, GF_ClientService *service, LPNET
 	}
 	/*this is service disconnect*/
 	if (!netch) {
-		gf_mx_p(term->media_queue_mx);
+		gf_term_lock_media_queue(term, 1);
 		/*unregister from valid services*/
 		if (gf_list_del_item(term->net_services, service)>=0) {
 			/*and queue for destroy*/
 			gf_list_add(term->net_services_to_remove, service);
 		}
-		gf_mx_v(term->media_queue_mx);
+		gf_term_lock_media_queue(term, 0);
 		return;
 	}
 	/*this is channel disconnect*/
@@ -273,8 +273,12 @@ static void term_on_media_add(void *user_priv, GF_ClientService *service, GF_Des
 	GET_TERM();
 
 	root = service->owner;
-	if (!root){
+	if (!root) {
 	  GF_LOG(GF_LOG_ERROR, GF_LOG_MEDIA, ("[Service %s] has not root, aborting !\n", service->url));
+	  return;
+	}
+	if (root->flags & GF_ODM_DESTROYED) {
+	  GF_LOG(GF_LOG_ERROR, GF_LOG_MEDIA, ("[Service %s] root has been scheduled for destruction - aborting !\n", service->url));
 	  return;
 	}
 	scene = root->subscene ? root->subscene : root->parentscene;
@@ -310,16 +314,19 @@ static void term_on_media_add(void *user_priv, GF_ClientService *service, GF_Des
 		GF_ESD *esd;
 		char *url;
 		GF_MediaObject *mo = gf_list_get(scene->scene_objects, i);
-		if (!mo->odm) continue;
 
 		if ((mo->OD_ID != GF_MEDIA_EXTERNAL_ID) && (min_od_id<mo->OD_ID)) 
 			min_od_id = mo->OD_ID;
+
+		if (!mo->odm) continue;
+		/*if object is attached to a service, don't bother looking in a different one*/
+		if (mo->odm->net_service && (mo->odm->net_service != service)) continue;
 
 		/*already assigned object - this may happen since the compositor has no control on when objects are declared by the service,
 		therefore opening file#video and file#audio may result in the objects being declared twice if the service doesn't
 		keep track of declared objects*/
 		if (mo->odm->OD) {
-			if (is_same_od(mo->odm->OD, od)) {
+			if (od->objectDescriptorID && is_same_od(mo->odm->OD, od)) {
 				/*reassign OD ID*/
 				mo->OD_ID = od->objectDescriptorID;
 				gf_odf_desc_del(media_desc);
@@ -385,6 +392,7 @@ static void term_on_media_add(void *user_priv, GF_ClientService *service, GF_Des
 		odm = mo->odm;
 		break;
 	}
+
 	if (!odm) {
 		odm = gf_odm_new();
 		odm->term = term;
@@ -496,7 +504,27 @@ static void term_on_command(void *user_priv, GF_ClientService *service, GF_Netwo
 	case GF_NET_CHAN_MAP_TIME:
 		ch->seed_ts = com->map_time.timestamp;
 		ch->ts_offset = (u32) (com->map_time.media_time*1000);
-		if (com->map_time.reset_buffers) gf_es_reset_buffers(ch);
+		GF_LOG(GF_LOG_INFO, GF_LOG_SYNC, ("[SyncLayer] ES%d: mapping TS "LLD" to media time %f - current time %d\n", ch->esd->ESID, com->map_time.timestamp, com->map_time.media_time, gf_clock_time(ch->clock)));
+
+		if (com->map_time.reset_buffers) {
+			gf_es_reset_buffers(ch);
+		}
+		/*if we were reassembling an AU, do not perform clock init check when dispatching it since we computed its timestamps 
+		according to the previous clock origin*/
+		else {
+			gf_mx_p(ch->mx);
+			ch->skip_time_check_for_pending = 1;
+			gf_mx_v(ch->mx);
+		}
+		/*if the channel is the clock, force a re-init*/
+		if (gf_es_owns_clock(ch)) {
+			ch->IsClockInit = 0;
+			gf_clock_reset(ch->clock);
+		}
+		else if (ch->odm->flags & GF_ODM_INHERIT_TIMELINE) {
+			ch->IsClockInit = 0;
+//			ch->ts_offset -= ch->seed_ts*1000/ch->ts_res;
+		}
 		break;
 	/*duration changed*/
 	case GF_NET_CHAN_DURATION:
@@ -997,7 +1025,7 @@ void gf_term_download_del(GF_DownloadSession * sess)
 	/*avoid sending data back to user*/
 	gf_dm_sess_abort(sess);
 
-	gf_mx_p(serv->term->media_queue_mx); 
+	gf_term_lock_media_queue(serv->term, 1);
 
 	/*unregister from service*/
 	gf_list_del_item(serv->dnloads, sess);
@@ -1005,7 +1033,8 @@ void gf_term_download_del(GF_DownloadSession * sess)
 	/*same as service: this may be called in the downloader thread (typically when download fails)
 	so we must queue the downloader and let the term delete it later on*/
 	gf_list_add(serv->term->net_services_to_remove, sess);
-	gf_mx_v(serv->term->media_queue_mx); 
+
+	gf_term_lock_media_queue(serv->term, 0);
 }
 
 GF_EXPORT

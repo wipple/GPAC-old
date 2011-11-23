@@ -171,8 +171,9 @@ void MPD_NetIO_Segment(void *cbk, GF_NETIO_Parameter *param)
 	}	
 	
     if ((param->msg_type == GF_NETIO_PARSE_HEADER) && !strcmp(param->name, "Content-Type")) {
-		if (!group->service_mime) group->service_mime = gf_strdup(param->value);
-		else if (strcmp(group->service_mime, param->value)) {
+		if (!group->service_mime) {
+			group->service_mime = gf_strdup(param->value);
+		} else if (strcmp(group->service_mime, param->value)) {
 			GF_MPD_Representation *rep = gf_list_get(group->period->representations, group->active_rep_index);
 			if (!rep->mime) rep->mime = gf_strdup(param->value);
 			rep->disabled = 1;
@@ -1306,6 +1307,7 @@ void MPD_ResetGroups(GF_MPD_In *mpdin)
 	mpdin->groups = NULL;
 }
 
+/* Adds all representations to a group (possibly creating it) */
 GF_Err MPD_SetupGroups(GF_MPD_In *mpdin)
 {
 	GF_Err e;
@@ -1374,10 +1376,6 @@ static GF_Err MPD_SegmentsProcessStart(GF_MPD_In *mpdin, u32 time)
     GF_MPD_Period *period;
     e = GF_BAD_PARAM;
 
-#if 0
-    MPD_DownloadStop(mpdin);
-#endif
-
 	MPD_ResetGroups(mpdin);
 
 	/* Get the right period from the given time */
@@ -1400,6 +1398,8 @@ static GF_Err MPD_SegmentsProcessStart(GF_MPD_In *mpdin, u32 time)
 		if (group->group_id==0) {
 			mpdin->group_zero_selected = group;
 		} else if (mpdin->group_zero_selected) {
+			/* if this group is not the group 0 and we have found the group 0, 
+			we can safely ignore this group. */
 			break;
 		}
 
@@ -1855,19 +1855,24 @@ GF_Err MPD_ChannelReleaseSLP(GF_InputService *plug, LPNETCHANNEL channel)
 
 Bool MPD_CanHandleURLInService(GF_InputService *plug, const char *url)
 {
-	/*JLF: commented out, this shall not happen*/
-#if 0
+	/**
+	 * May arrive when using pid:// URLs into a TS stream
+	 */
 	GF_MPD_In *mpdin = (GF_MPD_In*) plug->priv;
     GF_LOG(GF_LOG_DEBUG, GF_LOG_MODULE, ("[MPD_IN] Received Can Handle URL In Service (%p) request from terminal for %s\n", mpdin->service, url));
     if (!plug || !plug->priv) return GF_SERVICE_ERROR;
     if (mpdin->url && !strcmp(mpdin->url, url)) {
         return 1;
     } else {
+	GF_InputService *segment_ifce = NULL;
+        GF_MPD_Group *group = NULL;
+        if (mpdin->group_zero_selected)
+		segment_ifce = mpdin->group_zero_selected->service;
+	if (segment_ifce && segment_ifce->CanHandleURLInService){
+		return segment_ifce->CanHandleURLInService(plug, url);
+	}
         return 0;
     }
-#endif
-
-	return 0;
 }
 
 GF_EXPORT

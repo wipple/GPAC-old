@@ -355,12 +355,12 @@ enum
 	GF_LOG_MEMORY,
 	/*! Log for audio compositor*/
 	GF_LOG_AUDIO,
-	/*! generic Log for modules*/
+	/*! Generic Log for modules*/
 	GF_LOG_MODULE,
-	/*! log for threads and mutexes */
-    GF_LOG_MUTEX,
-	/*! log for all messages comming from GF_Terminal or script alert()*/
-    GF_LOG_CONSOLE,
+	/*! Log for threads and mutexes */
+	GF_LOG_MUTEX,
+	/*! Log for all messages coming from GF_Terminal or script alert()*/
+	GF_LOG_CONSOLE,
 
 	/*! special value used to set a level for all tools*/
 	GF_LOG_ALL,
@@ -789,6 +789,13 @@ GF_Err gf_gz_compress_payload(char **data, u32 data_len, u32 *out_size);
  * \return GF_OK if evertything went fine
  */
 GF_Err gf_gz_decompress_payload(char *data, u32 data_len, char **uncompressed_data, u32 *out_size);
+
+
+#ifdef GPAC_ANDROID
+typedef void (*fm_callback_func)(void *cbk_obj, u32 type, u32 param, int *value);
+extern void gf_fm_request_set_callback(void *cbk_obj, fm_callback_func cbk_func);
+void gf_fm_request_call(u32 type, u32 param, int *value);
+#endif //GPAC_ANDROID
 
 /*! @} */
 
